@@ -1,43 +1,24 @@
-import logging
-
 from flask import Flask
 
 import utils
 from HttpClient import HttpClient
-
-# from pgmpy.readwrite import XMLBIFReader
-
-# from orchestration.HttpClient import HttpClient
-# from orchestration.ServiceWrapper import start_service
-# from orchestration.models import model_trainer
+from QrDetector import QrDetector
 
 app = Flask(__name__)
-
-MODEL_DIRECTORY = "./"
-
-logger = logging.getLogger("vehicle")
-logging.getLogger('pgmpy').setLevel(logging.ERROR)
-logging.getLogger('werkzeug').setLevel(logging.WARNING)
-logging.getLogger('vehicle').setLevel(logging.INFO)
 
 DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
 
 http_client = HttpClient()
+qd = QrDetector(show_results=False)
 
-
-# MEMBER ROUTES ######################################
 
 # @utils.print_execution_time
-@app.route("/start_service", methods=['POST'])
-def start():
-    pass
-
+@app.route("/start_video", methods=['POST'])
+def start_video_processing():
+    qd.start_process()
     return "M| Started service successfully"
 
 
-def run_server():
-    print(f"Start HttpServer at ??")
+if __name__ == '__main__':
+    # start_video_processing()<
     app.run(host='0.0.0.0', port=8080)
-
-
-run_server()
