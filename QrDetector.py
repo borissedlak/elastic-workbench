@@ -1,3 +1,4 @@
+import logging
 import os
 import threading
 import time
@@ -9,13 +10,14 @@ import utils
 from VehicleService import VehicleService
 
 DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
-
+logger = logging.getLogger("multiscale")
 
 # output_video = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (1080, 608))
 
 class QrDetector(VehicleService):
     def __init__(self, show_results=False):
         super().__init__()
+        self._running = False
         ROOT = os.path.dirname(__file__)
         self.video_path = ROOT + "/data/QR_Video.mp4"
         self.simulate_fps = True
@@ -75,10 +77,16 @@ class QrDetector(VehicleService):
         self.cap = cv2.VideoCapture(self.video_path)
 
     def process_loop(self):
-        while True:
-            self.process_one_iteration({'pixel': 500, 'fps': 30})
+        while self._running:
+            self.process_one_iteration({'pixel': 800, 'fps': 30})
+
+        logger.info("QR Detector stopped")
 
     def start_process(self):
+        self._running = True
         processing_thread = threading.Thread(target=self.process_loop, daemon=True)
         processing_thread.start()
-        print("QR Detector started ...")
+        logger.info("QR Detector started")
+
+    def terminate(self):
+        self._running = False
