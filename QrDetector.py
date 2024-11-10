@@ -4,6 +4,7 @@ import threading
 import time
 
 import cv2
+from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
@@ -11,6 +12,10 @@ from VehicleService import VehicleService
 
 DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
+
+start_http_server(8000)
+latency = Gauge('latency', 'Current CPU load', ['service_id'])
+
 
 # output_video = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (1080, 608))
 
@@ -70,15 +75,17 @@ class QrDetector(VehicleService):
             if processing_time < available_time_frame:
                 time.sleep((available_time_frame - processing_time) / 1000)
 
-        print(processing_time)
-        return []
+        return processing_time
 
     def initialize_video(self):
         self.cap = cv2.VideoCapture(self.video_path)
 
     def process_loop(self):
         while self._running:
-            self.process_one_iteration({'pixel': 800, 'fps': 30})
+            latency_m = self.process_one_iteration({'pixel': 800, 'fps': 30})
+
+            # cpu_load.labels(device_name=DEVICE_NAME).set(device_metrics["metrics"]["cpu"])
+            latency.labels(service_id="video").set(latency_m)
 
         logger.info("QR Detector stopped")
 
