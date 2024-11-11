@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
 
-  #TODO: I can only find the Prometheus target when this is started through Python
   video-processing:
     build: .
     ports:

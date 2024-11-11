@@ -1,6 +1,7 @@
+import ast
 import logging
 
-from flask import Flask
+from flask import Flask, request
 
 import utils
 from HttpClient import HttpClient
@@ -20,12 +21,21 @@ qd = QrDetector(show_results=False)
 @app.route("/start_video", methods=['POST'])
 def start_video_processing():
     qd.start_process()
-    return "Started service successfully"
+    return ""
+
 
 @app.route("/stop_all", methods=['POST'])
 def terminate_processing():
     qd.terminate()
-    return "Service stopped successfully"
+    return ""
+
+
+@app.route("/change_config", methods=['PUT'])
+def change_config():
+    service_d = ast.literal_eval(request.args.get('service_description'))
+    qd.change_config(service_d)
+
+    return ""
 
 
 if __name__ == '__main__':

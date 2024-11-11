@@ -1,4 +1,5 @@
 #Provides the current resources it has in the container
-docker stats multiscaler-web-1
+docker stats multiscaler-video-processing-1
 
-docker stats multiscaler-web-1
+docker inspect multiscaler-video-processing-1
+docker inspect multiscaler-video-processing-1 | grep CpuShares

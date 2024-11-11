@@ -13,8 +13,9 @@ from VehicleService import VehicleService
 DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
 
-start_http_server(8000, "0.0.0.0")
+start_http_server(8000)
 latency = Gauge('latency', 'Current CPU load', ['service_id'])
+in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
 
 
 # output_video = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (1080, 608))
@@ -26,6 +27,7 @@ class QrDetector(VehicleService):
         ROOT = os.path.dirname(__file__)
         self.video_path = ROOT + "/data/QR_Video.mp4"
         self.simulate_fps = True
+        self.service_conf = {'pixel': 800, 'fps': 20}
 
         # self.device_metric_reporter = DeviceMetricReporter(leader_ip, gpu_available=False)
         # self.service_metric_reporter = ServiceMetricReporter("QR")
@@ -37,7 +39,7 @@ class QrDetector(VehicleService):
             print("Error opening video ...")
             return
 
-    def process_one_iteration(self, params):
+    def process_one_iteration(self, params) -> int:
         target_height, source_fps = int(params['pixel']), int(params['fps'])
 
         # print(f"Now processing: {params.source_pixel} p, {params.source_fps} FPS")
@@ -82,8 +84,11 @@ class QrDetector(VehicleService):
 
     def process_loop(self):
         while self._running:
-            latency_m = self.process_one_iteration({'pixel': 800, 'fps': 30})
+            latency_m = self.process_one_iteration(self.service_conf)
             latency.labels(service_id="video").set(latency_m)
+
+            available_time_frame = (1000 / self.service_conf['fps'])
+            in_time_fuzzy.labels(service_id="video").set(available_time_frame / max(1, latency_m))
 
         logger.info("QR Detector stopped")
 
@@ -95,3 +100,7 @@ class QrDetector(VehicleService):
 
     def terminate(self):
         self._running = False
+
+    def change_config(self, config):
+        self.service_conf = config
+        logger.info(f"QR Detector changed to {config}")
