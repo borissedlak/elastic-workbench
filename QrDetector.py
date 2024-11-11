@@ -11,11 +11,10 @@ from pyzbar.pyzbar import decode
 
 import utils
 from VehicleService import VehicleService
-from multi import WebcamStream
+from VideoReader import VideoReader
 
 DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
-# ROOT = os.path.dirname(__file__)
 
 start_http_server(8000)
 fps_average = Gauge('fps', 'Current processing FPS', ['service_id'])
@@ -27,40 +26,25 @@ class QrDetector(VehicleService):
     def __init__(self, show_results=False):
         super().__init__()
         self._running = False
-        # self.video_path = ROOT + "/data/QR_Video.mp4"
-        self.simulate_fps = True
         self.service_conf = {'pixel': 800, 'fps': 20}
-        self.number_threads = 1
+        self.NUMBER_THREADS = 4
         self.fps = utils.FPS_(calculate_avg=5)
 
-
-        self.webcam_stream = WebcamStream(stream_id=0)  # stream_id = 0 is for primary camera
+        self.webcam_stream = VideoReader(stream_id=0)  # stream_id = 0 is for primary camera
         self.webcam_stream.start()
 
         # self.device_metric_reporter = DeviceMetricReporter(leader_ip, gpu_available=False)
         # self.service_metric_reporter = ServiceMetricReporter("QR")
 
         self.show_result = show_results
-        # self.initialize_video()
-
-        # if not self.cap.isOpened():
-        #     print("Error opening video ...")
-        #     return
 
     def process_one_iteration(self, params) -> None:
         target_height, source_fps = int(params['pixel']), int(params['fps'])
 
-        # print(f"Now processing: {params.source_pixel} p, {params.source_fps} FPS")
-        available_time_frame = (1000 / source_fps)
-        # with self.mutex:
-        # print(time.time())
+        # available_time_frame = (1000 / source_fps)
         original_frame = self.webcam_stream.read()
-        # if not ret:
-        #     self.webcam_stream.reset()
-            # output_video.release()
-            # sys.exit()
 
-        if params is None:
+        if original_frame is None:
             pass
 
         original_width, original_height = original_frame.shape[1], original_frame.shape[0]
@@ -75,20 +59,14 @@ class QrDetector(VehicleService):
 
         if self.show_result:
             cv2.imshow("Detected Objects", combined_img)
-        # output_video.writ(combined_img)
 
         self.fps.tick()
-        print(self.fps.get_average())
         processing_time = (time.time() - start_time) * 1000.0
         pixel = combined_img.shape[0]
 
         # service_blanket = self.service_metric_reporter.create_metrics(processing_time, source_fps, pixel=pixel)
         # device_blanket = self.device_metric_reporter.create_metrics()
         # merged_metrics = utils.merge_single_dicts(service_blanket["metrics"], device_blanket["metrics"])
-
-        # if self.simulate_fps:
-        #     if processing_time < available_time_frame:
-        #         time.sleep((available_time_frame - processing_time) / 1000)
 
         current_fps = self.fps.get_average()
         fps_average.labels(service_id="video").set(current_fps)
@@ -98,7 +76,7 @@ class QrDetector(VehicleService):
 
     def process_loop(self):
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUMBER_THREADS) as executor:
             while self._running:
                 future = executor.submit(self.process_one_iteration, self.service_conf)
                 result = future.result()
