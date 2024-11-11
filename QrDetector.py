@@ -8,6 +8,7 @@ from multiprocessing import Lock, Process
 import cv2
 from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
+from torch.distributed.elastic.multiprocessing import start_processes
 
 import utils
 from VehicleService import VehicleService
@@ -27,7 +28,7 @@ class QrDetector(VehicleService):
         super().__init__()
         self._running = False
         self.service_conf = {'pixel': 800, 'fps': 20}
-        self.NUMBER_THREADS = 4
+        self.NUMBER_THREADS = 2
         self.fps = utils.FPS_(calculate_avg=5)
 
         self.webcam_stream = VideoReader(stream_id=0)  # stream_id = 0 is for primary camera
@@ -75,12 +76,21 @@ class QrDetector(VehicleService):
         # return processing_time
 
     def process_loop(self):
+        global frame_count
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUMBER_THREADS) as executor:
             while self._running:
-                future = executor.submit(self.process_one_iteration, self.service_conf)
-                result = future.result()
+                print(f"{frame_count}| Started Frame ")
+                # executor.map(self.process_one_iteration, self.service_conf)
+                # TODO: The problem is somewhere here, because it does only read one frame at once
+                future = executor.map(self.wait_task, range(1))
+                # result = future.result()
+                print(f"{frame_count}| Stopped Frame ")
+                frame_count += 1
         logger.info("QR Detector stopped")
+
+    def wait_task(self):
+        time.sleep(0.5)
 
     def start_process(self):
         self._running = True
@@ -94,3 +104,9 @@ class QrDetector(VehicleService):
     def change_config(self, config):
         self.service_conf = config
         logger.info(f"QR Detector changed to {config}")
+
+
+if __name__ == '__main__':
+    qd = QrDetector(show_results=False)
+    qd._running = True
+    qd.process_loop()
