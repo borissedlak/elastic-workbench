@@ -13,7 +13,7 @@ from VehicleService import VehicleService
 DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
 
-start_http_server(8000)
+start_http_server(8000, "0.0.0.0")
 latency = Gauge('latency', 'Current CPU load', ['service_id'])
 
 
@@ -83,8 +83,6 @@ class QrDetector(VehicleService):
     def process_loop(self):
         while self._running:
             latency_m = self.process_one_iteration({'pixel': 800, 'fps': 30})
-
-            # cpu_load.labels(device_name=DEVICE_NAME).set(device_metrics["metrics"]["cpu"])
             latency.labels(service_id="video").set(latency_m)
 
         logger.info("QR Detector stopped")

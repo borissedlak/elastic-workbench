@@ -1,10 +1,13 @@
 version: '3.8'
 
 services:
+
+  #TODO: I can only find the Prometheus target when this is started through Python
   video-processing:
     build: .
     ports:
-      - "8080:8080"
+      - "8080:8080" # HTTP
+      - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
 #    volumes:
@@ -16,7 +19,7 @@ services:
     image: prom/prometheus
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "9090:9090" # Prometheus UI
     volumes:
       - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
@@ -27,7 +30,7 @@ services:
     image: grafana/grafana
     container_name: grafana
     ports:
-      - "3000:3000"
+      - "3000:3000" # Grafana UI
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
