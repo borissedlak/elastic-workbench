@@ -1,5 +1,11 @@
-#Provides the current resources it has in the container
+# Provides the current resources it has in the container
 docker stats multiscaler-video-processing-1
 
 docker inspect multiscaler-video-processing-1
 docker inspect multiscaler-video-processing-1 | grep CpuShares
+
+# Absolute amount of CPUs that the process gets assigned
+docker update --cpus 0.1 multiscaler-video-processing-1
+
+# Shares that it can use compared to other Docker containers
+docker update --cpu-shares 1024 multiscaler-video-processing-1

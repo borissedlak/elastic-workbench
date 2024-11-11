@@ -13,6 +13,17 @@ services:
 #      - .:/app
     restart: always
 
+#  test:
+#    build: .
+##    ports:
+##      - "8080:8080" # HTTP
+##      - "8000:8000" # Prometheus Server
+#    environment:
+#      - FLASK_ENV=development
+##    volumes:
+##      - .:/app
+#    restart: always
+
 
   prometheus:
     image: prom/prometheus
