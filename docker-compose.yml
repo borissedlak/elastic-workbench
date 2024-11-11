@@ -31,7 +31,7 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 
 import cv2
@@ -41,6 +42,7 @@ def highlight_qr_codes(frame, decoded_objects):
         cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     return frame
 
+
 def print_execution_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -51,3 +53,48 @@ def print_execution_time(func):
         return result
 
     return wrapper
+
+
+class FPS_:
+    def __init__(self, calculate_avg=1, display_total=True):
+        # self.output_string = output_string
+        self.display_total = display_total
+        self.prev_time = 0
+        self.new_time = 0
+
+        if calculate_avg < 1:
+            raise ValueError("Average must be calculated over value 1 at least")
+        self.store = Cyclical_Array(calculate_avg)
+
+    def tick(self) -> None:
+        self.new_time = time.time()
+        dif = self.new_time - self.prev_time
+
+        if dif != 0:
+            self.store.put(1 / dif)
+            self.prev_time = self.new_time
+            # msg = "\r" + self.output_string + "%d" % self.store.get_average()
+            # if self.display_total:
+            #     msg += ", last total %.3fs" % dif
+            # print(msg)
+            # sys.stdout.write(msg)
+            # sys.stdout.flush()
+
+        # return dif
+
+    def get_average(self) -> int:
+        return self.store.get_average()
+
+
+class Cyclical_Array:
+    def __init__(self, size):
+        self.data = np.zeros(size, dtype=object)
+        self.index = 0
+        self.size = size
+
+    def put(self, item):
+        self.data[self.index % self.size] = item
+        self.index = self.index + 1
+
+    def get_average(self):
+        return np.mean(self.data)
