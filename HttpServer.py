@@ -10,14 +10,17 @@ from test import DockerClient
 
 app = Flask(__name__)
 
-DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
-
 logging.getLogger('multiscale').setLevel(logging.INFO)
+
+DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
+DOCKER_PREFIX = utils.get_ENV_PARAM('DOCKER_PREFIX', "unix://")
+DOCKER_HOST = utils.get_ENV_PARAM('DOCKER_HOST', "/home/boris/.docker/desktop/docker.sock")
+
 
 http_client = HttpClient()
 qd = QrDetector(show_results=False)
 
-docker_client = DockerClient('unix:///home/boris/.docker/desktop/docker.sock')
+docker_client = DockerClient(DOCKER_PREFIX + DOCKER_HOST)
 
 
 # @utils.print_execution_time

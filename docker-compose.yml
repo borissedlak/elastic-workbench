@@ -1,4 +1,3 @@
-
 services:
 
   video-processing:
@@ -8,12 +7,15 @@ services:
       - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
+      - DOCKER_HOST=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
+      - DOCKER_PREFIX=unix:// # npipe:// # unix://
     volumes:
       #Probably needed so that I can find the socket from within docker
-#      - /var/run/docker.sock:/var/run/docker.sock
-      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
-      - /home/boris/.docker/desktop/docker.sock:/home/boris/.docker/desktop/docker.sock
-    restart: always
+      #      - /var/run/docker.sock:/var/run/docker.sock
+      #      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
+      #      - /home/boris/.docker/desktop/docker.sock:/home/boris/.docker/desktop/docker.sock
+      - //./pipe/dockerDesktopLinuxEngine:/var/run/docker.sock
+#    restart: always
 
   #  test:
   #    build: .
@@ -33,7 +35,8 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml
+      #      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

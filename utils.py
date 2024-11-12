@@ -1,19 +1,20 @@
 import logging
 import os
-import sys
 import time
 
 import cv2
 import numpy as np
 
+logger = logging.getLogger('multiscale')
+
 
 def get_ENV_PARAM(var, DEFAULT) -> str:
     ENV = os.environ.get(var)
     if ENV:
-        logging.info(f'Found ENV value for {var}: {ENV}')
+        logger.info(f'Found ENV value for {var}: {ENV}')
     else:
         ENV = DEFAULT
-        logging.warning(f"Didn't find ENV value for {var}, default to: {DEFAULT}")
+        logger.warning(f"Didn't find ENV value for {var}, default to: {DEFAULT}")
     return ENV
 
 
@@ -56,7 +57,7 @@ def print_execution_time(func):
 
 
 class FPS_:
-    def __init__(self, max_fps = 300):
+    def __init__(self, max_fps=300):
         self.prev_time = 0
         self.new_time = 0
 
@@ -73,12 +74,12 @@ class FPS_:
         #     self.prev_time = self.new_time
         # else:
         #     pass
-            # msg = "\r" + self.output_string + "%d" % self.store.get_average()
-            # if self.display_total:
-            #     msg += ", last total %.3fs" % dif
-            # print(msg)
-            # sys.stdout.write(msg)
-            # sys.stdout.flush()
+        # msg = "\r" + self.output_string + "%d" % self.store.get_average()
+        # if self.display_total:
+        #     msg += ", last total %.3fs" % dif
+        # print(msg)
+        # sys.stdout.write(msg)
+        # sys.stdout.flush()
 
         # return dif
 
