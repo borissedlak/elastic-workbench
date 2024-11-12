@@ -37,6 +37,13 @@ def change_config():
 
     return ""
 
+@app.route("/change_threads", methods=['PUT'])
+def change_threads():
+    threads_num = int(request.args.get('thread_number'))
+    qd.change_threads(threads_num)
+
+    return ""
+
 
 if __name__ == '__main__':
     start_video_processing()

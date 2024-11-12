@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ae3iuocrzgy68b"
+        "uid": "de3qbouqqups0b"
       },
       "fieldConfig": {
         "defaults": {
@@ -121,7 +121,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ae3iuocrzgy68b"
+        "uid": "de3qbouqqups0b"
       },
       "fieldConfig": {
         "defaults": {
@@ -210,7 +210,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ae3iuocrzgy68b"
+            "uid": "de3qbouqqups0b"
           },
           "disableTextWrap": false,
           "editorMode": "builder",

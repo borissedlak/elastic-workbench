@@ -19,15 +19,16 @@ start_http_server(8000)
 fps_average = Gauge('fps', 'Current processing FPS', ['service_id'])
 in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
 
-frame_count = 0
+# frame_count = 0
 
 
 class QrDetector(VehicleService):
     def __init__(self, show_results=False):
         super().__init__()
+        self._terminated = True
         self._running = False
         self.service_conf = {'pixel': 800, 'fps': 20}
-        self.NUMBER_THREADS = 8
+        self.number_threads = 2
         self.fps = utils.FPS_()
 
         self.webcam_stream = VideoReader(stream_id=0)  # stream_id = 0 is for primary camera
@@ -70,21 +71,22 @@ class QrDetector(VehicleService):
 
         buffer = []
 
-        while len(buffer) < self.NUMBER_THREADS:
+        # TODO: Need to reload buffer when 4 frames were consumed
+        while len(buffer) < self.number_threads:
             frame = self.webcam_stream.read()
             buffer.append(frame)
 
-        multiprocessing.set_start_method('fork')
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUMBER_THREADS) as executor:
+        # multiprocessing.set_start_method('fork')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
             while self._running:
 
                 # buffer = []
                 #
-                # while len(buffer) < self.NUMBER_THREADS:
+                # while len(buffer) < self.number_threads:
                 #     buffer.append(self.webcam_stream.read())
 
-                future_to_url = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame for frame
-                                 in buffer}
+                future_to_url = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
+                                 for frame in buffer}
 
                 # Process the results as they complete
                 for future in concurrent.futures.as_completed(future_to_url):
@@ -95,14 +97,18 @@ class QrDetector(VehicleService):
                     except Exception as e:
                         print(f"Error occurred while fetching {number}: {e}")
 
+                # TODO: Need some sliding window to balance fluctuations
                 current_fps = self.fps.get_fps()
                 fps_average.labels(service_id="video").set(current_fps)
                 in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
 
+        self._terminated = True
         logger.info("QR Detector stopped")
 
     def start_process(self):
+        self._terminated = False
         self._running = True
+
         processing_thread = threading.Thread(target=self.process_loop, daemon=True)
         processing_thread.start()
         logger.info("QR Detector started")
@@ -113,6 +119,17 @@ class QrDetector(VehicleService):
     def change_config(self, config):
         self.service_conf = config
         logger.info(f"QR Detector changed to {config}")
+
+    def change_threads(self, c_threads):
+        self.terminate()
+        # Wait until it is really terminated and then start new
+        while not self._terminated:
+            time.sleep(0.01)
+
+        self.number_threads = c_threads
+        logger.info(f"QR Detector set to work with {c_threads} threads")
+
+        self.start_process()
 
 
 if __name__ == '__main__':
