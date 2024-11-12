@@ -6,6 +6,7 @@ from flask import Flask, request
 import utils
 from HttpClient import HttpClient
 from QrDetector import QrDetector
+from test import DockerClient
 
 app = Flask(__name__)
 
@@ -15,6 +16,8 @@ logging.getLogger('multiscale').setLevel(logging.INFO)
 
 http_client = HttpClient()
 qd = QrDetector(show_results=False)
+
+docker_client = DockerClient('unix:///home/boris/.docker/desktop/docker.sock')
 
 
 # @utils.print_execution_time
@@ -37,10 +40,14 @@ def change_config():
 
     return ""
 
+
 @app.route("/change_threads", methods=['PUT'])
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
+    container_id = request.args.get('container_id')
+
     qd.change_threads(threads_num)
+    docker_client.update_cpu(container_id, threads_num)
 
     return ""
 

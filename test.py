@@ -1,23 +1,22 @@
+import logging
+
 import docker
 
-# Initialize the Docker client
-client = docker.DockerClient(base_url='unix:///home/boris/.docker/desktop/docker.sock')
-
-# container = client.containers.get("dd158b94a138")
+logger = logging.getLogger("multiscale")
 
 
-running_container = client.containers.list()
-for name in running_container:
-    print(f"Container ID: {name.id}")
-    print(f"Container Status: {name.status}")
+class DockerClient:
+    def __init__(self, url):
+        self.client = docker.DockerClient(base_url=url)  # 'unix:///home/boris/.docker/desktop/docker.sock')
 
-# # Print container ID and status
-# print(f"Container ID: {container.id}")
-# print(f"Container Status: {container.status}")
+    def update_cpu(self, container_id, cpus):
+        try:
+            container = self.client.containers.get(container_id)
+            container.update(cpu_quota=cpus * 100000)
+        except Exception as e:
+            logger.error("Could not connect to docker container", e)
+            # print(e)
 
-# Optional: Updating resource limits on a running container
-# container.update(cpu_quota=25000, mem_limit="256m")  # Adjust limits here if needed
-
-# Stop and remove the container when done
-# container.stop()
-# container.remove()
+if __name__ == "__main__":
+    client = DockerClient('unix:///home/boris/.docker/desktop/docker.sock')
+    client.update_cpu("c73449861df8", 5)

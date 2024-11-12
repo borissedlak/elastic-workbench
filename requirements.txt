@@ -5,3 +5,4 @@ pyzbar~=0.1.9
 numpy~=1.26.4
 opencv-python~=4.10.0.82
 prometheus-client~=0.16.0
+docker~=7.1.0
