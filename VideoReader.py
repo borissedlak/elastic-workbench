@@ -37,7 +37,7 @@ class VideoReader:
         self.t.start()  # method for reading next frame
 
     def update(self):
-        while True:
+        while not self.stopped:
             if self.last_frame_read:
 
                 if self.frame_count >= self.vcap.get(cv2.CAP_PROP_FRAME_COUNT):

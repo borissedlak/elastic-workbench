@@ -4,12 +4,8 @@ import requests
 
 # Define a function that simulates a blocking task
 def fetch_url(url):
-    try:
-        print(f"Fetching {url}")
-        response = requests.get(url)
-        return f"{url}: {len(response.content)} bytes"
-    except requests.RequestException as e:
-        return f"Error fetching {url}: {e}"
+    print(f"Fetching {url}")
+    time.sleep(1)
 
 # List of URLs to fetch
 urls = [
@@ -24,7 +20,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         while True:
             # Schedule the fetch_url function for each URL
-            future_to_url = {executor.submit(fetch_url, url): url for url in urls}
+            future_to_url = {executor.submit(fetch_url, url): url for url in range(4)}
 
             # Process the results as they complete
             for future in concurrent.futures.as_completed(future_to_url):

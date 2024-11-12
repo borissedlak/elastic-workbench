@@ -5,7 +5,7 @@ class VehicleService:
     def __init__(self):
         self.device_metric_reporter = None
 
-    def process_one_iteration(self, params) -> None:
+    def process_one_iteration(self, params, frame) -> None:
         pass
 
     def start_process(self):

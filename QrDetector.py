@@ -1,14 +1,12 @@
 import concurrent.futures
 import logging
-import os
+import multiprocessing
 import threading
 import time
-from multiprocessing import Lock, Process
 
 import cv2
 from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
-from torch.distributed.elastic.multiprocessing import start_processes
 
 import utils
 from VehicleService import VehicleService
@@ -23,13 +21,14 @@ in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
 
 frame_count = 0
 
+
 class QrDetector(VehicleService):
     def __init__(self, show_results=False):
         super().__init__()
         self._running = False
         self.service_conf = {'pixel': 800, 'fps': 20}
-        self.NUMBER_THREADS = 2
-        self.fps = utils.FPS_(calculate_avg=5)
+        self.NUMBER_THREADS = 8
+        self.fps = utils.FPS_()
 
         self.webcam_stream = VideoReader(stream_id=0)  # stream_id = 0 is for primary camera
         self.webcam_stream.start()
@@ -39,19 +38,15 @@ class QrDetector(VehicleService):
 
         self.show_result = show_results
 
-    def process_one_iteration(self, params) -> None:
+    def process_one_iteration(self, params, frame) -> None:
+
+        global frame_count
         target_height, source_fps = int(params['pixel']), int(params['fps'])
 
-        # available_time_frame = (1000 / source_fps)
-        original_frame = self.webcam_stream.read()
-
-        if original_frame is None:
-            pass
-
-        original_width, original_height = original_frame.shape[1], original_frame.shape[0]
+        original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height
 
-        frame = cv2.resize(original_frame, (int(original_width / ratio), int(original_height / ratio)))
+        frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
 
         start_time = time.time()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -61,36 +56,50 @@ class QrDetector(VehicleService):
         if self.show_result:
             cv2.imshow("Detected Objects", combined_img)
 
-        self.fps.tick()
         processing_time = (time.time() - start_time) * 1000.0
-        pixel = combined_img.shape[0]
+        # pixel = combined_img.shape[0]
 
         # service_blanket = self.service_metric_reporter.create_metrics(processing_time, source_fps, pixel=pixel)
         # device_blanket = self.device_metric_reporter.create_metrics()
         # merged_metrics = utils.merge_single_dicts(service_blanket["metrics"], device_blanket["metrics"])
 
-        current_fps = self.fps.get_average()
-        fps_average.labels(service_id="video").set(current_fps)
-        in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / source_fps)
-
-        # return processing_time
+        # frame_count += 1
+        # print(frame_count, processing_time)
 
     def process_loop(self):
-        global frame_count
 
+        buffer = []
+
+        while len(buffer) < self.NUMBER_THREADS:
+            frame = self.webcam_stream.read()
+            buffer.append(frame)
+
+        multiprocessing.set_start_method('fork')
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.NUMBER_THREADS) as executor:
             while self._running:
-                print(f"{frame_count}| Started Frame ")
-                # executor.map(self.process_one_iteration, self.service_conf)
-                # TODO: The problem is somewhere here, because it does only read one frame at once
-                future = executor.map(self.wait_task, range(1))
-                # result = future.result()
-                print(f"{frame_count}| Stopped Frame ")
-                frame_count += 1
-        logger.info("QR Detector stopped")
 
-    def wait_task(self):
-        time.sleep(0.5)
+                # buffer = []
+                #
+                # while len(buffer) < self.NUMBER_THREADS:
+                #     buffer.append(self.webcam_stream.read())
+
+                future_to_url = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame for frame
+                                 in buffer}
+
+                # Process the results as they complete
+                for future in concurrent.futures.as_completed(future_to_url):
+                    number = future_to_url[future]
+                    try:
+                        result = future.result()
+                        self.fps.tick()
+                    except Exception as e:
+                        print(f"Error occurred while fetching {number}: {e}")
+
+                current_fps = self.fps.get_fps()
+                fps_average.labels(service_id="video").set(current_fps)
+                in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
+
+        logger.info("QR Detector stopped")
 
     def start_process(self):
         self._running = True
@@ -108,5 +117,10 @@ class QrDetector(VehicleService):
 
 if __name__ == '__main__':
     qd = QrDetector(show_results=False)
-    qd._running = True
-    qd.process_loop()
+    qd.start_process()
+
+    # Needed to keep the daemon alive
+    while True:
+        time.sleep(1000)
+    # qd._running = True
+    # qd.process_loop()
