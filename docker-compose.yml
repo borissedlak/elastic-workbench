@@ -7,14 +7,11 @@ services:
       - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
-      - DOCKER_HOST=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
       - DOCKER_PREFIX=unix:// # npipe:// # unix://
     volumes:
-      #Probably needed so that I can find the socket from within docker
-      #      - /var/run/docker.sock:/var/run/docker.sock
-      #      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
-      #      - /home/boris/.docker/desktop/docker.sock:/home/boris/.docker/desktop/docker.sock
-      - //./pipe/dockerDesktopLinuxEngine:/var/run/docker.sock
+      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
+      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
 #    restart: always
 
   #  test:
