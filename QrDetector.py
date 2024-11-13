@@ -1,11 +1,10 @@
 import concurrent.futures
 import logging
-import multiprocessing
 import threading
 import time
 
 import cv2
-from prometheus_client import start_http_server, Gauge
+from prometheus_client import start_http_server, Gauge, Summary
 from pyzbar.pyzbar import decode
 
 import utils
@@ -16,10 +15,8 @@ DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
-fps_average = Gauge('fps', 'Current processing FPS', ['service_id'])
+fps_average = Summary('fps', 'Current processing FPS', ['service_id'])
 in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
-
-# frame_count = 0
 
 
 class QrDetector(VehicleService):
@@ -41,7 +38,7 @@ class QrDetector(VehicleService):
 
     def process_one_iteration(self, params, frame) -> None:
 
-        global frame_count
+        # global frame_count
         target_height, source_fps = int(params['pixel']), int(params['fps'])
 
         original_width, original_height = frame.shape[1], frame.shape[0]
@@ -71,7 +68,7 @@ class QrDetector(VehicleService):
 
         buffer = []
 
-        # TODO: Need to reload buffer when 4 frames were consumed
+        # TODO: Need to reload buffer when all frames were consumed
         while len(buffer) < self.number_threads:
             frame = self.webcam_stream.read()
             buffer.append(frame)
@@ -97,9 +94,9 @@ class QrDetector(VehicleService):
                     except Exception as e:
                         print(f"Error occurred while fetching {number}: {e}")
 
-                # TODO: Need some sliding window to balance fluctuations
+                # This is only executed once, and not for every frame
                 current_fps = self.fps.get_fps()
-                fps_average.labels(service_id="video").set(current_fps)
+                fps_average.labels(service_id="video").observe(current_fps)
                 in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
 
         self._terminated = True

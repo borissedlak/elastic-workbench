@@ -7,11 +7,11 @@ services:
       - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
+      - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET_PATH=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
       - DOCKER_PREFIX=unix:// # npipe:// # unix://
     volumes:
-      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
-      - /home/boris/.docker/desktop/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
 #    restart: always
 
   #  test:
@@ -32,8 +32,8 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-      #      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
+      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+#      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

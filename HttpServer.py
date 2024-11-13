@@ -4,23 +4,24 @@ import logging
 from flask import Flask, request
 
 import utils
+from DockerClient import DockerClient
 from HttpClient import HttpClient
 from QrDetector import QrDetector
-from DockerClient import DockerClient
 
 app = Flask(__name__)
 
-logging.getLogger('multiscale').setLevel(logging.INFO)
+# logger = logging.getLogger("multiscale")
+# logging.getLogger('multiscale').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
 DOCKER_PREFIX = utils.get_ENV_PARAM('DOCKER_PREFIX', "unix://")
-DOCKER_SOCKET_PATH = utils.get_ENV_PARAM('DOCKER_SOCKET_PATH', "/home/boris/.docker/desktop/docker.sock")
-
+DOCKER_SOCKET_PATH = utils.get_ENV_PARAM('DOCKER_SOCKET_PATH', "/var/run/docker.sock")
 
 http_client = HttpClient()
 qd = QrDetector(show_results=False)
 
-# docker_client = DockerClient(DOCKER_PREFIX + DOCKER_SOCKET_PATH)
+docker_client = DockerClient(DOCKER_PREFIX + DOCKER_SOCKET_PATH)
 
 
 # @utils.print_execution_time
@@ -47,10 +48,10 @@ def change_config():
 @app.route("/change_threads", methods=['PUT'])
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
-    # container_id = request.args.get('container_id')
+    container_id = request.args.get('container_id')
 
     qd.change_threads(threads_num)
-    # docker_client.update_cpu(container_id, threads_num)
+    docker_client.update_cpu(container_id, threads_num)
 
     return ""
 

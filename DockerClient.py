@@ -11,13 +11,13 @@ DOCKER_SOCKET_PATH = utils.get_ENV_PARAM('DOCKER_SOCKET_PATH', "/var/run/docker.
 
 class DockerClient:
     def __init__(self, url):
-        print(url)
         self.client = docker.DockerClient(base_url=url)
 
     def update_cpu(self, container_id, cpus):
         try:
             container = self.client.containers.get(container_id)
             container.update(cpu_quota=cpus * 100000)
+            logger.info(f"Container set to work with {cpus} cores")
         except Exception as e:
             logger.error("Could not connect to docker container", e)
             # print(e)

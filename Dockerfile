@@ -9,7 +9,6 @@ COPY requirements.txt /src
 RUN pip install -r ./requirements.txt
 
 COPY . /src
-#COPY /data /src
 
 EXPOSE 8080
 CMD [ "python", "./HttpServer.py" ]

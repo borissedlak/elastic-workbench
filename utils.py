@@ -57,36 +57,24 @@ def print_execution_time(func):
 
 
 class FPS_:
-    def __init__(self, max_fps=300):
+    def __init__(self, max_fps=300, sliding_window=5):
         self.prev_time = 0
         self.new_time = 0
 
-        self.store = Cyclical_Array(max_fps)
+        self.time_store = Cyclical_Array(max_fps)
+        self.fps_store = Cyclical_Array(sliding_window)
 
     def tick(self) -> None:
-        self.store.put(time.time())
-        # self.new_time = time.time()
-        # dif = self.new_time - self.prev_time
-        #
-        # if dif != 0:
-        #     print(dif)
-        #     self.store.put(int(1 / dif))
-        #     self.prev_time = self.new_time
-        # else:
-        #     pass
-        # msg = "\r" + self.output_string + "%d" % self.store.get_average()
-        # if self.display_total:
-        #     msg += ", last total %.3fs" % dif
-        # print(msg)
-        # sys.stdout.write(msg)
-        # sys.stdout.flush()
-
-        # return dif
+        self.time_store.put(time.time())
 
     def get_fps(self) -> int:
         current_time = time.time()
-        recent_timestamps = [t for t in self.store.data if current_time - t <= 1]
+        recent_timestamps = [t for t in self.time_store.data if current_time - t <= 1]
         return len(recent_timestamps)
+
+    def get_balanced_fps(self) -> int:
+        self.fps_store.put(self.get_fps())
+        return int(self.fps_store.get_average())
 
 
 class Cyclical_Array:
@@ -100,5 +88,5 @@ class Cyclical_Array:
         self.index = self.index + 1
 
     def get_average(self):
-        print(self.data, np.mean(self.data, dtype=np.float64))
+        # print(self.data, np.mean(self.data, dtype=np.float64))
         return np.mean(self.data, dtype=np.float64)
