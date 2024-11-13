@@ -117,6 +117,7 @@ class QrDetector(VehicleService):
         self.service_conf = config
         logger.info(f"QR Detector changed to {config}")
 
+    @utils.print_execution_time
     def change_threads(self, c_threads):
         self.terminate()
         # Wait until it is really terminated and then start new

@@ -48,9 +48,10 @@ def change_config():
 @app.route("/change_threads", methods=['PUT'])
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
-    container_id = request.args.get('container_id')
 
     qd.change_threads(threads_num)
+
+    container_id = docker_client.get_container_id()
     docker_client.update_cpu(container_id, threads_num)
 
     return ""
