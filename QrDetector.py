@@ -15,7 +15,7 @@ DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
-fps_average = Summary('fps', 'Current processing FPS', ['service_id'])
+fps = Gauge('fps', 'Current processing FPS', ['service_id'])
 in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
 
 
@@ -88,7 +88,7 @@ class QrDetector(VehicleService):
 
                 # This is only executed once, and not for every frame
                 current_fps = self.fps.get_fps()
-                fps_average.labels(service_id="video").observe(current_fps)
+                fps.labels(service_id="video").set(current_fps)
                 in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
 
         self._terminated = True
