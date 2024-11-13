@@ -50,7 +50,7 @@ def print_execution_time(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         execution_time_ms = (end_time - start_time) * 1000.0
-        print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
+        logger.info(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
         return result
 
     return wrapper
@@ -67,6 +67,7 @@ class FPS_:
     def tick(self) -> None:
         self.time_store.put(time.time())
 
+    @print_execution_time
     def get_fps(self) -> int:
         current_time = time.time()
         recent_timestamps = [t for t in self.time_store.data if current_time - t <= 1]

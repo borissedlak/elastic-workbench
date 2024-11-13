@@ -13,7 +13,8 @@ class DockerClient:
     def __init__(self, url):
         self.client = docker.DockerClient(base_url=url)
 
-    @utils.print_execution_time
+    # TODO: Takes too long with 90ms
+    # @utils.print_execution_time
     def update_cpu(self, container_id, cpus):
         try:
             container = self.client.containers.get(container_id)

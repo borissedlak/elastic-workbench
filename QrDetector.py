@@ -67,27 +67,19 @@ class QrDetector(VehicleService):
     def process_loop(self):
 
         buffer = []
-
         # TODO: Need to reload buffer when all frames were consumed
         while len(buffer) < self.number_threads:
             frame = self.webcam_stream.read()
             buffer.append(frame)
 
-        # multiprocessing.set_start_method('fork')
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
             while self._running:
 
-                # buffer = []
-                #
-                # while len(buffer) < self.number_threads:
-                #     buffer.append(self.webcam_stream.read())
-
-                future_to_url = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
+                future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
                                  for frame in buffer}
 
-                # Process the results as they complete
-                for future in concurrent.futures.as_completed(future_to_url):
-                    number = future_to_url[future]
+                for future in concurrent.futures.as_completed(future_dict):
+                    number = future_dict[future]
                     try:
                         result = future.result()
                         self.fps.tick()
@@ -117,7 +109,8 @@ class QrDetector(VehicleService):
         self.service_conf = config
         logger.info(f"QR Detector changed to {config}")
 
-    @utils.print_execution_time
+    # TODO: Takes too long with 106ms
+    # @utils.print_execution_time
     def change_threads(self, c_threads):
         self.terminate()
         # Wait until it is really terminated and then start new
@@ -134,8 +127,5 @@ if __name__ == '__main__':
     qd = QrDetector(show_results=False)
     qd.start_process()
 
-    # Needed to keep the daemon alive
     while True:
         time.sleep(1000)
-    # qd._running = True
-    # qd.process_loop()

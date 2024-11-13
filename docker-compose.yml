@@ -3,26 +3,15 @@ services:
   video-processing:
     build: .
     ports:
-      - "8080:8080" # HTTP
+      - "8080:8080" # Flask HTTP Server
       - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
-      - PYTHONUNBUFFERED=0 # Always flushes out
+      #      - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET_PATH=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
-      - DOCKER_PREFIX=unix:// # npipe:// # unix://
+      - DOCKER_PREFIX=unix:// # npipe://
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-#    restart: always
-
-  #  test:
-  #    build: .
-  ##    ports:
-  ##      - "8080:8080" # HTTP
-  ##      - "8000:8000" # Prometheus Server
-  #    environment:
-  #      - FLASK_ENV=development
-  ##    volumes:
-  ##      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
   #    restart: always
 
 
@@ -33,7 +22,7 @@ services:
       - "9090:9090" # Prometheus UI
     volumes:
       - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-#      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
+    #      - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api
@@ -46,5 +35,3 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
-#    volumes:
-#      - grafana-storage:/var/lib/grafana
