@@ -95,3 +95,6 @@ class Cyclical_Array:
 
 def convert_prom_multi(raw_result, item_name="__name__", decimal=False):
     return [(item['metric'][item_name], (float if decimal else int) (item['value'][1])) for item in raw_result]
+
+def filter_tuple(tuple, name, index):
+    return next((item for item in tuple if item[index] == name), None)
