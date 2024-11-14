@@ -3,6 +3,8 @@ import os
 import cv2
 from threading import Thread
 
+import utils
+
 
 class VideoReader:
     def __init__(self, stream_id=0):
@@ -54,6 +56,15 @@ class VideoReader:
     def read(self):
         self.last_frame_read = True
         return self.frame
+
+    # @utils.print_execution_time # Takes < 1ms, which I can hardly imagine
+    def get_buffer_size_n(self, size):
+        buffer = []
+        while len(buffer) < size:
+            frame = self.read()
+            buffer.append(frame)
+
+        return buffer
 
     def stop(self):
         self.stopped = True

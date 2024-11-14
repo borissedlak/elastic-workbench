@@ -4,7 +4,7 @@ import threading
 import time
 
 import cv2
-from prometheus_client import start_http_server, Gauge, Summary
+from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
@@ -28,7 +28,7 @@ class QrDetector(VehicleService):
         self.number_threads = 2
         self.fps = utils.FPS_()
 
-        self.webcam_stream = VideoReader(stream_id=0)  # stream_id = 0 is for primary camera
+        self.webcam_stream = VideoReader()
         self.webcam_stream.start()
 
         # self.device_metric_reporter = DeviceMetricReporter(leader_ip, gpu_available=False)
@@ -57,31 +57,29 @@ class QrDetector(VehicleService):
         processing_time = (time.time() - start_time) * 1000.0
         # pixel = combined_img.shape[0]
 
+        # TODO: These are the metrics that can be submitted to Prometheus
+
         # service_blanket = self.service_metric_reporter.create_metrics(processing_time, source_fps, pixel=pixel)
         # device_blanket = self.device_metric_reporter.create_metrics()
         # merged_metrics = utils.merge_single_dicts(service_blanket["metrics"], device_blanket["metrics"])
 
         # frame_count += 1
-        # print(frame_count, processing_time)
+        # print(processing_time, params)
 
     def process_loop(self):
-
-        buffer = []
-        # TODO: Need to reload buffer when all frames were consumed
-        while len(buffer) < self.number_threads:
-            frame = self.webcam_stream.read()
-            buffer.append(frame)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
             while self._running:
 
+                buffer = self.webcam_stream.get_buffer_size_n(self.number_threads)
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
-                                 for frame in buffer}
+                               for frame in buffer}
 
                 for future in concurrent.futures.as_completed(future_dict):
                     number = future_dict[future]
                     try:
                         result = future.result()
+                        # print("ready")
                         self.fps.tick()
                     except Exception as e:
                         print(f"Error occurred while fetching {number}: {e}")
@@ -90,6 +88,7 @@ class QrDetector(VehicleService):
                 current_fps = self.fps.get_fps()
                 fps.labels(service_id="video").set(current_fps)
                 in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
+                # time.sleep(1)
 
         self._terminated = True
         logger.info("QR Detector stopped")

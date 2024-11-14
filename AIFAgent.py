@@ -13,7 +13,7 @@ class AIFAgent(Thread):
         while True:
             slof_fps = self.prom_client.fetch_metric()
             print(slof_fps)
-            time.sleep(0.5)
+            time.sleep(1)
 
 
 if __name__ == '__main__':
