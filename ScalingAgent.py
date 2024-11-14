@@ -5,8 +5,8 @@ from PrometheusClient import PrometheusClient, MB
 
 
 # TODO: So what the agent must do on a high level is:
-#  1) Collect sensory state from Prometheus --> Easy
-#  2) Evaluate if SLOs are fulfilled --> Easy
+#  1) Collect sensory state from Prometheus --> Easy ✓
+#  2) Evaluate if SLOs are fulfilled --> Easy ✓
 #  3) Retrain its interpretation model --> Difficult
 #  4) Act so that SLO-F is optimized --> Difficult
 #  _

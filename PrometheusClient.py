@@ -6,7 +6,7 @@ import utils
 
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
-      'slos': [('pixel', 180, math.inf), ('fps', 20, math.inf), ('energy', 0, 0)]}
+      'slos': [('pixel', 180, math.inf), ('fps', 20, math.inf), ('energy', 0, 1)]}
 
 
 class PrometheusClient:
@@ -29,14 +29,19 @@ class PrometheusClient:
         transformed = utils.convert_prom_multi(metric_data, item_name="metric_id", decimal=True)
         # TODO: Return fuzzy SLO fulfillment --> compare against thresh from MB object
 
-        print(transformed)
-        for var in transformed:
-            thresh = utils.filter_tuple(MB['slos'], var[0], 0)
+        fuzzy_slof = []
+        for slo_var_obs in transformed:
+            var, t_min, t_max = utils.filter_tuple(MB['slos'], slo_var_obs[0], 0)
 
-        return transformed
-        current_value = float(metric_data[0]['value'][1])
-        slof = current_value / threshold
-        return slof
+            # TODO: There is surely a better way for this, like a function expressing this over all possible metric values
+            if slo_var_obs[1] < t_max:
+                fuzzy_slof.append((var, slo_var_obs[1] / t_min))
+            elif slo_var_obs[1] > t_max:
+                fuzzy_slof.append((var, t_max / slo_var_obs[1]))
+            else:
+                raise RuntimeError("How?")
+
+        return fuzzy_slof
 
 
 if __name__ == "__main__":
