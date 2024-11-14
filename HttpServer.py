@@ -15,13 +15,12 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
-DOCKER_PREFIX = utils.get_ENV_PARAM('DOCKER_PREFIX', "unix://")
-DOCKER_SOCKET_PATH = utils.get_ENV_PARAM('DOCKER_SOCKET_PATH', "/var/run/docker.sock")
+DOCKER_SOCKET = utils.get_ENV_PARAM('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 http_client = HttpClient()
 qd = QrDetector(show_results=False)
 
-docker_client = DockerClient(DOCKER_PREFIX + DOCKER_SOCKET_PATH)
+docker_client = DockerClient(DOCKER_SOCKET)
 
 
 # @utils.print_execution_time
@@ -49,8 +48,10 @@ def change_config():
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
 
+    # Change the number of threads of the application
     qd.change_threads(threads_num)
 
+    # Change the number of cores available for docker
     container_id = docker_client.get_container_id()
     docker_client.update_cpu(container_id, threads_num)
 
