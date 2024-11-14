@@ -6,8 +6,7 @@ import utils
 
 logger = logging.getLogger("multiscale")
 
-DOCKER_PREFIX = utils.get_ENV_PARAM('DOCKER_PREFIX', "unix://")
-DOCKER_SOCKET_PATH = utils.get_ENV_PARAM('DOCKER_SOCKET_PATH', "/var/run/docker.sock")
+DOCKER_SOCKET = utils.get_ENV_PARAM('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 class DockerClient:
     def __init__(self, url):
@@ -34,6 +33,6 @@ class DockerClient:
 
 
 if __name__ == "__main__":
-    client = DockerClient(DOCKER_PREFIX + DOCKER_SOCKET_PATH)
+    client = DockerClient(DOCKER_SOCKET)
     # client.update_cpu("67959d3ff81a", 5)
     print(client.get_container_id())

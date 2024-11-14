@@ -25,8 +25,9 @@ class AIFAgent(Thread):
         while True:
             slo_f = self.prom_client.get_slo_evaluations()
             parameter = self.prom_client.get_param_assignments()
-            print(slo_f)
-            print(parameter)
+            print("Parameter assignments:", parameter)
+            print("SLO evaluation:", slo_f)
+
             time.sleep(1)
 
 
