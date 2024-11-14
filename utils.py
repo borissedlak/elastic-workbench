@@ -92,3 +92,6 @@ class Cyclical_Array:
     def get_average(self):
         # print(self.data, np.mean(self.data, dtype=np.float64))
         return np.mean(self.data, dtype=np.float64)
+
+def convert_prom_multi(raw_result, item_name="__name__", decimal=False):
+    return [(item['metric'][item_name], (float if decimal else int) (item['value'][1])) for item in raw_result]

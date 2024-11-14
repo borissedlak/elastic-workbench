@@ -1,7 +1,7 @@
 import time
 from threading import Thread
 
-from PrometheusClient import PrometheusClient
+from PrometheusClient import PrometheusClient, MB
 
 
 # TODO: So what the agent must do on a high level is:
@@ -13,15 +13,20 @@ from PrometheusClient import PrometheusClient
 #  However, I assume that the agent has the variable DAG and the SLO thresholds
 #  And I dont have to resolve variable names dynamically, but keep them hardcoded
 
+
 class AIFAgent(Thread):
     def __init__(self):
         super().__init__()
+        
         self.prom_client = PrometheusClient()
+        self.MB = MB
 
     def run(self):
         while True:
-            slof_fps = self.prom_client.fetch_metric()
-            print(slof_fps)
+            slo_f = self.prom_client.get_slo_evaluations()
+            parameter = self.prom_client.get_param_assignments()
+            print(slo_f)
+            print(parameter)
             time.sleep(1)
 
 

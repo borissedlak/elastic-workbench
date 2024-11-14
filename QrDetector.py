@@ -2,6 +2,7 @@ import concurrent.futures
 import logging
 import threading
 import time
+from random import randint
 
 import cv2
 from prometheus_client import start_http_server, Gauge
@@ -15,8 +16,11 @@ DEVICE_NAME = utils.get_ENV_PARAM("DEVICE_NAME", "Unknown")
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
-fps = Gauge('fps', 'Current processing FPS', ['service_id'])
-in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id'])
+fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
+pixel = Gauge('pixel', 'Current processing FPS', ['service_id', 'metric_id'])
+energy = Gauge('energy', 'Current processing FPS', ['service_id', 'metric_id'])
+cores = Gauge('cores', 'Current processing FPS', ['service_id', 'metric_id'])
+# in_time_fuzzy = Gauge('in_time_fuzzy', 'Fuzzy SLO fulfillment', ['service_id', 'metric_id'])
 
 
 class QrDetector(VehicleService):
@@ -85,9 +89,13 @@ class QrDetector(VehicleService):
                         print(f"Error occurred while fetching {number}: {e}")
 
                 # This is only executed once, and not for every frame
-                current_fps = self.fps.get_fps()
-                fps.labels(service_id="video").set(current_fps)
-                in_time_fuzzy.labels(service_id="video").set(max(1, current_fps) / self.service_conf['fps'])
+                processing_fps = self.fps.get_fps()
+                fps.labels(service_id="video", metric_id="fps").set(processing_fps)
+                pixel.labels(service_id="video", metric_id="pixel").set(self.service_conf['pixel'])
+                energy.labels(service_id="video", metric_id="energy").set(randint(1,20))
+                cores.labels(service_id="video", metric_id="cores").set(self.number_threads)
+                # in_time_fuzzy.labels(service_id="video", metric_id="in_time").set(
+                #     max(1, current_fps) / self.service_conf['fps'])
                 # time.sleep(1)
 
         self._terminated = True
