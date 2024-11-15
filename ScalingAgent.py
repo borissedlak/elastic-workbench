@@ -1,7 +1,12 @@
+import os
 import time
 from threading import Thread
 
+import utils
+from DockerClient import DockerClient
 from PrometheusClient import PrometheusClient, MB
+
+DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 
 # TODO: So what the agent must do on a high level is:
@@ -17,8 +22,9 @@ from PrometheusClient import PrometheusClient, MB
 class AIFAgent(Thread):
     def __init__(self):
         super().__init__()
-        
+
         self.prom_client = PrometheusClient()
+        self.docker_client = DockerClient(DOCKER_SOCKET)
         self.MB = MB
 
     def run(self):
@@ -27,6 +33,7 @@ class AIFAgent(Thread):
             parameter = self.prom_client.get_param_assignments()
             print("Parameter assignments:", parameter)
             print("SLO evaluation:", slo_f)
+            print(os.cpu_count())
 
             time.sleep(1)
 

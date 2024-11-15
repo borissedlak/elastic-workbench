@@ -14,11 +14,11 @@ app = Flask(__name__)
 # logging.getLogger('multiscale').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
-DEVICE_NAME = utils.get_ENV_PARAM('DEVICE_NAME', "Unknown")
-DOCKER_SOCKET = utils.get_ENV_PARAM('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+DEVICE_NAME = utils.get_env_param('DEVICE_NAME', "Unknown")
+DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 http_client = HttpClient()
-qd = QrDetector(show_results=False)
+qd = QrDetector()
 
 docker_client = DockerClient(DOCKER_SOCKET)
 
@@ -48,9 +48,11 @@ def change_config():
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
 
+    # TODO: Ideally, I would get maximum utilization from 1:1 assignment
     # Change the number of threads of the application
     qd.change_threads(threads_num)
 
+    # TODO: This should also work with the name, or not?
     # Change the number of cores available for docker
     container_id = docker_client.get_container_id()
     docker_client.update_cpu(container_id, threads_num)

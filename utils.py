@@ -8,14 +8,14 @@ import numpy as np
 logger = logging.getLogger('multiscale')
 
 
-def get_ENV_PARAM(var, DEFAULT) -> str:
-    ENV = os.environ.get(var)
-    if ENV:
-        logger.info(f'Found ENV value for {var}: {ENV}')
+def get_env_param(var, default) -> str:
+    env = os.environ.get(var)
+    if env:
+        logger.info(f'Found ENV value for {var}: {env}')
     else:
-        ENV = DEFAULT
-        logger.warning(f"Didn't find ENV value for {var}, default to: {DEFAULT}")
-    return ENV
+        env = default
+        logger.warning(f"Didn't find ENV value for {var}, default to: {default}")
+    return env
 
 
 # def get_local_ip():
@@ -63,20 +63,20 @@ class FPS_:
         self.new_time = 0
 
         self.time_store = Cyclical_Array(max_fps)
-        self.fps_store = Cyclical_Array(sliding_window)
+        # self.fps_store = Cyclical_Array(sliding_window)
 
     def tick(self) -> None:
         self.time_store.put(time.time())
 
     # @print_execution_time
-    def get_fps(self) -> int:
+    def get_current_fps(self) -> int:
         current_time = time.time()
         recent_timestamps = [t for t in self.time_store.data if current_time - t <= 1]
         return len(recent_timestamps)
 
-    def get_balanced_fps(self) -> int:
-        self.fps_store.put(self.get_fps())
-        return int(self.fps_store.get_average())
+    # def get_balanced_fps(self) -> int:
+    #     self.fps_store.put(self.get_current_fps())
+    #     return int(self.fps_store.get_average())
 
 
 class Cyclical_Array:
@@ -90,11 +90,12 @@ class Cyclical_Array:
         self.index = self.index + 1
 
     def get_average(self):
-        # print(self.data, np.mean(self.data, dtype=np.float64))
         return np.mean(self.data, dtype=np.float64)
 
-def convert_prom_multi(raw_result, item_name="__name__", decimal=False):
-    return [(item['metric'][item_name], (float if decimal else int) (item['value'][1])) for item in raw_result]
 
-def filter_tuple(tuple, name, index):
-    return next((item for item in tuple if item[index] == name), None)
+def convert_prom_multi(raw_result, item_name="__name__", decimal=False):
+    return [(item['metric'][item_name], (float if decimal else int)(item['value'][1])) for item in raw_result]
+
+
+def filter_tuple(t, name, index):
+    return next((item for item in t if item[index] == name), None)

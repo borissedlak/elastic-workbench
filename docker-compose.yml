@@ -1,5 +1,6 @@
 services:
 
+  #TODO: Upon startup, the Docker container has no limits!
   video-processing:
     build: .
     ports:

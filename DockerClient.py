@@ -6,7 +6,7 @@ import utils
 
 logger = logging.getLogger("multiscale")
 
-DOCKER_SOCKET = utils.get_ENV_PARAM('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 class DockerClient:
     def __init__(self, url):
@@ -30,6 +30,14 @@ class DockerClient:
             return str(container[0].id)[:12]
         else:
             return "Unknown"
+
+    # def get_max_cpus(self):
+    #     container = self.client.containers.get("multiscaler-video-processing-1")
+    #     cpu_set = container.attrs['HostConfig']['CpusetCpus']
+    #
+    #     # Calculate the number of cores
+    #     max_cores = len(cpu_set.split(',')) if cpu_set else "No CPU limits set"
+    #     print(f"Maximum cores: {max_cores}")
 
 
 if __name__ == "__main__":
