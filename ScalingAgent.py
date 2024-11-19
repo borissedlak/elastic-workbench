@@ -50,7 +50,6 @@ class AIFAgent(Thread):
         pass
 
 
-# @utils.print_execution_time  # only around 3ms
 def calculate_value_slo(state, slos=MB['slos']):
     fuzzy_slof = []
 

@@ -15,9 +15,9 @@ class PrometheusClient:
 
     # @utils.print_execution_time  # only around 3ms
     def get_metric_values(self, metric_name, period=None):
-        # raw_result = self.client.custom_query(f'{{__name__=~"{metric_name}"}}')
         start = f"avg_over_time(" if period is not None else ""
         end = f"[{period}])" if period is not None else ""
+
         metric_data = self.client.custom_query(query=f'{start}{{__name__=~"{metric_name}"}}{end}')
         transformed = utils.convert_prom_multi(metric_data, item_name="metric_id", decimal=True)
         return transformed
