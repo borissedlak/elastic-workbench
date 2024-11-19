@@ -14,9 +14,9 @@ class DockerClient:
 
     # TODO: Takes too long with 90ms
     # @utils.print_execution_time
-    def update_cpu(self, container_id, cpus):
+    def update_cpu(self, container_ref, cpus):
         try:
-            container = self.client.containers.get(container_id)
+            container = self.client.containers.get(container_ref)
             container.update(cpu_quota=cpus * 100000)
             logger.info(f"Container set to work with {cpus} cores")
         except Exception as e:
@@ -25,7 +25,6 @@ class DockerClient:
     # @utils.print_execution_time # Takes 6 ms
     def get_container_id(self, container_name="multiscaler-video-processing-1"):
         container = self.client.containers.list(filters={'name': container_name})
-
         if container:
             return str(container[0].id)[:12]
         else:

@@ -99,3 +99,8 @@ def convert_prom_multi(raw_result, item_name="__name__", decimal=False):
 
 def filter_tuple(t, name, index):
     return next((item for item in t if item[index] == name), None)
+
+
+# Define sigmoid using numpy
+def sigmoid(x, k=1, c=0):
+    return 1 / (1 + np.exp(-k * (x - c)))
