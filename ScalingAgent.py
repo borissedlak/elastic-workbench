@@ -28,13 +28,17 @@ class AIFAgent(Thread):
 
     def run(self):
         while True:
+            f = open(f'data.csv', 'a')
             state = self.get_current_state()
             value = calculate_value_slo(state)
 
-            print("Current State:", state)
-            print("State Value:", value)
+            f.write(f'{state['fps']},{state['pixel']},{state['cores']}\n')
 
-            time.sleep(1)
+            print("Current State:", state)
+            print("Value from State:", value)
+
+            time.sleep(0.5)
+            f.close()
 
     # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
@@ -43,7 +47,7 @@ class AIFAgent(Thread):
         prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
 
         cpu_cores = os.cpu_count()
-        return prom_metric_states + prom_parameter_states + [("max_cores", cpu_cores)]
+        return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
 
     # TODO: If I take an action, the agent should suspend any actions until 2 * (interval) has passed
     def action(self):
@@ -53,8 +57,7 @@ class AIFAgent(Thread):
 def calculate_value_slo(state, slos=MB['slos']):
     fuzzy_slof = []
 
-    for state_var in state:
-        var_name, value = state_var
+    for var_name, value in state.items():
         if var_name not in [v[0] for v in slos]:
             continue
 

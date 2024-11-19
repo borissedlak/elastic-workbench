@@ -1,30 +1,33 @@
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
-from pgmpy.models import BayesianNetwork, LinearGaussianBayesianNetwork
-# from pgmpy.factors.continuous import ContinuousGaussian
-from pgmpy.estimators import MaximumLikelihoodEstimator
-from pgmpy.readwrite import XMLBIFReader, XMLBIFWriter
+from pgmpy.models import LinearGaussianBayesianNetwork
+from pgmpy.readwrite import XMLBIFWriter
 
-try:
+if False:  # os.path.isfile("model.xml"):
     model = XMLBIFReader("model.xml").get_model()
-except FileNotFoundError as a:
+else:
 
-    data = {
-        'X': [2.3, 3.5, 4.2, 5.1, 3.9],
-        'Y': [1.2, 2.1, 1.9, 2.8, 2.4],
-        'Z': [0.7, 1.0, 0.6, 0.9, 0.8]
-    }
-    df = pd.DataFrame(data)
+    df = pd.read_csv("data.csv")
 
-    model = LinearGaussianBayesianNetwork([('X', 'Y'), ('X', 'Z'), ('Y', 'Z')])
-    model_name = 'model_Xavier_GPU.xml'
+    model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
     XMLBIFWriter(model).write_xmlbif("model.xml")
     model.fit(df)
 
 # Step 4: Access the learned CPDs (Continuous Gaussian distributions)
 for cpd in model.get_cpds():
     print(cpd)
+
+import pandas as pd
+import seaborn as sns
+
+states = ["pixel", "fps"]
+X_samples = model.simulate(1000, 35)
+X_df = pd.DataFrame(X_samples, columns=states)
+
+sns.jointplot(x=X_df["pixel"], y=X_df["fps"], kind="kde", height=10, space=0, cmap="viridis")
+plt.show()
 
 sys.exit()
 
@@ -33,7 +36,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import utils
-
 
 center = 25
 k = 0.35
