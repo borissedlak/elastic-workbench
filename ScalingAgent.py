@@ -38,19 +38,21 @@ class AIFAgent(Thread):
             print("Initial State:", initial_state)
             initial_state_f = [initial_state['pixel'], initial_state['fps']]
 
-            action_vectors = test_gpt.get_action(initial_state_f, self.round_counter < 50)
-            print("Best Action would be:", test_gpt.get_action(initial_state_f))
-            action_vectors_trans = [np.interp(vector, [-2.0, 2.0], [100, 5000]) for vector in action_vectors]
+            random = self.round_counter % 5 == 0
+            action_vectors = test_gpt.get_action(initial_state_f, random)
+            if random:
+                print(f"Randomly choosing {action_vectors} but preferred action would be:", test_gpt.get_action(initial_state_f))
+            # action_vectors_trans = [np.interp(vector, [-2.0, 2.0], [100, 3000]) for vector in action_vectors]
 
-            agent.act_on_env(action_vectors_trans[0])
+            agent.act_on_env(action_vectors[0])
 
-            time.sleep(6.5)
+            time.sleep(5.0)
             updated_state = self.get_current_state()
             print("Following State:", updated_state)
             updated_state_f = [updated_state['pixel'], updated_state['fps']]
 
             value_factors = calculate_value_slo(updated_state)
-            value = (np.sum(value_factors) - 2.6) * 10
+            value = np.sum(value_factors)
             print(f"Reward for {value_factors} = {value}\n")
 
             test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
@@ -65,7 +67,6 @@ class AIFAgent(Thread):
         cpu_cores = os.cpu_count()
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
 
-    # TODO: If I take an action, the agent should suspend any actions until 2 * (interval) has passed
     def act_on_env(self, a_pixel):
         self.http_client.change_config("localhost", {'pixel': int(a_pixel)})
 

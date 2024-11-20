@@ -2,11 +2,11 @@ from prometheus_api_client import PrometheusConnect
 
 import utils
 
-INTERVAL = "5s"
+INTERVAL = "3s"
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
-      'slos': [('pixel', utils.sigmoid, 0.015, 450, 0.8),
-               ('fps', utils.sigmoid, 0.35, 25, 1.8)]}
+      'slos': [('pixel', utils.sigmoid, 0.015, 450, 1.0),
+               ('fps', utils.sigmoid, 0.35, 25, 1.5)]}
 
 
 class PrometheusClient:

@@ -27,8 +27,7 @@ class QrDetector(VehicleService):
         super().__init__()
         self._terminated = True
         self._running = False
-        # TODO: This randomness should be set by the agent
-        self.service_conf = 800
+        self.service_conf = {'pixel': 800}
         self.number_cores = 2
         self.thread_multiplier = 4
         self.number_threads = self.number_cores * self.thread_multiplier

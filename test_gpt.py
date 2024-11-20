@@ -19,8 +19,8 @@ print("Size of Action Space ->  {}".format(num_actions))
 
 # upper_bound = env.action_space.high[0]
 # lower_bound = env.action_space.low[0]
-lower_bound = -2.0
-upper_bound = 2.0
+lower_bound = 100.0
+upper_bound = 3000.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
@@ -43,7 +43,7 @@ class OUActionNoise:
         self.reset()
 
     def __call__(self):
-        self.reset() # TODO: Remove??
+        # self.reset()  # TODO: Remove??
         # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process
         x = (
                 self.x_prev
@@ -201,10 +201,12 @@ def get_actor():
     inputs = layers.Input(shape=(num_states,))
     out = layers.Dense(256, activation="relu")(inputs)
     out = layers.Dense(256, activation="relu")(out)
-    outputs = layers.Dense(1, activation="tanh", kernel_initializer=last_init)(out)
+    outputs = layers.Dense(1, activation="sigmoid", kernel_initializer=last_init)(out) # TODO: Correct?
 
     # Our upper bound is 2.0 for Pendulum.
-    outputs = outputs * upper_bound
+    # outputs = outputs * upper_bound
+    # outputs = ((outputs + 1.0) / 2 * (upper_bound - lower_bound)) + lower_bound
+    outputs = (outputs * (upper_bound - lower_bound)) + lower_bound
     model = keras.Model(inputs, outputs)
     return model
 
@@ -246,7 +248,8 @@ def policy(s, noise_object):
 
     # We make sure action is within bounds
     legal_action = np.clip(sampled_actions_noisy, lower_bound, upper_bound)
-    print(sampled_actions.numpy(), sampled_actions_noisy, lower_bound, upper_bound, legal_action, [np.squeeze(legal_action)])
+    # print(sampled_actions.numpy(), sampled_actions_noisy, lower_bound, upper_bound, legal_action,
+    #       [np.squeeze(legal_action)])
 
     return [np.squeeze(legal_action)]
 
@@ -256,7 +259,7 @@ def policy(s, noise_object):
 """
 
 # TODO: Must be relative to value range
-std_dev = 0.2
+std_dev = 250  # 0.2
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
 actor_model = get_actor()
@@ -301,7 +304,6 @@ avg_reward_list = []
 
 
 def get_action(prev_state, random=False):
-
     if random:
         return [randint(int(lower_bound), int(upper_bound))]
 
