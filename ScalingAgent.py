@@ -38,8 +38,11 @@ class AIFAgent(Thread):
             print("Initial State:", initial_state)
             initial_state_f = [initial_state['pixel'], initial_state['fps']]
 
-            action_vectors = test_gpt.get_action(initial_state_f, self.round_counter % 10 == 0)
-            agent.act_on_env(action_vectors[0])
+            action_vectors = test_gpt.get_action(initial_state_f, self.round_counter < 50)
+            print("Best Action would be:", test_gpt.get_action(initial_state_f))
+            action_vectors_trans = [np.interp(vector, [-2.0, 2.0], [100, 5000]) for vector in action_vectors]
+
+            agent.act_on_env(action_vectors_trans[0])
 
             time.sleep(6.5)
             updated_state = self.get_current_state()

@@ -2,6 +2,7 @@ import os
 from random import randint
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import keras
 from keras import layers
@@ -18,8 +19,8 @@ print("Size of Action Space ->  {}".format(num_actions))
 
 # upper_bound = env.action_space.high[0]
 # lower_bound = env.action_space.low[0]
-lower_bound = 100
-upper_bound = 5000
+lower_bound = -2.0
+upper_bound = 2.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
@@ -42,6 +43,7 @@ class OUActionNoise:
         self.reset()
 
     def __call__(self):
+        self.reset() # TODO: Remove??
         # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process
         x = (
                 self.x_prev
@@ -240,11 +242,11 @@ def policy(s, noise_object):
     sampled_actions = keras.ops.squeeze(actor_model(s))
     noise = noise_object()
     # Adding noise to action
-    sampled_actions = sampled_actions.numpy() + noise
+    sampled_actions_noisy = sampled_actions.numpy() + noise
 
     # We make sure action is within bounds
-    legal_action = np.clip(sampled_actions, lower_bound, upper_bound)
-    print(sampled_actions, lower_bound, upper_bound, legal_action, [np.squeeze(legal_action)])
+    legal_action = np.clip(sampled_actions_noisy, lower_bound, upper_bound)
+    print(sampled_actions.numpy(), sampled_actions_noisy, lower_bound, upper_bound, legal_action, [np.squeeze(legal_action)])
 
     return [np.squeeze(legal_action)]
 
@@ -254,7 +256,7 @@ def policy(s, noise_object):
 """
 
 # TODO: Must be relative to value range
-std_dev = 200  # 0.2
+std_dev = 0.2
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
 actor_model = get_actor()
@@ -301,7 +303,7 @@ avg_reward_list = []
 def get_action(prev_state, random=False):
 
     if random:
-        return [randint(lower_bound, upper_bound)]
+        return [randint(int(lower_bound), int(upper_bound))]
 
     tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
     action = policy(tf_prev_state, ou_noise)
