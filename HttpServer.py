@@ -53,7 +53,6 @@ def change_threads():
     qd.change_threads(threads_num)
 
     # Change the number of cores available for docker
-    # container_id = docker_client.get_container_id()
     docker_client.update_cpu("multiscaler-video-processing-1", threads_num)
 
     return ""

@@ -9,10 +9,14 @@ services:
     environment:
       - FLASK_ENV=development
       #      - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET_PATH=/var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
-      - DOCKER_PREFIX=unix:// # npipe://
+      - DOCKER_SOCKET=unix:///var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '2.0' # BUG with "Conflicting options: CPU Quota cannot be updated as NanoCPUs has already been set""
+
   #    restart: always
 
 
@@ -22,7 +26,7 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-#      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+      #      - /home/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
       - /c/users/boris/development/multiScaler/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
