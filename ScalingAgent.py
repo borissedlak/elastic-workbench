@@ -2,8 +2,12 @@ import os
 import time
 from threading import Thread
 
+import numpy as np
+
+import test_gpt
 import utils
 from DockerClient import DockerClient
+from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient, MB, INTERVAL
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -25,20 +29,26 @@ class AIFAgent(Thread):
 
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
+        self.http_client = HttpClient()
 
     def run(self):
         while True:
-            f = open(f'data.csv', 'a')
-            state = self.get_current_state()
-            value = calculate_value_slo(state)
+            initial_state = self.get_current_state()
+            print("Current State:", initial_state)
+            initial_state_f = [initial_state['pixel'], initial_state['fps']]
 
-            f.write(f'{state['fps']},{state['pixel']},{state['cores']}\n')
+            action_vectors = test_gpt.get_action(initial_state_f)
+            agent.act_on_env(action_vectors[0])
 
-            print("Current State:", state)
-            print("Value from State:", value)
+            time.sleep(8)
+            updated_state = self.get_current_state()
+            updated_state_f = [updated_state['pixel'], updated_state['fps']]
 
-            time.sleep(0.5)
-            f.close()
+            value_factors = calculate_value_slo(updated_state)
+            print("Value of new state:", value_factors)
+            value = np.sum(value_factors)
+
+            test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
 
     # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
@@ -50,8 +60,8 @@ class AIFAgent(Thread):
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
 
     # TODO: If I take an action, the agent should suspend any actions until 2 * (interval) has passed
-    def action(self):
-        pass
+    def act_on_env(self, a_pixel):
+        self.http_client.change_config("localhost", {'pixel': int(a_pixel)})
 
 
 def calculate_value_slo(state, slos=MB['slos']):

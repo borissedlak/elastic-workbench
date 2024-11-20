@@ -27,7 +27,7 @@ class QrDetector(VehicleService):
         super().__init__()
         self._terminated = True
         self._running = False
-        self.service_conf = {'pixel': 800, 'fps': 20}
+        self.service_conf = {'pixel': 800}
         self.number_cores = 2
         self.thread_multiplier = 4
         self.number_threads = self.number_cores * self.thread_multiplier
@@ -36,9 +36,9 @@ class QrDetector(VehicleService):
         self.webcam_stream = VideoReader()
         self.webcam_stream.start()
 
-    def process_one_iteration(self, params, frame) -> None:
+    def process_one_iteration(self, config_params, frame) -> None:
 
-        target_height, source_fps = int(params['pixel']), int(params['fps'])
+        target_height = int(config_params['pixel'])
 
         original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height

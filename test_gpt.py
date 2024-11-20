@@ -68,9 +68,7 @@ import keras
 from keras import layers
 
 import tensorflow as tf
-import gymnasium as gym
 import numpy as np
-import matplotlib.pyplot as plt
 
 """
 We use [Gymnasium](https://gymnasium.farama.org/) to create the environment.
@@ -78,15 +76,19 @@ We will use the `upper_bound` parameter to scale our actions later.
 """
 
 # Specify the `render_mode` parameter to show the attempts of the agent in a pop up window.
-env = gym.make("Pendulum-v1")  # , render_mode="human")
+# env = gym.make("Pendulum-v1")  # , render_mode="human")
 
-num_states = env.observation_space.shape[0]
+# num_states = env.observation_space.shape[0]
+num_states = 2
 print("Size of State Space ->  {}".format(num_states))
-num_actions = env.action_space.shape[0]
+# num_actions = env.action_space.shape[0]
+num_actions = 1
 print("Size of Action Space ->  {}".format(num_actions))
 
-upper_bound = env.action_space.high[0]
-lower_bound = env.action_space.low[0]
+# upper_bound = env.action_space.high[0]
+# lower_bound = env.action_space.low[0]
+upper_bound = 1000.0
+lower_bound = 100.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
@@ -111,9 +113,9 @@ class OUActionNoise:
     def __call__(self):
         # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process
         x = (
-            self.x_prev
-            + self.theta * (self.mean - self.x_prev) * self.dt
-            + self.std_dev * np.sqrt(self.dt) * np.random.normal(size=self.mean.shape)
+                self.x_prev
+                + self.theta * (self.mean - self.x_prev) * self.dt
+                + self.std_dev * np.sqrt(self.dt) * np.random.normal(size=self.mean.shape)
         )
         # Store x into x_prev
         # Makes next noise dependent on current one
@@ -184,11 +186,11 @@ class Buffer:
     # This provides a large speed up for blocks of code that contain many small TensorFlow operations such as this one.
     @tf.function
     def update(
-        self,
-        state_batch,
-        action_batch,
-        reward_batch,
-        next_state_batch,
+            self,
+            state_batch,
+            action_batch,
+            reward_batch,
+            next_state_batch,
     ):
         # Training and updating Actor & Critic networks.
         # See Pseudo Code.
@@ -303,8 +305,8 @@ exploration.
 """
 
 
-def policy(state, noise_object):
-    sampled_actions = keras.ops.squeeze(actor_model(state))
+def policy(s, noise_object):
+    sampled_actions = keras.ops.squeeze(actor_model(s))
     noise = noise_object()
     # Adding noise to action
     sampled_actions = sampled_actions.numpy() + noise
@@ -358,47 +360,72 @@ ep_reward_list = []
 # To store average reward history of last few episodes
 avg_reward_list = []
 
+# prev_state_g = None
+# action_g = None
+
+
+def get_action(prev_state):
+    # global prev_state_g, action_g
+    tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
+    action = policy(tf_prev_state, ou_noise)
+
+    # prev_state_g = prev_state
+    # action_g = action
+    return action
+
+
+def evaluate_result(prev_state, action, reward, new_state):
+    # global prev_state_g, action_g
+
+    buffer.record((prev_state, action, reward, new_state))
+    buffer.learn()
+
+    update_target(target_actor, actor_model, tau)
+    update_target(target_critic, critic_model, tau)
+
+
 # Takes about 4 min to train
-for ep in range(total_episodes):
-    prev_state, _ = env.reset() # [0.99757475 0.0696037  0.10989507]
-    episodic_reward = 0
-
-    while True:
-        tf_prev_state = keras.ops.expand_dims(
-            keras.ops.convert_to_tensor(prev_state), 0
-        )
-
-        action = policy(tf_prev_state, ou_noise)
-        # Receive state and reward from environment.
-        state, reward, done, truncated, _ = env.step(action) # ([0.9960107  0.08923335 0.22799788], -0.008827652903753114, False, False, {})
-
-        buffer.record((prev_state, action, reward, state))
-        episodic_reward += reward
-
-        buffer.learn()
-
-        update_target(target_actor, actor_model, tau)
-        update_target(target_critic, critic_model, tau)
-
-        # End this episode when `done` or `truncated` is True
-        if done or truncated:
-            break
-
-        prev_state = state
-
-    ep_reward_list.append(episodic_reward)
-
-    # Mean of last 40 episodes
-    avg_reward = np.mean(ep_reward_list[-40:])
-    print("Episode * {} * Avg Reward is ==> {}".format(ep, avg_reward))
-    avg_reward_list.append(avg_reward)
+# for ep in range(total_episodes):
+#     prev_state, _ = env.reset()  # [0.99757475 0.0696037  0.10989507]
+#     episodic_reward = 0
+#
+#     while True:
+#         tf_prev_state = keras.ops.expand_dims(
+#             keras.ops.convert_to_tensor(prev_state), 0
+#         )
+#
+#         action = policy(tf_prev_state, ou_noise)
+#         # Receive state and reward from environment.
+#         state, reward, done, truncated, _ = env.step(
+#             action)  # ([0.9960107  0.08923335 0.22799788], -0.008827652903753114, False, False, {})
+#
+#         buffer.record((prev_state, action, reward, state))
+#         episodic_reward += reward
+#
+#         buffer.learn()
+#
+#         update_target(target_actor, actor_model, tau)
+#         update_target(target_critic, critic_model, tau)
+#
+#         # End this episode when `done` or `truncated` is True
+#         if done or truncated:
+#             break
+#
+#         prev_state = state
+#
+#     ep_reward_list.append(episodic_reward)
+#
+#     # Mean of last 40 episodes
+#     avg_reward = np.mean(ep_reward_list[-40:])
+#     print("Episode * {} * Avg Reward is ==> {}".format(ep, avg_reward))
+#     avg_reward_list.append(avg_reward)
 
 # Plotting graph
 # Episodes versus Avg. Rewards
-plt.plot(avg_reward_list)
-plt.xlabel("Episode")
-plt.ylabel("Avg. Episodic Reward")
-plt.show()
+# plt.plot(avg_reward_list)
+# plt.xlabel("Episode")
+# plt.ylabel("Avg. Episodic Reward")
+# plt.show()
 
 """
 If training proceeds correctly, the average episodic reward will increase with time.

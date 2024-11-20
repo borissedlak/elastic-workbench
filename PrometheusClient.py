@@ -2,7 +2,7 @@ from prometheus_api_client import PrometheusConnect
 
 import utils
 
-INTERVAL = "10s"
+INTERVAL = "5s"
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
       'slos': [('pixel', utils.sigmoid, 0.015, 450),
