@@ -4,6 +4,7 @@ import time
 
 import cv2
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
 logger = logging.getLogger('multiscale')
 
@@ -108,3 +109,14 @@ def filter_tuple(t, name, index):
 # Define sigmoid using numpy
 def sigmoid(x, k=1, c=0):
     return 1 / (1 + np.exp(-k * (x - c)))
+
+
+def get_regression_model(df):
+
+    X = df[['pixel', 'cores']].values  # Predictor variable (must be 2D for sklearn)
+    y = df['fps'].values  # Target variable
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    return model

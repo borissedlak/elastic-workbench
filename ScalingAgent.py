@@ -1,8 +1,9 @@
 import os
-import time
+from random import randint
 from threading import Thread
 
 import numpy as np
+import pandas as pd
 
 import test_gpt
 import utils
@@ -32,28 +33,37 @@ class AIFAgent(Thread):
         self.http_client = HttpClient()
         self.round_counter = 0
 
+        self.simulated_env = ScalingEnv()
+
     def run(self):
         while True:
-            initial_state = self.get_current_state()
-            print("Initial State:", initial_state)
-            initial_state_f = [initial_state['pixel'], initial_state['fps']]
+            # initial_state = self.get_current_state()
+            # print("Initial State:", initial_state)
+            # initial_state_f = [initial_state['pixel'], initial_state['fps']]
+            initial_state_f = self.simulated_env.get_current_state()
 
-            random = self.round_counter % 2 == 0
+            random = self.round_counter % 5 == 0  # e - greedy with 0.2
             action_vectors = test_gpt.get_action(initial_state_f, random)
-            if random:
-                print(f"Randomly choosing {action_vectors} but preferred action would be:", test_gpt.get_action(initial_state_f))
-            # action_vectors_trans = [np.interp(vector, [-2.0, 2.0], [100, 3000]) for vector in action_vectors]
+            # if random:
+                # print(f"Randomly choosing {action_vectors} but preferred action would be:",
+                #       test_gpt.get_action(initial_state_f))
 
-            agent.act_on_env(action_vectors[0])
+            # agent.act_on_env(action_vectors[0])
+            self.simulated_env.act_on_env(action_vectors[0])
 
-            time.sleep(5.0)
-            updated_state = self.get_current_state()
-            print("Following State:", updated_state)
-            updated_state_f = [updated_state['pixel'], updated_state['fps']]
+            # time.sleep(5.0)
+            updated_state = {'pixel': self.simulated_env.get_current_state()[0],
+                             'fps': self.simulated_env.get_current_state()[1]}
+            # updated_state = self.get_current_state()
+            # print("Following State:", updated_state)
+            # updated_state_f = [updated_state['pixel'], updated_state['fps']]
+            updated_state_f = self.simulated_env.get_current_state()
+            # print(f"State transition {initial_state_f} --> {updated_state_f}")
 
             value_factors = calculate_value_slo(updated_state)
             value = np.sum(value_factors)
-            print(f"Reward for {value_factors} = {value}\n")
+            # print(f"Reward for {value_factors} = {value}\n")
+            print(f"{self.round_counter}| Reward: {value} for {updated_state_f}")
 
             test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
             self.round_counter += 1
@@ -69,6 +79,23 @@ class AIFAgent(Thread):
 
     def act_on_env(self, a_pixel):
         self.http_client.change_config("localhost", {'pixel': int(a_pixel)})
+
+
+class ScalingEnv:
+    def __init__(self):
+        self.regression_model = utils.get_regression_model(pd.read_csv("data.csv"))
+        self.pixel = randint(100, 2000)
+
+    def get_current_state(self):
+        try:
+           return [self.pixel, self.regression_model.predict([[self.pixel, 2.0]])[0]]
+        except ValueError:
+            print("Error")
+            self.pixel = randint(100, 2000)
+            return self.get_current_state()
+
+    def act_on_env(self, pixel):
+        self.pixel = pixel
 
 
 def calculate_value_slo(state, slos=MB['slos']):

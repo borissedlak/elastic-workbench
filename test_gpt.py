@@ -283,7 +283,7 @@ total_episodes = 100
 # Discount factor for future rewards
 gamma = 0.99
 # Used to update target networks
-tau = 1.0 # 0.005
+tau = 0.1 # 0.005
 
 buffer = Buffer(50000, 64)
 
@@ -310,6 +310,9 @@ def get_action(prev_state, random=False):
 
     tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
     action = policy(tf_prev_state, ou_noise)
+
+    if np.isnan(action[0]):
+        pass
 
     return action
 
