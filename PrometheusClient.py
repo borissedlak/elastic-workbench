@@ -5,7 +5,7 @@ import utils
 INTERVAL = "3s"
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
-      'slos': [('pixel', utils.sigmoid, 0.015, 450, 1.0),
+      'slos': [('pixel', utils.sigmoid, 0.015, 450, 0.85),
                ('fps', utils.sigmoid, 0.35, 25, 1.5)]}
 
 

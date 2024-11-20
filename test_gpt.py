@@ -20,7 +20,7 @@ print("Size of Action Space ->  {}".format(num_actions))
 # upper_bound = env.action_space.high[0]
 # lower_bound = env.action_space.low[0]
 lower_bound = 100.0
-upper_bound = 3000.0
+upper_bound = 2000.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
@@ -283,7 +283,7 @@ total_episodes = 100
 # Discount factor for future rewards
 gamma = 0.99
 # Used to update target networks
-tau = 0.005
+tau = 0.5 # 0.005
 
 buffer = Buffer(50000, 64)
 
@@ -305,6 +305,7 @@ avg_reward_list = []
 
 def get_action(prev_state, random=False):
     if random:
+        ou_noise.reset()
         return [randint(int(lower_bound), int(upper_bound))]
 
     tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
