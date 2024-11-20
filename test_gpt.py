@@ -283,7 +283,7 @@ total_episodes = 100
 # Discount factor for future rewards
 gamma = 0.99
 # Used to update target networks
-tau = 0.5 # 0.005
+tau = 1.0 # 0.005
 
 buffer = Buffer(50000, 64)
 
