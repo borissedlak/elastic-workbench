@@ -1,65 +1,3 @@
-"""
-Title: Deep Deterministic Policy Gradient (DDPG)
-Author: [amifunny](https://github.com/amifunny)
-Date created: 2020/06/04
-Last modified: 2024/03/23
-Description: Implementing DDPG algorithm on the Inverted Pendulum Problem.
-Accelerator: None
-"""
-
-"""
-## Introduction
-
-**Deep Deterministic Policy Gradient (DDPG)** is a model-free off-policy algorithm for
-learning continuous actions.
-
-It combines ideas from DPG (Deterministic Policy Gradient) and DQN (Deep Q-Network).
-It uses Experience Replay and slow-learning target networks from DQN, and it is based on
-DPG, which can operate over continuous action spaces.
-
-This tutorial closely follow this paper -
-[Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
-
-## Problem
-
-We are trying to solve the classic **Inverted Pendulum** control problem.
-In this setting, we can take only two actions: swing left or swing right.
-
-What make this problem challenging for Q-Learning Algorithms is that actions
-are **continuous** instead of being **discrete**. That is, instead of using two
-discrete actions like `-1` or `+1`, we have to select from infinite actions
-ranging from `-2` to `+2`.
-
-## Quick theory
-
-Just like the Actor-Critic method, we have two networks:
-
-1. Actor - It proposes an action given a state.
-2. Critic - It predicts if the action is good (positive value) or bad (negative value)
-given a state and an action.
-
-DDPG uses two more techniques not present in the original DQN:
-
-**First, it uses two Target networks.**
-
-**Why?** Because it add stability to training. In short, we are learning from estimated
-targets and Target networks are updated slowly, hence keeping our estimated targets
-stable.
-
-Conceptually, this is like saying, "I have an idea of how to play this well,
-I'm going to try it out for a bit until I find something better",
-as opposed to saying "I'm going to re-learn how to play this entire game after every
-move".
-See this [StackOverflow answer](https://stackoverflow.com/a/54238556/13475679).
-
-**Second, it uses Experience Replay.**
-
-We store list of tuples `(state, action, reward, next_state)`, and instead of
-learning only from recent experience, we learn from sampling all of our experience
-accumulated so far.
-
-Now, let's see how is it implemented.
-"""
 import os
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -70,14 +8,6 @@ from keras import layers
 import tensorflow as tf
 import numpy as np
 
-"""
-We use [Gymnasium](https://gymnasium.farama.org/) to create the environment.
-We will use the `upper_bound` parameter to scale our actions later.
-"""
-
-# Specify the `render_mode` parameter to show the attempts of the agent in a pop up window.
-# env = gym.make("Pendulum-v1")  # , render_mode="human")
-
 # num_states = env.observation_space.shape[0]
 num_states = 2
 print("Size of State Space ->  {}".format(num_states))
@@ -87,7 +17,7 @@ print("Size of Action Space ->  {}".format(num_actions))
 
 # upper_bound = env.action_space.high[0]
 # lower_bound = env.action_space.low[0]
-upper_bound = 1000.0
+upper_bound = 2000.0
 lower_bound = 100.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
@@ -321,7 +251,8 @@ def policy(s, noise_object):
 ## Training hyperparameters
 """
 
-std_dev = 0.2
+# TODO: Must be relative to value range
+std_dev = 200  # 0.2
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
 actor_model = get_actor()
@@ -359,6 +290,7 @@ along with updating the Target networks at a rate `tau`.
 ep_reward_list = []
 # To store average reward history of last few episodes
 avg_reward_list = []
+
 
 # prev_state_g = None
 # action_g = None

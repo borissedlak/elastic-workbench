@@ -40,13 +40,13 @@ class AIFAgent(Thread):
             action_vectors = test_gpt.get_action(initial_state_f)
             agent.act_on_env(action_vectors[0])
 
-            time.sleep(8)
+            time.sleep(6.5)
             updated_state = self.get_current_state()
             updated_state_f = [updated_state['pixel'], updated_state['fps']]
 
             value_factors = calculate_value_slo(updated_state)
-            print("Value of new state:", value_factors)
             value = np.sum(value_factors)
+            print(f"Value of new state {value_factors} = {value}\n")
 
             test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
 
