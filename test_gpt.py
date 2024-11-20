@@ -1,4 +1,5 @@
 import os
+from random import randint
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
@@ -17,8 +18,8 @@ print("Size of Action Space ->  {}".format(num_actions))
 
 # upper_bound = env.action_space.high[0]
 # lower_bound = env.action_space.low[0]
-upper_bound = 2000.0
-lower_bound = 100.0
+lower_bound = 100
+upper_bound = 5000
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
@@ -243,6 +244,7 @@ def policy(s, noise_object):
 
     # We make sure action is within bounds
     legal_action = np.clip(sampled_actions, lower_bound, upper_bound)
+    print(sampled_actions, lower_bound, upper_bound, legal_action, [np.squeeze(legal_action)])
 
     return [np.squeeze(legal_action)]
 
@@ -296,13 +298,14 @@ avg_reward_list = []
 # action_g = None
 
 
-def get_action(prev_state):
-    # global prev_state_g, action_g
+def get_action(prev_state, random=False):
+
+    if random:
+        return [randint(lower_bound, upper_bound)]
+
     tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
     action = policy(tf_prev_state, ou_noise)
 
-    # prev_state_g = prev_state
-    # action_g = action
     return action
 
 
@@ -373,11 +376,11 @@ more episodes to obtain good results.
 """
 
 # Save the weights
-actor_model.save_weights("pendulum_actor.weights.h5")
-critic_model.save_weights("pendulum_critic.weights.h5")
-
-target_actor.save_weights("pendulum_target_actor.weights.h5")
-target_critic.save_weights("pendulum_target_critic.weights.h5")
+# actor_model.save_weights("pendulum_actor.weights.h5")
+# critic_model.save_weights("pendulum_critic.weights.h5")
+#
+# target_actor.save_weights("pendulum_target_actor.weights.h5")
+# target_critic.save_weights("pendulum_target_critic.weights.h5")
 
 """
 Before Training:

@@ -30,25 +30,28 @@ class AIFAgent(Thread):
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
+        self.round_counter = 0
 
     def run(self):
         while True:
             initial_state = self.get_current_state()
-            print("Current State:", initial_state)
+            print("Initial State:", initial_state)
             initial_state_f = [initial_state['pixel'], initial_state['fps']]
 
-            action_vectors = test_gpt.get_action(initial_state_f)
+            action_vectors = test_gpt.get_action(initial_state_f, self.round_counter % 10 == 0)
             agent.act_on_env(action_vectors[0])
 
             time.sleep(6.5)
             updated_state = self.get_current_state()
+            print("Following State:", updated_state)
             updated_state_f = [updated_state['pixel'], updated_state['fps']]
 
             value_factors = calculate_value_slo(updated_state)
-            value = np.sum(value_factors)
-            print(f"Value of new state {value_factors} = {value}\n")
+            value = (np.sum(value_factors) - 2.6) * 10
+            print(f"Reward for {value_factors} = {value}\n")
 
             test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
+            self.round_counter += 1
 
     # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
@@ -71,8 +74,8 @@ def calculate_value_slo(state, slos=MB['slos']):
         if var_name not in [v[0] for v in slos]:
             continue
 
-        var, func, k, c = utils.filter_tuple(slos, var_name, 0)
-        fuzzy_slof.append(func(value, k, c))
+        var, func, k, c, boost = utils.filter_tuple(slos, var_name, 0)
+        fuzzy_slof.append(boost * func(value, k, c))
 
     return fuzzy_slof
 

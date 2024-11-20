@@ -27,7 +27,8 @@ class QrDetector(VehicleService):
         super().__init__()
         self._terminated = True
         self._running = False
-        self.service_conf = {'pixel': 800}
+        # TODO: This randomness should be set by the agent
+        self.service_conf = 800
         self.number_cores = 2
         self.thread_multiplier = 4
         self.number_threads = self.number_cores * self.thread_multiplier
@@ -64,7 +65,7 @@ class QrDetector(VehicleService):
                 for future in concurrent.futures.as_completed(future_dict):
                     number = future_dict[future]
                     try:
-                        result = future.result() # Does not even return anything!
+                        result = future.result()  # Does not even return anything!
                         self.fps.tick()
                     except Exception as e:
                         print(f"Error occurred while fetching {number}: {e}")
