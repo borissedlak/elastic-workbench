@@ -5,8 +5,8 @@ import utils
 INTERVAL = "3s"
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
-      'slos': [('pixel', utils.sigmoid, 0.015, 450, 0.8),
-               ('fps', utils.sigmoid, 0.35, 25, 1.6)]}
+      'slos': [('pixel', utils.sigmoid, 2, 450, 0.8),
+               ('fps', utils.sigmoid, 2.0, 25, 1.6)]}
 
 
 class PrometheusClient:

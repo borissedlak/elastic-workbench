@@ -38,7 +38,7 @@ class AIFAgent(Thread):
             print("Initial State:", initial_state)
             initial_state_f = [initial_state['pixel'], initial_state['fps']]
 
-            random = self.round_counter % 5 == 0
+            random = self.round_counter % 2 == 0
             action_vectors = test_gpt.get_action(initial_state_f, random)
             if random:
                 print(f"Randomly choosing {action_vectors} but preferred action would be:", test_gpt.get_action(initial_state_f))
