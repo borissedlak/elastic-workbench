@@ -28,9 +28,9 @@ class AIFAgent(Thread):
     def __init__(self):
         super().__init__()
 
-        self.prom_client = PrometheusClient()
-        self.docker_client = DockerClient(DOCKER_SOCKET)
-        self.http_client = HttpClient()
+        # self.prom_client = PrometheusClient()
+        # self.docker_client = DockerClient(DOCKER_SOCKET)
+        # self.http_client = HttpClient()
         self.round_counter = 0
 
         self.simulated_env = ScalingEnv()
@@ -42,7 +42,7 @@ class AIFAgent(Thread):
             # initial_state_f = [initial_state['pixel'], initial_state['fps']]
             initial_state_f = self.simulated_env.get_current_state()
 
-            random = self.round_counter % 5 == 0  # e - greedy with 0.2
+            random = self.round_counter % 5 == 0 or self.round_counter < 1000  # e - greedy with 0.2
             action_vectors = test_gpt.get_action(initial_state_f, random)
             # if random:
                 # print(f"Randomly choosing {action_vectors} but preferred action would be:",
@@ -64,6 +64,8 @@ class AIFAgent(Thread):
             value = np.sum(value_factors)
             # print(f"Reward for {value_factors} = {value}\n")
             print(f"{self.round_counter}| Reward: {value} for {updated_state_f}")
+            # if self.round_counter % 5000 == 0:
+            #     print(self.round_counter)
 
             test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
             self.round_counter += 1
@@ -88,7 +90,7 @@ class ScalingEnv:
 
     def get_current_state(self):
         try:
-           return [self.pixel, self.regression_model.predict([[self.pixel, 2.0]])[0]]
+           return [self.pixel, int(self.regression_model.predict([[self.pixel, 2.0]])[0])]
         except ValueError:
             print("Error")
             self.pixel = randint(100, 2000)

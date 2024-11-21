@@ -7,3 +7,8 @@ opencv-python~=4.10.0.82
 prometheus-client~=0.16.0
 docker~=7.1.0
 prometheus-api-client~=0.5.5
+
+tensorflow[and-gpu]~=2.18.0
+matplotlib~=3.9.2
+keras~=3.6.0
+scikit-learn~=1.5.2

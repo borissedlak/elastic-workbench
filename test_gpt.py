@@ -1,14 +1,9 @@
-import os
 from random import randint
 
-os.environ["KERAS_BACKEND"] = "tensorflow"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
 import keras
-from keras import layers
-
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from keras import layers
 
 # num_states = env.observation_space.shape[0]
 num_states = 2
@@ -196,12 +191,13 @@ as we use the `tanh` activation.
 
 def get_actor():
     # Initialize weights between -3e-3 and 3-e3
-    last_init = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
+    # last_init = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
 
     inputs = layers.Input(shape=(num_states,))
     out = layers.Dense(256, activation="relu")(inputs)
     out = layers.Dense(256, activation="relu")(out)
-    outputs = layers.Dense(1, activation="sigmoid", kernel_initializer=last_init)(out) # TODO: Correct?
+    # outputs = layers.Dense(1, activation="relu", kernel_initializer=last_init)(out) # TODO: Correct?
+    outputs = layers.Dense(1, activation="sigmoid")(out)  # TODO: Correct?
 
     # Our upper bound is 2.0 for Pendulum.
     # outputs = outputs * upper_bound
@@ -283,7 +279,7 @@ total_episodes = 100
 # Discount factor for future rewards
 gamma = 0.99
 # Used to update target networks
-tau = 0.1 # 0.005
+tau = 0.25  # 0.005
 
 buffer = Buffer(50000, 64)
 
@@ -305,7 +301,12 @@ avg_reward_list = []
 
 def get_action(prev_state, random=False):
     if random:
-        ou_noise.reset()
+        # ou_noise.reset()
+
+        # STill doing this
+        # tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
+        # action = policy(tf_prev_state, ou_noise)
+
         return [randint(int(lower_bound), int(upper_bound))]
 
     tf_prev_state = keras.ops.expand_dims(keras.ops.convert_to_tensor(prev_state), 0)
@@ -314,7 +315,7 @@ def get_action(prev_state, random=False):
     if np.isnan(action[0]):
         pass
 
-    return action
+    return [int(a) for a in action]
 
 
 def evaluate_result(prev_state, action, reward, new_state):
