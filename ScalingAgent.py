@@ -85,7 +85,7 @@ class AIFAgent(Thread):
 
 class ScalingEnv:
     def __init__(self):
-        self.regression_model = utils.get_regression_model(pd.read_csv("data.csv"))
+        self.regression_model = utils.get_regression_model(pd.read_csv("regression_data.csv"))
         self.pixel = randint(100, 2000)
 
     def get_current_state(self):
