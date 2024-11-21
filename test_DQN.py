@@ -62,12 +62,12 @@ class QNetwork(nn.Module):
 
 class DQNAgent:
     def __init__(self):
-        self.state_dim = 2  # 3
+        self.state_dim = 1  # 3
         self.action_dim = 3
         self.lr = 0.01
         self.gamma = 0.98
-        self.tau = 0.1  # 0.01
-        self.epsilon = 1.0
+        self.tau = 0.05  # 0.01
+        self.epsilon = 0.0
         self.epsilon_decay = 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000

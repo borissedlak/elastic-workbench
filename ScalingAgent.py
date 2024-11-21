@@ -41,9 +41,9 @@ class AIFAgent(Thread):
             # initial_state_f = [initial_state['pixel'], initial_state['fps']]
             initial_state_f = self.simulated_env.get_current_state()
 
-            random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.2
+            random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
             # action_vectors = test_gpt.get_action(initial_state_f, random)
-            action_vectors = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
+            action_vectors = self.dqn.choose_action(torch.FloatTensor(np.array([initial_state_f[1] > 20])), random)
 
             # agent.act_on_env(action_vectors[0])
             delta_pixel = initial_state_f[0] + action_vectors
