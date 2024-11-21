@@ -315,7 +315,7 @@ def get_action(prev_state, random=False):
     if np.isnan(action[0]):
         pass
 
-    return [int(a) for a in action]
+    return action
 
 
 def evaluate_result(prev_state, action, reward, new_state):

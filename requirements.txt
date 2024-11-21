@@ -13,6 +13,8 @@ matplotlib~=3.9.2
 keras~=3.6.0
 scikit-learn~=1.5.2
 
-torchrl
-gym
+
+mujoco~=3.2.5
+torchrl~=0.6.0
+gym~=0.26.2
 tqdm
