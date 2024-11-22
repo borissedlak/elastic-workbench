@@ -5,6 +5,7 @@ from threading import Thread
 import numpy as np
 import pandas as pd
 import torch
+from matplotlib import pyplot as plt
 
 import utils
 from PrometheusClient import MB, INTERVAL
@@ -31,11 +32,14 @@ class AIFAgent(Thread):
         # self.docker_client = DockerClient(DOCKER_SOCKET)
         # self.http_client = HttpClient()
         self.round_counter = 0
-        self.dqn = DQNAgent()
+        self.dqn = DQNAgent(state_dim=2, action_dim=3)
         self.simulated_env = ScalingEnv()
 
     def run(self):
-        while True:
+        score = 0.0
+        score_list = []  # [-2000]
+
+        while self.round_counter < 50 * 1000:
             # initial_state = self.get_current_state()
             # print("Initial State:", initial_state)
             # initial_state_f = [initial_state['pixel'], initial_state['fps']]
@@ -43,13 +47,13 @@ class AIFAgent(Thread):
 
             random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
             # action_vectors = test_gpt.get_action(initial_state_f, random)
-            action_vectors = self.dqn.choose_action(torch.FloatTensor(np.array([initial_state_f[1] > 20])), random)
+            action, scaled_action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
 
             # agent.act_on_env(action_vectors[0])
-            delta_pixel = initial_state_f[0] + action_vectors
+            delta_pixel = initial_state_f[0] + scaled_action
             punishment_off = 0
             if delta_pixel < 100 or delta_pixel > 2000:
-                delta_pixel = np.clip(initial_state_f[0] + action_vectors, 100, 2000)
+                delta_pixel = np.clip(initial_state_f[0] + scaled_action, 100, 2000)
                 punishment_off = - 5
             self.simulated_env.act_on_env(delta_pixel)
 
@@ -64,8 +68,10 @@ class AIFAgent(Thread):
 
             value_factors = calculate_value_slo(updated_state)
             value = np.sum(value_factors) + punishment_off
+            score += value
             # print(f"Reward for {value_factors} = {value}\n")
-            print(f"{self.round_counter}| Reward: {value} for {updated_state_f}")
+            # print(f"{self.round_counter}| Reward: {value} for {updated_state_f}")
+            self.dqn.memory.put((initial_state_f, action, value, updated_state_f))
 
             if self.dqn.memory.size() > 1000:
                 # Probably due to buffer that is trained
@@ -78,8 +84,18 @@ class AIFAgent(Thread):
             #     self.dqn.epsilon *= self.dqn.epsilon_decay
 
             if self.round_counter % 1000 == 0:
-                # self.dqn.epsilon = 1.0
                 self.simulated_env.reset_env()
+                self.dqn.epsilon *= self.dqn.epsilon_decay
+
+                print("EP:{}, Avg_Score:{:.1f}, Epsilon:{:.5f}".format(self.round_counter, score, self.dqn.epsilon))
+                score_list.append(score)
+                score = 0.0
+
+        # TODO: DO this through an animation or interactive plot
+        plt.plot(score_list)
+        plt.show()
+
+
 
     # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
@@ -126,9 +142,9 @@ def calculate_value_slo(state, slos=MB['slos']):
         # fuzzy_slof.append(boost * func(value, k, c))
 
         if var_name == "pixel":
-            fuzzy_slof.append(value >=800)
+            fuzzy_slof.append(value >= 800)
         elif var_name == "fps":
-            fuzzy_slof.append(value >=20)
+            fuzzy_slof.append(value >= 20)
         else:
             raise RuntimeError("WHY??")
 

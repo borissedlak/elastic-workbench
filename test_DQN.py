@@ -1,4 +1,3 @@
-import os
 import random
 from collections import deque
 
@@ -9,6 +8,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
+# Check if GPU is available
+if torch.cuda.is_available():
+    print("GPU is available!")
+else:
+    print("GPU is not available.")
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
@@ -61,13 +66,13 @@ class QNetwork(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self):
-        self.state_dim = 1  # 3
-        self.action_dim = 3
+    def __init__(self, state_dim=3, action_dim=9):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
         self.lr = 0.01
         self.gamma = 0.98
-        self.tau = 0.05  # 0.01
-        self.epsilon = 0.0
+        self.tau = 0.01  # 0.01
+        self.epsilon = 1.0
         self.epsilon_decay = 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
@@ -84,24 +89,29 @@ class DQNAgent:
     def choose_action(self, state, explore=False):
         random_number = np.random.rand()
         if explore or self.epsilon > random_number:  # Explore
-            action = np.random.choice([n for n in range(self.action_dim)])
-            # real_action = action * 100
+            if self.action_dim != 9:
+                action = np.random.choice([n for n in range(self.action_dim)])
+                scaled_action = (action - 1) * 100
+            else:
+                action = np.random.choice([n for n in range(self.action_dim)])
+                scaled_action = (action - 4) / 2  # -2, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0
         else:  # Exploit
             with torch.no_grad():
-                action = float(torch.argmax(self.Q(state)).numpy())
-                # action = float(action.numpy())
-                # real_action = (action -2) * 100
+                if self.action_dim != 9:
+                    action = float(torch.argmax(self.Q(state)).numpy())
+                    scaled_action = (action - 1) * 100
+                else:
+                    action = float(torch.argmax(self.Q(state)).numpy())
+                    scaled_action = (action - 4) / 4  # Exploration is in smaller steps
                 # maxQ_action_count = 1
 
-        scaled_action = (action - 1) * 100
-        print(f"Scaled Action: {scaled_action}")
-        return scaled_action
+        return action, scaled_action
 
     def calc_target(self, mini_batch):
         s, a, r, s_prime = mini_batch
         with torch.no_grad():
             q_target = self.Q_target(s_prime).max(1)[0].unsqueeze(1)
-            target = r + self.gamma * done * q_target
+            target = r + self.gamma * q_target
         return target
 
     # @utils.print_execution_time
@@ -128,19 +138,19 @@ class DQNAgent:
 if __name__ == '__main__':
 
     ###### logging ######
-    log_name = '0404'
-
-    model_save_dir = 'saved_model/' + log_name
-    if not os.path.isdir(model_save_dir): os.mkdir(model_save_dir)
-    log_save_dir = 'log/' + log_name
-    if not os.path.isdir(log_save_dir): os.mkdir(log_save_dir)
+    # log_name = '0404'
+    #
+    # model_save_dir = 'saved_model/' + log_name
+    # if not os.path.isdir(model_save_dir): os.mkdir(model_save_dir)
+    # log_save_dir = 'log/' + log_name
+    # if not os.path.isdir(log_save_dir): os.mkdir(log_save_dir)
     ###### logging ######
 
     agent = DQNAgent()
 
     env = gym.make('Pendulum-v1')
 
-    EPISODE = 50
+    EPISODE = 200
     score_list = []  # [-2000]
 
     for EP in range(EPISODE):
@@ -149,15 +159,15 @@ if __name__ == '__main__':
         maxQ_action_count = 0
 
         while True:
-            action, real_action, count = agent.choose_action(
+            action, scaled_action = agent.choose_action(
                 torch.FloatTensor(state))  # [ 0.99982554 -0.01867788  0.00215611]
 
-            state_prime, reward, terminated, truncated, _ = env.step([real_action])
+            state_prime, reward, terminated, truncated, _ = env.step([scaled_action])
 
             agent.memory.put((state, action, reward, state_prime))
 
             score += reward
-            maxQ_action_count += count
+            # maxQ_action_count += count
 
             state = state_prime
 
@@ -167,8 +177,8 @@ if __name__ == '__main__':
             if terminated or truncated:
                 break
 
-        if EP % 10 == 0:
-            torch.save(agent.Q.state_dict(), model_save_dir + "/DQN_Q_EP" + str(EP) + ".pt")
+        # if EP % 10 == 0:
+        #     torch.save(agent.Q.state_dict(), model_save_dir + "/DQN_Q_EP" + str(EP) + ".pt")
 
         print("EP:{}, Avg_Score:{:.1f}, MaxQ_Action_Count:{}, Epsilon:{:.5f}".format(EP, score, maxQ_action_count,
                                                                                      agent.epsilon))
@@ -180,4 +190,4 @@ if __name__ == '__main__':
     plt.plot(score_list)
     plt.show()
 
-    np.savetxt(log_save_dir + '/pendulum_score.txt', score_list)
+    # np.savetxt(log_save_dir + '/pendulum_score.txt', score_list)
