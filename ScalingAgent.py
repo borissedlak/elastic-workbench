@@ -39,15 +39,21 @@ class AIFAgent(Thread):
         score = 0.0
         score_list = []  # [-2000]
 
-        while self.round_counter < 50 * 1000:
+        while self.round_counter < 50 * 100:
             # initial_state = self.get_current_state()
             # print("Initial State:", initial_state)
             # initial_state_f = [initial_state['pixel'], initial_state['fps']]
+
+            # 1) Get initial state s ################################
+
             initial_state_f = self.simulated_env.get_current_state()
 
+            # 2) Get action from policy #############################
+
             random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
-            # action_vectors = test_gpt.get_action(initial_state_f, random)
             action, scaled_action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
+
+            # 3) Enact on environment ###############################
 
             # agent.act_on_env(action_vectors[0])
             delta_pixel = initial_state_f[0] + scaled_action
@@ -56,6 +62,9 @@ class AIFAgent(Thread):
                 delta_pixel = np.clip(initial_state_f[0] + scaled_action, 100, 2000)
                 punishment_off = - 5
             self.simulated_env.act_on_env(delta_pixel)
+
+
+            # 4) Get updated state s' ###############################
 
             # time.sleep(5.0)
             updated_state = {'pixel': self.simulated_env.get_current_state()[0],
@@ -66,28 +75,25 @@ class AIFAgent(Thread):
             updated_state_f = self.simulated_env.get_current_state()
             # print(f"State transition {initial_state_f} --> {updated_state_f}")
 
+            # 5) Calculate reward for s' ############################
+
             value_factors = calculate_value_slo(updated_state)
             value = np.sum(value_factors) + punishment_off
-            score += value
-            # print(f"Reward for {value_factors} = {value}\n")
-            # print(f"{self.round_counter}| Reward: {value} for {updated_state_f}")
             self.dqn.memory.put((initial_state_f, action, value, updated_state_f))
+            score += value
 
-            if self.dqn.memory.size() > 1000:
-                # Probably due to buffer that is trained
-                self.dqn.train_agent()
+            # 6) Retrain the agents networks ########################
 
-            # test_gpt.evaluate_result(initial_state_f, action_vectors, value, updated_state_f)
+            if self.dqn.memory.size() > self.dqn.batch_size:
+                self.dqn.train_agent() # Probably due to buffer that is trained
+
             self.round_counter += 1
 
-            # if self.dqn.epsilon > self.dqn.epsilon_min:
-            #     self.dqn.epsilon *= self.dqn.epsilon_decay
-
-            if self.round_counter % 1000 == 0:
+            if self.round_counter % 100 == 0:
                 self.simulated_env.reset_env()
                 self.dqn.epsilon *= self.dqn.epsilon_decay
 
-                print("EP:{}, Avg_Score:{:.1f}, Epsilon:{:.5f}".format(self.round_counter, score, self.dqn.epsilon))
+                print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.5f}".format(self.round_counter, score, self.dqn.epsilon))
                 score_list.append(score)
                 score = 0.0
 

@@ -73,7 +73,7 @@ class DQNAgent:
         self.gamma = 0.98
         self.tau = 0.01  # 0.01
         self.epsilon = 1.0
-        self.epsilon_decay = 0.98
+        self.epsilon_decay = 0.95 # 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
         self.batch_size = 200
@@ -159,8 +159,7 @@ if __name__ == '__main__':
         maxQ_action_count = 0
 
         while True:
-            action, scaled_action = agent.choose_action(
-                torch.FloatTensor(state))  # [ 0.99982554 -0.01867788  0.00215611]
+            action, scaled_action = agent.choose_action(torch.FloatTensor(state))
 
             state_prime, reward, terminated, truncated, _ = env.step([scaled_action])
 

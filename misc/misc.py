@@ -9,10 +9,10 @@ if False:  # os.path.isfile("model.xml"):
     model = XMLBIFReader("model.xml").get_model()
 else:
 
-    df = pd.read_csv("regression_data.csv")
+    df = pd.read_csv("../regression_data.csv")
 
     model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
-    XMLBIFWriter(model).write_xmlbif("model.xml")
+    XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df)
 
 # Step 4: Access the learned CPDs (Continuous Gaussian distributions)
