@@ -50,9 +50,13 @@ class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, q_lr):
         super(QNetwork, self).__init__()
 
-        self.fc_1 = nn.Linear(state_dim, 64)
-        self.fc_2 = nn.Linear(64, 32)
-        self.fc_out = nn.Linear(32, action_dim)
+        # self.fc_1 = nn.Linear(state_dim, 64)
+        # self.fc_2 = nn.Linear(64, 32)
+        # self.fc_out = nn.Linear(32, action_dim)
+        # Interestingly, this is way better for my simple regression task
+        self.fc_1 = nn.Linear(state_dim, 8)
+        self.fc_2 = nn.Linear(8, 4)
+        self.fc_out = nn.Linear(4, action_dim)
 
         self.lr = q_lr
 
@@ -73,7 +77,7 @@ class DQNAgent:
         self.gamma = 0.98
         self.tau = 0.01  # 0.01
         self.epsilon = 1.0
-        self.epsilon_decay = 0.95 # 0.98
+        self.epsilon_decay = 0.95  # 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
         self.batch_size = 200
