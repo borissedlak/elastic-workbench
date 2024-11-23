@@ -18,7 +18,7 @@ from tensordict.nn import TensorDictModule
 
 torch.set_printoptions(threshold=16384)
 
-device="cpu"
+device="cuda" if torch.cuda.is_available() else "cpu"
 
 base_env = GymEnv('CartPole-v1', device=device)
 

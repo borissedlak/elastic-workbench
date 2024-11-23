@@ -55,12 +55,12 @@ class QNetwork(nn.Module):
         # self.fc_out = nn.Linear(32, action_dim)
         # Interestingly, this is way better for my simple regression task
         self.fc_1 = nn.Linear(state_dim, 8)
-        self.fc_2 = nn.Linear(8, 4)
-        self.fc_out = nn.Linear(4, action_dim)
+        self.fc_2 = nn.Linear(8, 8)
+        self.fc_out = nn.Linear(8, action_dim)
 
-        self.lr = q_lr
+        # self.lr = q_lr
 
-        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
 
     def forward(self, x):
         q = F.leaky_relu(self.fc_1(x))
@@ -87,7 +87,7 @@ class DQNAgent:
         self.max_output = 2000
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Policy
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Critic
+        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
 
     def choose_action(self, state, explore=False):

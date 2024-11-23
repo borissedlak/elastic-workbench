@@ -39,7 +39,7 @@ class AIFAgent(Thread):
         score = 0.0
         score_list = []  # [-2000]
 
-        while self.round_counter < 50 * 100:
+        while self.round_counter < 200 * 100:
             # initial_state = self.get_current_state()
             # print("Initial State:", initial_state)
             # initial_state_f = [initial_state['pixel'], initial_state['fps']]
