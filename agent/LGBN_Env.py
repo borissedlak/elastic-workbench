@@ -2,6 +2,7 @@ from random import randint
 
 import gymnasium
 import numpy as np
+import pandas as pd
 
 from agent import agent_utils
 from slo_config import MB
@@ -12,10 +13,8 @@ class LGBN_Env(gymnasium.Env):
         super().__init__()
         self.state = None
         self.lgbn = None
-        # self.regression_model = agent_utils.get_regression_model(pd.read_csv("../metrics/regression_data.csv"))
         self.reset()
-
-        # Initialize the state
+        self.reload_lgbn_model()
         self.done = False  # TODO: How can I optimize rounds with done?
 
     # def get_current_state(self):
@@ -26,7 +25,7 @@ class LGBN_Env(gymnasium.Env):
         punishment_off = 0
 
         if 0 <= action < 3:
-            delta_pixel = int(((action - 1) * 100))
+            delta_pixel = int((action - 1) * 100)
             self.state[0] += delta_pixel
             if self.state[0] < 100 or self.state[0] > 2000:
                 self.state[0] = np.clip(self.state[0], 100, 2000)
@@ -36,16 +35,20 @@ class LGBN_Env(gymnasium.Env):
         elif 6 <= action < 9:
             punishment_off = - 10
 
+        #TODO: Finish this; get sample from std and mean
+        self.lgbn.predict(pd.DataFrame({'pixel': [self.state[0]]}))
+        self.state[1] = 0
+
         reward = np.sum(calculate_slo_reward(self.state)) + punishment_off
         return self.state, reward, self.done, False, {}
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.state = [randint(1, 20) * 100, None]
+        self.state = [randint(1, 20) * 100]
 
         return self.state, {}
 
-    def reload_env_model(self):
+    def reload_lgbn_model(self):
         self.lgbn = agent_utils.train_lgbn_model()
 
 

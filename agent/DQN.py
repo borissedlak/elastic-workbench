@@ -8,10 +8,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 # Check if GPU is available
-if torch.cuda.is_available():
-    print("GPU is available!")
-else:
-    print("GPU is not available.")
+# if torch.cuda.is_available():
+#     print("GPU is available!")
+# else:
+#     print("GPU is not available.")
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
@@ -24,21 +24,23 @@ class ReplayBuffer:
 
     def sample(self, n):
         mini_batch = random.sample(self.buffer, n)
-        s_lst, a_lst, r_lst, s_prime_lst = [], [], [], []
+        s_lst, a_lst, r_lst, s_prime_lst, done_mask_lst = [], [], [], [], []
 
         for transition in mini_batch:
-            s, a, r, s_prime = transition
+            s, a, r, s_prime, done_mask = transition
             s_lst.append(s)
             a_lst.append([a])
             r_lst.append([r])
             s_prime_lst.append(s_prime)
+            done_mask_lst.append([done_mask])
 
-        s_batch = torch.tensor(np.array(s_lst), dtype=torch.float)
+        s_batch = torch.tensor(s_lst, dtype=torch.float)
         a_batch = torch.tensor(np.array(a_lst), dtype=torch.float)
         r_batch = torch.tensor(np.array(r_lst), dtype=torch.float)
         s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float)
+        d_batch = torch.tensor(done_mask_lst)
 
-        return s_batch, a_batch, r_batch, s_prime_batch
+        return s_batch, a_batch, r_batch, s_prime_batch, d_batch
 
     def size(self):
         return len(self.buffer)
@@ -68,7 +70,7 @@ class QNetwork(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, state_dim=3, action_dim=9):
+    def __init__(self, state_dim, action_dim):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -88,9 +90,9 @@ class DQNAgent:
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
 
-    def choose_action(self, state, explore=False):
-        random_number = np.random.rand()
-        if explore or self.epsilon > random_number:  # Explore
+    def choose_action(self, state):
+
+        if self.epsilon > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
             with torch.no_grad():
@@ -99,7 +101,7 @@ class DQNAgent:
         return action
 
     def calc_target(self, mini_batch):
-        s, a, r, s_prime = mini_batch
+        s, a, r, s_prime, d = mini_batch
         with torch.no_grad():
             q_target = self.Q_target(s_prime).max(1)[0].unsqueeze(1)
             target = r + self.gamma * q_target
@@ -108,7 +110,8 @@ class DQNAgent:
     # @utils.print_execution_time
     def train_agent(self):
         mini_batch = self.memory.sample(self.batch_size)
-        s_batch, a_batch, r_batch, s_prime_batch = mini_batch
+        # TODO: Check Done and other implementations
+        s_batch, a_batch, r_batch, s_prime_batch, d_batch = mini_batch
         a_batch = a_batch.type(torch.int64)
 
         td_target = self.calc_target(mini_batch)

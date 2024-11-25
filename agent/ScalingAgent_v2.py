@@ -10,7 +10,6 @@ from DQN import DQNAgent
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import INTERVAL, PrometheusClient
-from agent import agent_utils
 from agent.LGBN_Env import LGBN_Env, calculate_slo_reward
 from slo_config import MB
 
@@ -43,36 +42,17 @@ class AIFAgent(Thread):
         score_list = []
 
         while self.round_counter < 40 * 500:
-            # while True:
 
-            # 1) Get initial state s ################################
+            initial_state = self.env.state.copy()
+            action = self.dqn.choose_action(torch.FloatTensor(np.array(self.env.state)))
+            next_state, reward, done, _, _ = self.env.step(action)
+            # print(f"State transition {initial_state}, {action} --> {next_state}")
 
-            initial_state = self.env.get_current_state()
-
-            # 2) Get action from policy #############################                                                                                                                                                                                                                                                                                       #######################
-
-            # random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
-            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state)))
-
-            # 3) Enact on environment ###############################
-
-            next_state, reward, _, _, _ = self.env.step(action)
-
-            # 4) Get updated state s' ###############################
-
-            # time.sleep(5.0)
-            next_state = self.env.get_current_state()
-            # print(f"State transition {initial_state_f} --> {updated_state_f}")
-
-            # 5) Calculate reward for s' ############################
-
-            self.dqn.memory.put((initial_state, action, reward, next_state))
+            self.dqn.memory.put((initial_state, action, reward, next_state, done))
             score += reward
 
-            # 6) Retrain the agents networks ########################
-
             if self.dqn.memory.size() > self.dqn.batch_size:
-                self.dqn.train_agent()  # Probably due to buffer that is trained
+                self.dqn.train_agent()
 
             self.round_counter += 1
 
@@ -83,8 +63,8 @@ class AIFAgent(Thread):
                 print(
                     "EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(
                         self.round_counter, score, self.dqn.epsilon,
-                        np.sum(calculate_slo_reward(self.env.get_current_state())),
-                        self.env.get_current_state()))
+                        np.sum(calculate_slo_reward(self.env.state)),
+                        self.env.state))
                 score_list.append(score)
                 score = 0.0
 
