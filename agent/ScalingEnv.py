@@ -3,7 +3,6 @@ from random import randint
 import gymnasium
 import numpy as np
 import pandas as pd
-from gymnasium import spaces
 
 import utils
 
@@ -17,17 +16,17 @@ class ScalingEnv(gymnasium.Env):
     def __init__(self, render_mode=None):
         super().__init__()
         self.render_mode = render_mode
-        self.regression_model = utils.get_regression_model(pd.read_csv("regression_data.csv"))
+        self.regression_model = utils.get_regression_model(pd.read_csv("../metrics/regression_data.csv"))
         self.pixel = None
         self.reset()
 
         # Define the action space (e.g., discrete actions: 0, 1, 2)
-        self.action_space = spaces.Discrete(9)
-
-        # Define the observation space (e.g., a continuous vector with 2 elements)
-        self.observation_space = spaces.Box(low=np.array([100, 0]),
-                                            high=np.array([2000, 999]),
-                                            dtype=np.int64)
+        # self.action_space = spaces.Discrete(9)
+        #
+        # # Define the observation space (e.g., a continuous vector with 2 elements)
+        # self.observation_space = spaces.Box(low=np.array([100, 0]),
+        #                                     high=np.array([2000, 999]),
+        #                                     dtype=np.int64)
 
         # Initialize the state
         self.state = None

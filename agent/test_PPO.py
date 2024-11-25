@@ -1,7 +1,7 @@
 import numpy as np
 from stable_baselines3 import PPO, A2C
 
-from ScalingEnv import ScalingEnv
+from agent.ScalingEnv import ScalingEnv
 
 # Create the environment
 env = ScalingEnv()

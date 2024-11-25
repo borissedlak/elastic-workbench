@@ -8,18 +8,16 @@ prometheus-client~=0.16.0 # Provide to Server
 docker~=7.1.0
 prometheus-api-client~=0.5.5 # Query from Server
 
-tensorflow[and-gpu]~=2.18.0
-matplotlib~=3.9.2
-keras~=3.6.0
-scikit-learn~=1.5.2
+#matplotlib~=3.9.2
+#scikit-learn~=1.5.2
+#torch~=2.5.0
+#gym~=0.26.2
 
 
-mujoco~=3.2.5
-torchrl~=0.6.0
-gym~=0.26.2
+#mujoco~=3.2.5
+#torchrl~=0.6.0
 #gymnasium~=1.0.0
-tqdm~=4.67.0
-torch~=2.5.0
+#tqdm~=4.67.0
 #pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 #shimmy
 #stable_baselines3~=2.4.0

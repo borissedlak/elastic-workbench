@@ -9,7 +9,7 @@ if False:  # os.path.isfile("model.xml"):
     model = XMLBIFReader("model.xml").get_model()
 else:
 
-    df = pd.read_csv("../regression_data.csv")
+    df = pd.read_csv("../metrics/regression_data.csv")
 
     model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
     XMLBIFWriter(model).write_xmlbif("../model.xml")
