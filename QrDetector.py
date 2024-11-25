@@ -1,8 +1,8 @@
 import concurrent.futures
+import datetime
 import logging
 import threading
 import time
-from random import randint
 
 import cv2
 from prometheus_client import start_http_server, Gauge
@@ -18,7 +18,7 @@ logger = logging.getLogger("multiscale")
 start_http_server(8000)
 fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
 pixel = Gauge('pixel', 'Current processing FPS', ['service_id', 'metric_id'])
-energy = Gauge('energy', 'Current processing FPS', ['service_id', 'metric_id'])
+# energy = Gauge('energy', 'Current processing FPS', ['service_id', 'metric_id'])
 cores = Gauge('cores', 'Current processing FPS', ['service_id', 'metric_id'])
 
 
@@ -28,9 +28,9 @@ class QrDetector(VehicleService):
         self._terminated = True
         self._running = False
         self.service_conf = {'pixel': 800}
-        self.number_cores = 2
+        self.cores = 2
         self.thread_multiplier = 4
-        self.number_threads = self.number_cores * self.thread_multiplier
+        self.number_threads = self.cores * self.thread_multiplier
         self.fps = utils.FPS_()
 
         self.webcam_stream = VideoReader()
@@ -53,6 +53,7 @@ class QrDetector(VehicleService):
         processing_time = (time.time() - start_time) * 1000.0
 
     def process_loop(self):
+        metric_buffer = []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
             while self._running:
@@ -73,8 +74,13 @@ class QrDetector(VehicleService):
                 processing_fps = self.fps.get_current_fps()
                 fps.labels(service_id="video", metric_id="fps").set(processing_fps)
                 pixel.labels(service_id="video", metric_id="pixel").set(self.service_conf['pixel'])
-                energy.labels(service_id="video", metric_id="energy").set(randint(1, 20))
-                cores.labels(service_id="video", metric_id="cores").set(self.number_cores)
+                # energy.labels(service_id="video", metric_id="energy").set(randint(1, 20))
+                cores.labels(service_id="video", metric_id="cores").set(self.cores)
+
+                metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores))
+                if len(metric_buffer) >= 15:
+                    utils.write_metrics_to_csv(metric_buffer)
+                    metric_buffer.clear()
 
         self._terminated = True
         logger.info("QR Detector stopped")
@@ -102,7 +108,7 @@ class QrDetector(VehicleService):
         while not self._terminated:
             time.sleep(0.01)
 
-        self.number_cores = c_threads
+        self.cores = c_threads
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
 

@@ -60,9 +60,5 @@ def change_threads():
 
 
 if __name__ == '__main__':
-    for root, dirs, files in os.walk("metrics"):
-        for file_name in files:
-            print(file_name)  # Optional: print to console
-
     start_video_processing()
     app.run(host='0.0.0.0', port=8080)

@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 import time
@@ -108,3 +109,27 @@ def filter_tuple(t, name, index):
 # Define sigmoid using numpy
 def sigmoid(x, k=1, c=0):
     return 1 / (1 + np.exp(-k * (x - c)))
+
+
+@print_execution_time
+def write_metrics_to_csv(lines):
+    # Define the directory and file name
+    directory = "./metrics"
+    file_name = "LGBN.csv"
+    file_path = os.path.join(directory, file_name)
+
+    # Ensure the directory exists
+    # if not os.path.exists(directory):
+    #     os.makedirs(directory)
+
+    # Check if the file exists
+    file_exists = os.path.isfile(file_path)
+
+    # Open the file in append mode
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        if not file_exists or os.path.getsize(file_path) == 0:
+            writer.writerow(["timestamp", "fps", "pixel", "Cores"])
+
+        writer.writerows(lines)
