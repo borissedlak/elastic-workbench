@@ -66,7 +66,6 @@ def calculate_slo_reward(state, slos=MB['slos']):
     fuzzy_slof = []
 
     for index, value in enumerate(state):
-
         func, k, c, boost = slos[index]
         slo_f = boost * func(value, k, c)
 
@@ -77,21 +76,3 @@ def calculate_slo_reward(state, slos=MB['slos']):
         fuzzy_slof.append(slo_f)
 
     return fuzzy_slof
-
-
-if __name__ == '__main__':
-    env = ScalingEnv()
-    initial_state = env.get_current_state()
-    print(f"Initial State: {initial_state}")
-    print(
-        f"Reward for current state: {np.sum(calculate_slo_reward({"pixel": initial_state[0], "fps": initial_state[1]}))}")
-    env.act_on_env(1200)
-    updated_state = env.get_current_state()
-    print(f"Updated State: {updated_state}")
-    print(
-        f"Reward for updated state: {np.sum(calculate_slo_reward({"pixel": updated_state[0], "fps": updated_state[1]}))}")
-    env.act_on_env(700)
-    updated_state = env.get_current_state()
-    print(f"Updated State: {updated_state}")
-    print(
-        f"Reward for updated state: {np.sum(calculate_slo_reward({"pixel": updated_state[0], "fps": updated_state[1]}))}")

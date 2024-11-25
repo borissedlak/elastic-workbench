@@ -42,26 +42,26 @@ class AIFAgent(Thread):
 
             # 1) Get initial state s ################################
 
-            initial_state_f = self.simulated_env.get_current_state()
+            initial_state = self.simulated_env.get_current_state()
 
             # 2) Get action from policy #############################                                                                                                                                                                                                                                                                                       #######################
 
             # random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
-            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)))
+            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state)))
 
             # 3) Enact on environment ###############################
 
-            updated_state_f, reward, _, _, _ = self.simulated_env.step(action)
+            next_state, reward, _, _, _ = self.simulated_env.step(action)
 
             # 4) Get updated state s' ###############################
 
             # time.sleep(5.0)
-            updated_state_f = self.simulated_env.get_current_state()
+            next_state = self.simulated_env.get_current_state()
             # print(f"State transition {initial_state_f} --> {updated_state_f}")
 
             # 5) Calculate reward for s' ############################
 
-            self.dqn.memory.put((initial_state_f, action, reward, updated_state_f))
+            self.dqn.memory.put((initial_state, action, reward, next_state))
             score += reward
 
             # 6) Retrain the agents networks ########################

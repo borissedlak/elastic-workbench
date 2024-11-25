@@ -1,8 +1,6 @@
 import random
 from collections import deque
 
-import gym
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -35,10 +33,10 @@ class ReplayBuffer:
             r_lst.append([r])
             s_prime_lst.append(s_prime)
 
-        s_batch = torch.tensor(s_lst, dtype=torch.float)
-        a_batch = torch.tensor(a_lst, dtype=torch.float)
-        r_batch = torch.tensor(r_lst, dtype=torch.float)
-        s_prime_batch = torch.tensor(s_prime_lst, dtype=torch.float)
+        s_batch = torch.tensor(np.array(s_lst), dtype=torch.float)
+        a_batch = torch.tensor(np.array(a_lst), dtype=torch.float)
+        r_batch = torch.tensor(np.array(r_lst), dtype=torch.float)
+        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float)
 
         return s_batch, a_batch, r_batch, s_prime_batch
 
@@ -93,21 +91,10 @@ class DQNAgent:
     def choose_action(self, state, explore=False):
         random_number = np.random.rand()
         if explore or self.epsilon > random_number:  # Explore
-            # if self.action_dim != 9:
-            #     action = np.random.choice([n for n in range(self.action_dim)])
-            #     scaled_action = (action - 1) * 100
-            # else:
             action = np.random.choice([n for n in range(self.action_dim)])
-            # scaled_action = (action - 4) / 2  # -2, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0
         else:  # Exploit
             with torch.no_grad():
-                # if self.action_dim != 9:
-                #     action = float(torch.argmax(self.Q(state)).numpy())
-                #     scaled_action = (action - 1) * 100
-                # else:
                 action = float(torch.argmax(self.Q(state)).numpy())
-                # scaled_action = (action - 4) / 4  # Exploration is in smaller steps
-                # maxQ_action_count = 1
 
         return action
 
@@ -137,60 +124,3 @@ class DQNAgent:
         #### Q soft-update ####
         for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
-
-
-if __name__ == '__main__':
-
-    ###### logging ######
-    # log_name = '0404'
-    #
-    # model_save_dir = 'saved_model/' + log_name
-    # if not os.path.isdir(model_save_dir): os.mkdir(model_save_dir)
-    # log_save_dir = 'log/' + log_name
-    # if not os.path.isdir(log_save_dir): os.mkdir(log_save_dir)
-    ###### logging ######
-
-    agent = DQNAgent()
-
-    env = gym.make('Pendulum-v1')
-
-    EPISODE = 200
-    score_list = []  # [-2000]
-
-    for EP in range(EPISODE):
-        state, _ = env.reset()
-        score, done = 0.0, False
-        maxQ_action_count = 0
-
-        while True:
-            action, scaled_action = agent.choose_action(torch.FloatTensor(state))
-
-            state_prime, reward, terminated, truncated, _ = env.step([scaled_action])
-
-            agent.memory.put((state, action, reward, state_prime))
-
-            score += reward
-            # maxQ_action_count += count
-
-            state = state_prime
-
-            if agent.memory.size() > 1000:
-                agent.train_agent()
-
-            if terminated or truncated:
-                break
-
-        # if EP % 10 == 0:
-        #     torch.save(agent.Q.state_dict(), model_save_dir + "/DQN_Q_EP" + str(EP) + ".pt")
-
-        print("EP:{}, Avg_Score:{:.1f}, MaxQ_Action_Count:{}, Epsilon:{:.5f}".format(EP, score, maxQ_action_count,
-                                                                                     agent.epsilon))
-        score_list.append(score)
-
-        if agent.epsilon > agent.epsilon_min:
-            agent.epsilon *= agent.epsilon_decay
-
-    plt.plot(score_list)
-    plt.show()
-
-    # np.savetxt(log_save_dir + '/pendulum_score.txt', score_list)
