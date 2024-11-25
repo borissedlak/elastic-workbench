@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 
 import utils
 from PrometheusClient import MB, INTERVAL
-from ScalingEnv import ScalingEnv
-from test_DQN import DQNAgent
+from ScalingEnv import ScalingEnv, calculate_slo_reward
+from DQN import DQNAgent
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
@@ -31,49 +31,36 @@ class AIFAgent(Thread):
         # self.docker_client = DockerClient(DOCKER_SOCKET)
         # self.http_client = HttpClient()
         self.round_counter = 0
-        self.dqn = DQNAgent(state_dim=2, action_dim=5)
+        self.dqn = DQNAgent(state_dim=2, action_dim=3)
         self.simulated_env = ScalingEnv()
 
     def run(self):
         score = 0.0
-        score_list = []  # [-2000]
+        score_list = []
 
-        while self.round_counter < 200 * 100:
-            # initial_state = self.get_current_state()
-            # print("Initial State:", initial_state)
-            # initial_state_f = [initial_state['pixel'], initial_state['fps']]
+        while self.round_counter < 40 * 500:
 
             # 1) Get initial state s ################################
 
             initial_state_f = self.simulated_env.get_current_state()
 
-            # 2) Get action from policy ######                                                                                                                                                                                                                                                                                        #######################
+            # 2) Get action from policy #############################                                                                                                                                                                                                                                                                                       #######################
 
-            random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
-            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
+            # random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
+            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)))
 
             # 3) Enact on environment ###############################
 
-            # agent.act_on_env(action_vectors[0])
-            # delta_pixel = initial_state_f[0] + scaled_action
-            # punishment_off = 0
             updated_state_f, reward, _, _, _ = self.simulated_env.step(action)
 
             # 4) Get updated state s' ###############################
 
             # time.sleep(5.0)
-            updated_state = {'pixel': self.simulated_env.get_current_state()[0],
-                             'fps': self.simulated_env.get_current_state()[1]}
-            # updated_state = self.get_current_state()
-            # print("Following State:", updated_state)
-            # updated_state_f = [updated_state['pixel'], updated_state['fps']]
             updated_state_f = self.simulated_env.get_current_state()
             # print(f"State transition {initial_state_f} --> {updated_state_f}")
 
             # 5) Calculate reward for s' ############################
 
-            # value_factors = calculate_value_slo(updated_state)
-            # value = np.sum(value_factors) + punishment_off
             self.dqn.memory.put((initial_state_f, action, reward, updated_state_f))
             score += reward
 
@@ -84,11 +71,11 @@ class AIFAgent(Thread):
 
             self.round_counter += 1
 
-            if self.round_counter % 100 == 0:
+            if self.round_counter % 500 == 0:
                 self.simulated_env.reset()
                 self.dqn.epsilon *= self.dqn.epsilon_decay
 
-                print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.5f}".format(self.round_counter, score, self.dqn.epsilon))
+                print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(self.round_counter, score, self.dqn.epsilon, np.sum(calculate_slo_reward(self.simulated_env.get_current_state())), self.simulated_env.get_current_state()))
                 score_list.append(score)
                 score = 0.0
 
