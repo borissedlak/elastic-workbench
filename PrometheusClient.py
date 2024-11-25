@@ -1,12 +1,9 @@
 from prometheus_api_client import PrometheusConnect
 
 import utils
+from slo_config import MB
 
 INTERVAL = "3s"
-MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
-      'parameter': ['pixel', 'cores'],
-      'slos': [('pixel', utils.sigmoid, 0.015, 450, 0.8),
-               ('fps', utils.sigmoid, 0.35, 25, 1.8)]}
 
 
 class PrometheusClient:
@@ -25,5 +22,6 @@ class PrometheusClient:
 
 if __name__ == "__main__":
     client = PrometheusClient()
-    print("Metric assignments:", client.get_metric_values("|".join(list(set(MB['variables']) - set(MB['parameter']))), period="10s"))
+    print("Metric assignments:",
+          client.get_metric_values("|".join(list(set(MB['variables']) - set(MB['parameter']))), period="10s"))
     print("Parameter assignments:", client.get_metric_values("|".join(MB['parameter'])))

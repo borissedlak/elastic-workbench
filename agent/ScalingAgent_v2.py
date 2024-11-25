@@ -6,9 +6,13 @@ import torch
 from matplotlib import pyplot as plt
 
 import utils
-from PrometheusClient import MB, INTERVAL
-from ScalingEnv import ScalingEnv, calculate_slo_reward
 from DQN import DQNAgent
+from DockerClient import DockerClient
+from HttpClient import HttpClient
+from PrometheusClient import INTERVAL, PrometheusClient
+from agent import agent_utils
+from agent.LGBN_Env import LGBN_Env, calculate_slo_reward
+from slo_config import MB
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
@@ -27,22 +31,23 @@ class AIFAgent(Thread):
     def __init__(self):
         super().__init__()
 
-        # self.prom_client = PrometheusClient()
-        # self.docker_client = DockerClient(DOCKER_SOCKET)
-        # self.http_client = HttpClient()
+        self.prom_client = PrometheusClient()
+        self.docker_client = DockerClient(DOCKER_SOCKET)
+        self.http_client = HttpClient()
         self.round_counter = 0
         self.dqn = DQNAgent(state_dim=2, action_dim=3)
-        self.simulated_env = ScalingEnv()
+        self.env = LGBN_Env()
 
     def run(self):
         score = 0.0
         score_list = []
 
         while self.round_counter < 40 * 500:
+            # while True:
 
             # 1) Get initial state s ################################
 
-            initial_state = self.simulated_env.get_current_state()
+            initial_state = self.env.get_current_state()
 
             # 2) Get action from policy #############################                                                                                                                                                                                                                                                                                       #######################
 
@@ -51,12 +56,12 @@ class AIFAgent(Thread):
 
             # 3) Enact on environment ###############################
 
-            next_state, reward, _, _, _ = self.simulated_env.step(action)
+            next_state, reward, _, _, _ = self.env.step(action)
 
             # 4) Get updated state s' ###############################
 
             # time.sleep(5.0)
-            next_state = self.simulated_env.get_current_state()
+            next_state = self.env.get_current_state()
             # print(f"State transition {initial_state_f} --> {updated_state_f}")
 
             # 5) Calculate reward for s' ############################
@@ -72,10 +77,14 @@ class AIFAgent(Thread):
             self.round_counter += 1
 
             if self.round_counter % 500 == 0:
-                self.simulated_env.reset()
+                self.env.reset()
                 self.dqn.epsilon *= self.dqn.epsilon_decay
 
-                print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(self.round_counter, score, self.dqn.epsilon, np.sum(calculate_slo_reward(self.simulated_env.get_current_state())), self.simulated_env.get_current_state()))
+                print(
+                    "EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(
+                        self.round_counter, score, self.dqn.epsilon,
+                        np.sum(calculate_slo_reward(self.env.get_current_state())),
+                        self.env.get_current_state()))
                 score_list.append(score)
                 score = 0.0
 
@@ -83,7 +92,6 @@ class AIFAgent(Thread):
         plt.plot(score_list)
         plt.show()
 
-    # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
         prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=INTERVAL)

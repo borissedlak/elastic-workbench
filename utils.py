@@ -130,6 +130,6 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "fps", "pixel", "Cores"])
+            writer.writerow(["timestamp", "fps", "pixel", "cores"])
 
         writer.writerows(lines)

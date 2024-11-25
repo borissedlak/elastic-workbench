@@ -4,19 +4,15 @@ import gymnasium
 import numpy as np
 import pandas as pd
 
-import utils
-
-MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
-      'parameter': ['pixel', 'cores'],
-      'slos': [(utils.sigmoid, 0.015, 450, 1.0),
-               (utils.sigmoid, 0.35, 25, 1.0)]}
+from agent import agent_utils
+from slo_config import MB
 
 
 class ScalingEnv(gymnasium.Env):
     def __init__(self, render_mode=None):
         super().__init__()
         self.render_mode = render_mode
-        self.regression_model = utils.get_regression_model(pd.read_csv("../metrics/regression_data.csv"))
+        self.regression_model = agent_utils.get_regression_model(pd.read_csv("../../metrics/regression_data.csv"))
         self.pixel = None
         self.reset()
 
