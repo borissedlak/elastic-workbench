@@ -86,7 +86,7 @@ class DQNAgent:
         self.min_output = 100
         self.max_output = 2000
 
-        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Policy
+        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
 

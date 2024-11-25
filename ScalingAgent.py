@@ -1,14 +1,13 @@
 import os
-from random import randint
 from threading import Thread
 
 import numpy as np
-import pandas as pd
 import torch
 from matplotlib import pyplot as plt
 
 import utils
 from PrometheusClient import MB, INTERVAL
+from ScalingEnv import calculate_value_slo, ScalingEnv
 from test_DQN import DQNAgent
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -61,8 +60,7 @@ class AIFAgent(Thread):
             if delta_pixel < 100 or delta_pixel > 2000:
                 delta_pixel = np.clip(initial_state_f[0] + scaled_action, 100, 2000)
                 punishment_off = - 5
-            self.simulated_env.act_on_env(delta_pixel)
-
+            self.simulated_env.step(delta_pixel)
 
             # 4) Get updated state s' ###############################
 
@@ -85,12 +83,12 @@ class AIFAgent(Thread):
             # 6) Retrain the agents networks ########################
 
             if self.dqn.memory.size() > self.dqn.batch_size:
-                self.dqn.train_agent() # Probably due to buffer that is trained
+                self.dqn.train_agent()  # Probably due to buffer that is trained
 
             self.round_counter += 1
 
             if self.round_counter % 100 == 0:
-                self.simulated_env.reset_env()
+                self.simulated_env.reset()
                 self.dqn.epsilon *= self.dqn.epsilon_decay
 
                 print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.5f}".format(self.round_counter, score, self.dqn.epsilon))
@@ -100,8 +98,6 @@ class AIFAgent(Thread):
         # TODO: DO this through an animation or interactive plot
         plt.plot(score_list)
         plt.show()
-
-
 
     # TODO: Also, I should probably look into better ways to query the metric values, like EMA
     def get_current_state(self):
@@ -114,47 +110,6 @@ class AIFAgent(Thread):
 
     def act_on_env(self, a_pixel):
         self.http_client.change_config("localhost", {'pixel': int(a_pixel)})
-
-
-class ScalingEnv:
-    def __init__(self):
-        self.regression_model = utils.get_regression_model(pd.read_csv("regression_data.csv"))
-        self.pixel = None
-        self.reset_env()
-
-    def get_current_state(self):
-        try:
-            return [self.pixel, int(self.regression_model.predict([[self.pixel, 2.0]])[0])]
-        except ValueError:
-            print("Error")
-            self.pixel = randint(100, 2000)
-            return self.get_current_state()
-
-    def act_on_env(self, pixel):
-        self.pixel = int(pixel)
-
-    def reset_env(self):
-        self.pixel = randint(1, 20) * 100
-
-
-def calculate_value_slo(state, slos=MB['slos']):
-    fuzzy_slof = []
-
-    for var_name, value in state.items():
-        if var_name not in [v[0] for v in slos]:
-            continue
-
-        # var, func, k, c, boost = utils.filter_tuple(slos, var_name, 0)
-        # fuzzy_slof.append(boost * func(value, k, c))
-
-        if var_name == "pixel":
-            fuzzy_slof.append(value >= 800)
-        elif var_name == "fps":
-            fuzzy_slof.append(value >= 20)
-        else:
-            raise RuntimeError("WHY??")
-
-    return fuzzy_slof
 
 
 if __name__ == '__main__':
