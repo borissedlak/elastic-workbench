@@ -93,23 +93,23 @@ class DQNAgent:
     def choose_action(self, state, explore=False):
         random_number = np.random.rand()
         if explore or self.epsilon > random_number:  # Explore
-            if self.action_dim != 9:
-                action = np.random.choice([n for n in range(self.action_dim)])
-                scaled_action = (action - 1) * 100
-            else:
-                action = np.random.choice([n for n in range(self.action_dim)])
-                scaled_action = (action - 4) / 2  # -2, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0
+            # if self.action_dim != 9:
+            #     action = np.random.choice([n for n in range(self.action_dim)])
+            #     scaled_action = (action - 1) * 100
+            # else:
+            action = np.random.choice([n for n in range(self.action_dim)])
+            # scaled_action = (action - 4) / 2  # -2, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0
         else:  # Exploit
             with torch.no_grad():
-                if self.action_dim != 9:
-                    action = float(torch.argmax(self.Q(state)).numpy())
-                    scaled_action = (action - 1) * 100
-                else:
-                    action = float(torch.argmax(self.Q(state)).numpy())
-                    scaled_action = (action - 4) / 4  # Exploration is in smaller steps
+                # if self.action_dim != 9:
+                #     action = float(torch.argmax(self.Q(state)).numpy())
+                #     scaled_action = (action - 1) * 100
+                # else:
+                action = float(torch.argmax(self.Q(state)).numpy())
+                # scaled_action = (action - 4) / 4  # Exploration is in smaller steps
                 # maxQ_action_count = 1
 
-        return action, scaled_action
+        return action
 
     def calc_target(self, mini_batch):
         s, a, r, s_prime = mini_batch

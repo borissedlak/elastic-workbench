@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import utils
 from PrometheusClient import MB, INTERVAL
-from ScalingEnv import calculate_value_slo, ScalingEnv
+from ScalingEnv import ScalingEnv
 from test_DQN import DQNAgent
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -31,7 +31,7 @@ class AIFAgent(Thread):
         # self.docker_client = DockerClient(DOCKER_SOCKET)
         # self.http_client = HttpClient()
         self.round_counter = 0
-        self.dqn = DQNAgent(state_dim=2, action_dim=3)
+        self.dqn = DQNAgent(state_dim=2, action_dim=5)
         self.simulated_env = ScalingEnv()
 
     def run(self):
@@ -47,20 +47,17 @@ class AIFAgent(Thread):
 
             initial_state_f = self.simulated_env.get_current_state()
 
-            # 2) Get action from policy #############################
+            # 2) Get action from policy ######                                                                                                                                                                                                                                                                                        #######################
 
             random = self.round_counter % 10 == 0 or self.round_counter < 1000  # e - greedy with 0.1
-            action, scaled_action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
+            action = self.dqn.choose_action(torch.FloatTensor(np.array(initial_state_f)), random)
 
             # 3) Enact on environment ###############################
 
             # agent.act_on_env(action_vectors[0])
-            delta_pixel = initial_state_f[0] + scaled_action
-            punishment_off = 0
-            if delta_pixel < 100 or delta_pixel > 2000:
-                delta_pixel = np.clip(initial_state_f[0] + scaled_action, 100, 2000)
-                punishment_off = - 5
-            self.simulated_env.step(delta_pixel)
+            # delta_pixel = initial_state_f[0] + scaled_action
+            # punishment_off = 0
+            updated_state_f, reward, _, _, _ = self.simulated_env.step(action)
 
             # 4) Get updated state s' ###############################
 
@@ -75,10 +72,10 @@ class AIFAgent(Thread):
 
             # 5) Calculate reward for s' ############################
 
-            value_factors = calculate_value_slo(updated_state)
-            value = np.sum(value_factors) + punishment_off
-            self.dqn.memory.put((initial_state_f, action, value, updated_state_f))
-            score += value
+            # value_factors = calculate_value_slo(updated_state)
+            # value = np.sum(value_factors) + punishment_off
+            self.dqn.memory.put((initial_state_f, action, reward, updated_state_f))
+            score += reward
 
             # 6) Retrain the agents networks ########################
 

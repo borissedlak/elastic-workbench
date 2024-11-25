@@ -22,7 +22,7 @@ class ScalingEnv(gymnasium.Env):
         self.reset()
 
         # Define the action space (e.g., discrete actions: 0, 1, 2)
-        self.action_space = spaces.Discrete(3)
+        self.action_space = spaces.Discrete(9)
 
         # Define the observation space (e.g., a continuous vector with 2 elements)
         self.observation_space = spaces.Box(low=np.array([100, 0]),
@@ -43,17 +43,27 @@ class ScalingEnv(gymnasium.Env):
             return self.get_current_state()
 
     def step(self, action):
-        self.pixel = int(self.pixel + action)
-
         punishment_off = 0
-        if self.pixel < 100 or self.pixel > 2000:
-            self.pixel = np.clip(self.pixel, 100, 2000)
-            punishment_off = - 5
+        if 0 <= action < 3:
+            self.pixel = int(self.pixel + ((action - 1) * 100))
+
+            if self.pixel < 100 or self.pixel > 2000:
+                self.pixel = np.clip(self.pixel, 100, 2000)
+                punishment_off = - 5
+        elif 3 <= action < 6:
+
+            punishment_off = - 10
+        elif 6 <= action < 9:
+
+            punishment_off = - 10
+
+
+
 
         updated_state = {'pixel': self.get_current_state()[0],
                          'fps': self.get_current_state()[1]}
-        return self.get_current_state(), np.sum(
-            calculate_value_slo(updated_state)) + punishment_off, self.done, False, None
+        reward = np.sum(calculate_value_slo(updated_state)) + punishment_off
+        return self.get_current_state(), reward, self.done, False, {}
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)

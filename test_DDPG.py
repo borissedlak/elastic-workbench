@@ -1,164 +1,146 @@
-import random
-from collections import deque
-
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
-from ScalingEnv import ScalingEnv
-
-# Hyperparameters
-BUFFER_SIZE = 100000
-BATCH_SIZE = 64
-GAMMA = 0.99
-TAU = 0.005
-LR_ACTOR = 1e-3
-LR_CRITIC = 1e-3
-# NOISE_STD = 0.1
-NOISE_DECAY = 0.99
+import numpy as np
 
 
+# Define the Actor Network (Policy)
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_action):
+    def __init__(self, state_dim, action_dim, hidden_size=64):
         super(Actor, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(state_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, action_dim),
-            nn.Tanh()
-        )
-        self.max_action = max_action
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, action_dim)
 
     def forward(self, state):
-        return self.max_action * self.net(state)
+        x = torch.relu(self.fc1(state))
+        x = torch.relu(self.fc2(x))
+        action_mean = self.fc3(x)
+        return action_mean
 
 
+# Define the Critic Network (Value Function)
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, hidden_size=64):
         super(Critic, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 1)
-        )
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, 1)
 
-    def forward(self, state, action):
-        x = torch.cat([state, action], dim=1)
-        return self.net(x)
+    def forward(self, state):
+        x = torch.relu(self.fc1(state))
+        x = torch.relu(self.fc2(x))
+        value = self.fc3(x)
+        return value
 
 
-# Replay Buffer
-class ReplayBuffer:
-    def __init__(self, max_size):
-        self.buffer = deque(maxlen=max_size)
+# Define the PPO Agent
+class PPOAgent:
+    def __init__(self, state_dim, action_dim, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, epsilon=0.2):
+        self.actor = Actor(state_dim, action_dim)
+        self.critic = Critic(state_dim)
 
-    def add(self, state, action, reward, next_state):
-        self.buffer.append((state, action, reward, next_state))
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
 
-    def sample(self, batch_size):
-        batch = random.sample(self.buffer, batch_size)
-        states, actions, rewards, next_states = zip(*batch)
-        return (
-            torch.tensor(np.array(states), dtype=torch.float32),
-            torch.tensor(np.array(actions), dtype=torch.float32),
-            torch.tensor(np.array(rewards), dtype=torch.float32).unsqueeze(1),
-            torch.tensor(np.array(next_states), dtype=torch.float32),
-        )
+        self.gamma = gamma
+        self.epsilon = epsilon
 
-    def size(self):
-        return len(self.buffer)
+    def get_action(self, state):
+        state = torch.tensor(state, dtype=torch.float32)
+        action_mean = self.actor(state)
+        # In continuous action spaces, the output is the mean of the action distribution (e.g., Gaussian)
+        action = action_mean + torch.randn_like(action_mean)  # Assuming no action noise for simplicity
+        return action, action_mean
 
+    def get_value(self, state):
+        state = torch.tensor(state, dtype=torch.float32)
+        return self.critic(state)
 
-# DDPG Agent
-class DDPGAgent:
-    def __init__(self, state_dim, action_dim, max_action):
-        self.actor = Actor(state_dim, action_dim, max_action)
-        self.actor_target = Actor(state_dim, action_dim, max_action)
-        self.actor_target.load_state_dict(self.actor.state_dict())
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=LR_ACTOR)
+    def update(self, states, actions, rewards, next_states, done, old_action_means, old_log_probs):
+        # Ensure actions are stacked properly
+        actions = torch.stack([torch.tensor(action, dtype=torch.float32) for action in actions])
 
-        self.critic = Critic(state_dim, action_dim)
-        self.critic_target = Critic(state_dim, action_dim)
-        self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=LR_CRITIC)
+        # Convert old_log_probs to a tensor
+        old_log_probs = torch.stack(old_log_probs)  # If it's a list of tensors, this will stack them
 
-        self.max_action = max_action
-        self.buffer = ReplayBuffer(BUFFER_SIZE)
+        states = torch.tensor(states, dtype=torch.float32)
+        rewards = torch.tensor(rewards, dtype=torch.float32)
+        next_states = torch.tensor(next_states, dtype=torch.float32)
+        done = torch.tensor(done, dtype=torch.float32)
 
-    def select_action(self, state, std, noise=0.0):
-        state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-        action = self.actor(state).detach().numpy()[0]
-        action += noise * np.random.normal(0, std, size=action.shape)
-        return np.clip(action, -self.max_action, self.max_action)
+        # Calculate returns (bootstrap the final return with the value of the last state)
+        target_values = self.critic(next_states)
+        returns = rewards + self.gamma * target_values * (1 - done)
 
-    def train(self):
-        if self.buffer.size() < BATCH_SIZE:
-            return
+        # Compute advantage
+        values = self.critic(states)
+        advantages = returns - values.detach()
 
-        # Sample a batch
-        states, actions, rewards, next_states = self.buffer.sample(BATCH_SIZE)
+        # Compute the log probability of the current actions
+        action_means = self.actor(states)
+        dist = torch.distributions.Normal(action_means, torch.ones_like(action_means))  # Gaussian distribution
+        log_probs = dist.log_prob(actions).sum(dim=-1)
 
-        # Critic Loss
-        with torch.no_grad():
-            next_actions = self.actor_target(next_states)
-            target_q = self.critic_target(next_states, next_actions)
-            target_q = rewards + GAMMA * target_q
-        current_q = self.critic(states, actions)
-        critic_loss = nn.MSELoss()(current_q, target_q)
+        # Calculate the ratio (pi_theta / pi_theta_old)
+        ratios = torch.exp(log_probs - old_log_probs)
+
+        # Surrogate loss function
+        surrogate_loss = torch.min(ratios * advantages,
+                                   torch.clamp(ratios, 1 - self.epsilon, 1 + self.epsilon) * advantages)
+
+        # Actor loss
+        actor_loss = -surrogate_loss.mean()
+
+        # Critic loss (mean squared error between value predictions and target values)
+        critic_loss = nn.MSELoss()(values, returns)
+
+        # Update the actor and critic networks
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
 
-        # Actor Loss
-        actor_loss = -self.critic(states, self.actor(states)).mean()
-
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        # Soft update
-        for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
-            target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
-
-        for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
-            target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
+        return actor_loss.item(), critic_loss.item()
 
 
-# Training Loop
-# env = gym.make('Pendulum-v1')
-env = ScalingEnv()
+# Sample usage of the PPOAgent class
+if __name__ == "__main__":
+    state_dim = 2
+    action_dim = 2
+    agent = PPOAgent(state_dim, action_dim)
 
-state_dim = env.observation_space.shape[0]  # = 3
-action_dim = env.action_space.shape[0]  # = 1
-max_action = env.action_space.high[0]  # = 2.0
+    # Example loop (simplified)
+    for episode in range(100):
+        state = np.random.rand(state_dim)  # Random initial state
+        done = False
+        episode_reward = 0
 
-agent = DDPGAgent(state_dim, action_dim, max_action)
+        states, actions, rewards, next_states, dones, old_action_means, old_log_probs = [], [], [], [], [], [], []
 
-episodes = 200
-for episode in range(episodes):
-    state, _ = env.reset()
-    episode_reward = 0
-    noise = max_action * (NOISE_DECAY ** episode)
+        while not done:
+            action, action_mean = agent.get_action(state)
+            value = agent.get_value(state)
+            next_state = np.random.rand(state_dim)  # Dummy next state
+            reward = np.random.rand()  # Dummy reward
+            done = np.random.rand() > 0.95  # Random done condition
 
-    for t in range(200):
-        action = agent.select_action(state, noise, max_action)
-        next_state, reward, done, _, _ = env.step(action)
-        # print(action, reward)
-        agent.buffer.add(state, action, reward, next_state)
+            # Save transition for later updates
+            states.append(state)
+            actions.append(action)
+            rewards.append(reward)
+            next_states.append(next_state)
+            dones.append(done)
+            old_action_means.append(action_mean)
+            old_log_probs.append(
+                torch.distributions.Normal(action_mean, torch.ones_like(action_mean)).log_prob(action).sum(dim=-1))
 
-        agent.train()
-        state = next_state
-        episode_reward += reward
+            state = next_state
+            episode_reward += reward
 
-        if done:
-            break
-
-    print(f"Episode {episode + 1}, Reward: {episode_reward:.2f}, Noise: {NOISE_DECAY ** episode:.2f}")
-
-env.close()
+        # After episode ends, perform the PPO update
+        agent.update(states, actions, rewards, next_states, dones, old_action_means, old_log_probs)
+        print(f"Episode {episode}, Reward: {episode_reward}")
