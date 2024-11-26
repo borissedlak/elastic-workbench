@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import utils
-from DQN import DQNAgent
+from DQN import DQN
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import INTERVAL, PrometheusClient
@@ -36,52 +36,22 @@ class AIFAgent(Thread):
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         # self.round_counter = 0
-        self.dqn = DQNAgent(state_dim=2, action_dim=3)
-        self.env = LGBN_Env()
+        self.dqn = DQN(state_dim=2, action_dim=3)
 
     def run(self):
         while True:
-            self.dqn.reset_networks()  # TODO: Resume training from intermediary point
-            self.train()
-            time.sleep(10)
-            self.env.reload_lgbn_model()
 
-    @utils.print_execution_time
-    def train(self):
-        score = 0.0
-        score_list = []
-        round_counter = 0
+            # REAL INFERENCE ############
 
-        while round_counter < 20 * 500:
+            # TRAINING OCCASIONALLY #####
 
-            initial_state = self.env.state.copy()
-            action = self.dqn.choose_action(np.array(self.env.state))
-            next_state, reward, done, _, _ = self.env.step(action)
-            # print(f"State transition {initial_state}, {action} --> {next_state}")
+            Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).run()
 
-            self.dqn.memory.put((initial_state, action, reward, next_state, done))
-            score += reward
+            time.sleep(60)
 
-            if self.dqn.memory.size() > self.dqn.batch_size:
-                self.dqn.train_agent()
+    # def retrain_Q_network(self):
+    #     self.train()
 
-            round_counter += 1
-
-            if round_counter % 500 == 0:
-                self.env.reset()
-                self.dqn.epsilon *= self.dqn.epsilon_decay
-
-                print(
-                    "EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(
-                        round_counter, score, self.dqn.epsilon,
-                        np.sum(calculate_slo_reward(self.env.state)),
-                        self.env.state))
-                score_list.append(score)
-                score = 0.0
-
-        # TODO: DO this through an animation or interactive plot
-        plt.plot(score_list)
-        plt.show()
 
     def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))

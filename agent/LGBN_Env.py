@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from agent import agent_utils
-from slo_config import MB
+from slo_config import calculate_slo_reward
 
 
 class LGBN_Env(gymnasium.Env):
@@ -13,8 +13,8 @@ class LGBN_Env(gymnasium.Env):
         super().__init__()
         self.state = None
         self.lgbn = None
-        self.reload_lgbn_model()
-        self.reset()
+        # self.reload_lgbn_model()
+        # self.reset()
         self.done = False  # TODO: How can I optimize rounds with done?
 
     def step(self, action):
@@ -55,18 +55,3 @@ class LGBN_Env(gymnasium.Env):
         self.lgbn = agent_utils.train_lgbn_model(show_result=True)
         print("Retrained LGBN model for Env")
 
-
-def calculate_slo_reward(state, slos=MB['slos']):
-    fuzzy_slof = []
-
-    for index, value in enumerate(state):
-        func, k, c, boost = slos[index]
-        slo_f = boost * func(value, k, c)
-
-        slo_f = np.clip(slo_f, 0.0, 1.0)
-        # if slo_f > 1:
-        #     slo_f = 2 - slo_f
-
-        fuzzy_slof.append(slo_f)
-
-    return fuzzy_slof
