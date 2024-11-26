@@ -106,8 +106,7 @@ class DQN:
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
             with torch.no_grad():
-                # TODO: What does the CPU mean??
-                action = float(torch.argmax(self.Q(s_tensor)).cpu().numpy())
+                action = float(torch.argmax(self.Q(s_tensor)).cpu().numpy())  # Must bring tensor to CPU for Numpy
 
         return action
 
