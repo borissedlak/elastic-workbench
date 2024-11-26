@@ -63,8 +63,7 @@ class QNetwork(nn.Module):
         self.fc_2 = nn.Linear(8, 8).to(device)
         self.fc_out = nn.Linear(8, action_dim).to(device)
 
-        # self.lr = q_lr
-
+        # TODO: Read more about Adam
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
 
     def forward(self, x):
@@ -98,15 +97,14 @@ class DQN:
         self.training_time = None
         self.env = LGBN_Env()
 
+    @torch.no_grad()  # We don't want to store gradient updates here at inference
     def choose_action(self, state):
-
         s_tensor = torch.FloatTensor(state).to(device)
 
         if self.epsilon > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
-            with torch.no_grad():
-                action = float(torch.argmax(self.Q(s_tensor)).cpu().numpy())  # Must bring tensor to CPU for Numpy
+            action = torch.argmax(self.Q(s_tensor)).cpu().numpy()  # Must bring tensor to CPU for Numpy
 
         return action
 
@@ -170,7 +168,6 @@ class DQN:
         self.Q.optimizer.zero_grad()
         q_loss.mean().backward()
         self.Q.optimizer.step()
-        #### Q train ####
 
         #### Q soft-update ####
         for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
