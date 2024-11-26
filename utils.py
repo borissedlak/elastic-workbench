@@ -114,7 +114,7 @@ def sigmoid(x, k=1, c=0):
 @print_execution_time
 def write_metrics_to_csv(lines):
     # Define the directory and file name
-    directory = "./metrics"
+    directory = "./share/metrics"
     file_name = "LGBN.csv"
     file_path = os.path.join(directory, file_name)
 

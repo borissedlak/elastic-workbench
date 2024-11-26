@@ -1,6 +1,8 @@
 import logging
+import os
 import random
 from collections import deque
+from datetime import datetime
 
 import numpy as np
 import torch
@@ -18,37 +20,9 @@ logging.getLogger("multiscale").setLevel(logging.INFO)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using {"GPU (CUDA)" if torch.cuda.is_available() else "CPU"} for training")
 
+torch.autograd.set_detect_anomaly(True)
 
-# ReplayBuffer from https://github.com/seungeunrho/minimalRL
-class ReplayBuffer:
-    def __init__(self, buffer_limit):
-        self.buffer = deque(maxlen=buffer_limit)
-
-    def put(self, transition):
-        self.buffer.append(transition)
-
-    def sample(self, n):
-        mini_batch = random.sample(self.buffer, n)
-        s_lst, a_lst, r_lst, s_prime_lst, done_mask_lst = [], [], [], [], []
-
-        for transition in mini_batch:
-            s, a, r, s_prime, done_mask = transition
-            s_lst.append(s)
-            a_lst.append([a])
-            r_lst.append([r])
-            s_prime_lst.append(s_prime)
-            done_mask_lst.append([done_mask])
-
-        s_batch = torch.tensor(s_lst, dtype=torch.float).to(device)
-        a_batch = torch.tensor(np.array(a_lst), dtype=torch.float).to(device)
-        r_batch = torch.tensor(np.array(r_lst), dtype=torch.float).to(device)
-        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(device)
-        d_batch = torch.tensor(done_mask_lst).to(device)
-
-        return s_batch, a_batch, r_batch, s_prime_batch, d_batch
-
-    def size(self):
-        return len(self.buffer)
+NN_FOLDER = "../share/networks"
 
 
 class QNetwork(nn.Module):
@@ -74,7 +48,7 @@ class QNetwork(nn.Module):
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, force_restart = False):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -91,14 +65,20 @@ class DQN:
         self.max_output = 2000
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Q-Network
+
+        if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
+            self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
+            logger.info("Loaded existing Q network on startup")
+
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
 
-        self.training_time = None
+        self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
+        self.currently_training = False
         self.env = LGBN_Env()
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
-    def choose_action(self, state):
+    def choose_action(self, state: np.ndarray):
         s_tensor = torch.FloatTensor(state).to(device)
 
         if self.epsilon > np.random.rand():  # Explore
@@ -117,15 +97,18 @@ class DQN:
 
     @utils.print_execution_time
     def train_dqn_from_env(self):
+        self.currently_training = True
+
         self.env.reload_lgbn_model()
         self.env.reset()
-        self.reset_q_networks()  # TODO: Resume training from intermediary point
+        # TODO: Resume training from intermediary point, this will also decrease the runtime
+        # self.reset_q_networks()
 
-        score = 0.0
+        episode_score = 0.0
         score_list = []
         round_counter = 0
 
-        while round_counter < 20 * 500:
+        while round_counter < 5 * 100:
 
             initial_state = self.env.state.copy()
             action = self.choose_action(np.array(self.env.state))
@@ -133,25 +116,27 @@ class DQN:
             # print(f"State transition {initial_state}, {action} --> {next_state}")
 
             self.memory.put((initial_state, action, reward, next_state, done))
-            score += reward
+            episode_score += reward
 
             if self.memory.size() > self.batch_size:
                 self.train_batch()
 
             round_counter += 1
 
-            if round_counter % 500 == 0:
+            if round_counter % 100 == 0:
                 self.env.reset()
                 self.epsilon *= self.epsilon_decay
+                score_list.append(episode_score)
+                episode_score = 0.0
 
-                # print("EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}".format(round_counter, score, self.epsilon))
-                score_list.append(score)
-                score = 0.0
+        if logger.level == logging.INFO:
+            logger.info(f"Average Score for 5 last rounds: {np.average(score_list[-5:])}")
+            plt.plot(score_list)
+            plt.show()
 
-        print(f"Average Score for 5 last rounds: {np.average(score_list[-5:])}")
-        # TODO: DO this through an animation or interactive plot
-        plt.plot(score_list)
-        plt.show()
+        self.store_dqn_as_file()
+        self.last_time_trained = datetime.now()
+        self.currently_training = False
 
     # @utils.print_execution_time
     def train_batch(self):
@@ -177,3 +162,39 @@ class DQN:
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
+
+    def store_dqn_as_file(self):
+        torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
+        # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
+
+
+# ReplayBuffer from https://github.com/seungeunrho/minimalRL
+class ReplayBuffer:
+    def __init__(self, buffer_limit: int):
+        self.buffer = deque(maxlen=buffer_limit)
+
+    def put(self, transition):
+        self.buffer.append(transition)
+
+    def sample(self, n: int):
+        mini_batch = random.sample(self.buffer, n)
+        s_lst, a_lst, r_lst, s_prime_lst, done_mask_lst = [], [], [], [], []
+
+        for transition in mini_batch:
+            s, a, r, s_prime, done_mask = transition
+            s_lst.append(s)
+            a_lst.append([a])
+            r_lst.append([r])
+            s_prime_lst.append(s_prime)
+            done_mask_lst.append([done_mask])
+
+        s_batch = torch.tensor(s_lst, dtype=torch.float).to(device)
+        a_batch = torch.tensor(np.array(a_lst), dtype=torch.float).to(device)
+        r_batch = torch.tensor(np.array(r_lst), dtype=torch.float).to(device)
+        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(device)
+        d_batch = torch.tensor(done_mask_lst).to(device)
+
+        return s_batch, a_batch, r_batch, s_prime_batch, d_batch
+
+    def size(self):
+        return len(self.buffer)

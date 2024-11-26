@@ -16,14 +16,6 @@ class ScalingEnv(gymnasium.Env):
         self.pixel = None
         self.reset()
 
-        # Define the action space (e.g., discrete actions: 0, 1, 2)
-        # self.action_space = spaces.Discrete(9)
-        #
-        # # Define the observation space (e.g., a continuous vector with 2 elements)
-        # self.observation_space = spaces.Box(low=np.array([100, 0]),
-        #                                     high=np.array([2000, 999]),
-        #                                     dtype=np.int64)
-
         # Initialize the state
         self.state = None
         self.done = False

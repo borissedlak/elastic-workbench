@@ -6,7 +6,6 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
-from sklearn.linear_model import LinearRegression
 
 logger = logging.getLogger('multiscale')
 
@@ -24,28 +23,27 @@ def print_execution_time(func):
     return wrapper
 
 
-def get_regression_model(df):
-    X = df[['pixel', 'cores']].values  # Predictor variable (must be 2D for sklearn)
-    y = df['fps'].values  # Target variable
+# def get_regression_model(df):
+#     X = df[['pixel', 'cores']].values  # Predictor variable (must be 2D for sklearn)
+#     y = df['fps'].values  # Target variable
+#
+#     model = LinearRegression()
+#     model.fit(X, y)
+#
+#     return model
 
-    model = LinearRegression()
-    model.fit(X, y)
 
-    return model
-
-
-@print_execution_time
+# @print_execution_time # Roughly 1 to 1.5s
 def train_lgbn_model(show_result=False):
-
-    df = pd.read_csv("../metrics/LGBN.csv")
+    df = pd.read_csv("../share/metrics/LGBN.csv")
 
     model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
     XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df)
 
     if show_result:
-        for cpd in model.get_cpds():
-            print(cpd)
+        # for cpd in model.get_cpds():
+        #     print(cpd)
 
         states = ["pixel", "fps"]
         X_samples = model.simulate(1000, 35)

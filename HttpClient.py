@@ -9,7 +9,7 @@ class HttpClient:
         self.CHANGE_THREADS_ROUTE = "/change_threads"
         self.CHANGE_CONFIG_ROUTE = "/change_config"
 
-        print(f"Opening HTTP Connection on port {self.PORT}")
+        # print(f"Opening HTTP Connection on port {self.PORT}")
 
     def change_threads(self, target_route, number):
         query_params = {"thread_number": number}
