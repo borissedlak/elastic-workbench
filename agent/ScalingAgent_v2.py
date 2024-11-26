@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from threading import Thread
 
 import numpy as np
@@ -14,6 +16,7 @@ from agent.LGBN_Env import LGBN_Env, calculate_slo_reward
 from slo_config import MB
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+logging.getLogger("multiscale").setLevel(logging.INFO)
 
 
 # TODO: So what the agent must do on a high level is:
@@ -33,15 +36,24 @@ class AIFAgent(Thread):
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
-        self.round_counter = 0
-        self.dqn = DQNAgent(state_dim=2, action_dim=9)
+        # self.round_counter = 0
+        self.dqn = DQNAgent(state_dim=2, action_dim=3)
         self.env = LGBN_Env()
 
     def run(self):
+        while True:
+            self.dqn.reset_networks()  # TODO: Resume training from intermediary point
+            self.train()
+            time.sleep(10)
+            self.env.reload_lgbn_model()
+
+    @utils.print_execution_time
+    def train(self):
         score = 0.0
         score_list = []
+        round_counter = 0
 
-        while self.round_counter < 200 * 500:
+        while round_counter < 20 * 500:
 
             initial_state = self.env.state.copy()
             action = self.dqn.choose_action(torch.FloatTensor(np.array(self.env.state)))
@@ -54,15 +66,15 @@ class AIFAgent(Thread):
             if self.dqn.memory.size() > self.dqn.batch_size:
                 self.dqn.train_agent()
 
-            self.round_counter += 1
+            round_counter += 1
 
-            if self.round_counter % 500 == 0:
+            if round_counter % 500 == 0:
                 self.env.reset()
                 self.dqn.epsilon *= self.dqn.epsilon_decay
 
                 print(
                     "EP:{}, Abs_Score:{:.1f}, Epsilon:{:.3f}, SLO-F:{:.2f}, State:{}".format(
-                        self.round_counter, score, self.dqn.epsilon,
+                        round_counter, score, self.dqn.epsilon,
                         np.sum(calculate_slo_reward(self.env.state)),
                         self.env.state))
                 score_list.append(score)
@@ -72,7 +84,7 @@ class AIFAgent(Thread):
         plt.plot(score_list)
         plt.show()
 
-    def get_current_state(self):
+    def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
         prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=INTERVAL)
         prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))

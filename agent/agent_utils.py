@@ -18,7 +18,7 @@ def print_execution_time(func):
         end_time = time.time()
         execution_time_ms = (end_time - start_time) * 1000.0
         logger.info(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
-        print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
+        # print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
         return result
 
     return wrapper
@@ -35,10 +35,7 @@ def get_regression_model(df):
 
 
 @print_execution_time
-def train_lgbn_model():
-    # if False:  # os.path.isfile("model.xml"):
-    #     model = XMLBIFReader("model.xml").get_model()
-    # else:
+def train_lgbn_model(show_result=False):
 
     df = pd.read_csv("../metrics/LGBN.csv")
 
@@ -46,14 +43,15 @@ def train_lgbn_model():
     XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df)
 
-    for cpd in model.get_cpds():
-        print(cpd)
+    if show_result:
+        for cpd in model.get_cpds():
+            print(cpd)
 
-    states = ["pixel", "fps"]
-    X_samples = model.simulate(1000, 35)
-    X_df = pd.DataFrame(X_samples, columns=states)
+        states = ["pixel", "fps"]
+        X_samples = model.simulate(1000, 35)
+        X_df = pd.DataFrame(X_samples, columns=states)
 
-    sns.jointplot(x=X_df["pixel"], y=X_df["fps"], kind="kde", height=10, space=0, cmap="viridis")
-    plt.show()
+        sns.jointplot(x=X_df["pixel"], y=X_df["fps"], kind="kde", height=10, space=0, cmap="viridis")
+        plt.show()
 
     return model

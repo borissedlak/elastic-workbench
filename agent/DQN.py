@@ -1,3 +1,4 @@
+import logging
 import random
 from collections import deque
 
@@ -7,11 +8,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-# Check if GPU is available
-# if torch.cuda.is_available():
-#     print("GPU is available!")
-# else:
-#     print("GPU is not available.")
+logger = logging.getLogger("multiscale")
+logging.getLogger("multiscale").setLevel(logging.INFO)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using {"GPU (CUDA)" if torch.cuda.is_available() else "CPU"} for training")
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
@@ -77,7 +78,7 @@ class DQNAgent:
         self.gamma = 0.98
         self.tau = 0.01  # 0.01
         self.epsilon = 1.0
-        self.epsilon_decay = 0.97  # 0.98
+        self.epsilon_decay = 0.95  # 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
         self.batch_size = 200
@@ -127,3 +128,8 @@ class DQNAgent:
         #### Q soft-update ####
         for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
+
+    def reset_networks(self):
+        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
+        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
+        self.Q_target.load_state_dict(self.Q.state_dict())

@@ -4,7 +4,6 @@ import gymnasium
 import numpy as np
 import pandas as pd
 
-import utils
 from agent import agent_utils
 from slo_config import MB
 
@@ -17,10 +16,6 @@ class LGBN_Env(gymnasium.Env):
         self.reload_lgbn_model()
         self.reset()
         self.done = False  # TODO: How can I optimize rounds with done?
-
-    # def get_current_state(self):
-    #     fps_infer = int(self.regression_model.predict([[self.pixel, 2.0]])[0])
-    #     return np.array([self.pixel, fps_infer])
 
     def step(self, action):
         punishment_off = 0
@@ -57,7 +52,8 @@ class LGBN_Env(gymnasium.Env):
         return self.state, {}
 
     def reload_lgbn_model(self):
-        self.lgbn = agent_utils.train_lgbn_model()
+        self.lgbn = agent_utils.train_lgbn_model(show_result=True)
+        print("Retrained LGBN model for Env")
 
 
 def calculate_slo_reward(state, slos=MB['slos']):
