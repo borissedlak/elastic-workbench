@@ -51,7 +51,7 @@ class AIFAgent(Thread):
 
             # TODO: This should have an own exploration factor which is a consequence of the model quality
             action_pw = self.dqn.choose_action(np.array(state_pw_f))
-            # self.act_on_env(action_pw, state_pw_f)
+            self.act_on_env(action_pw, state_pw_f)
 
             time.sleep(5)  # TODO: Should be 5s
 

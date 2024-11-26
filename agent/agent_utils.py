@@ -7,6 +7,8 @@ from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
 
+import utils
+
 logger = logging.getLogger('multiscale')
 
 
@@ -36,10 +38,11 @@ def print_execution_time(func):
 # @print_execution_time # Roughly 1 to 1.5s
 def train_lgbn_model(show_result=False):
     df = pd.read_csv("../share/metrics/LGBN.csv")
+    df_filtered = filter_3s_after_change(df)
 
     model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
     XMLBIFWriter(model).write_xmlbif("../model.xml")
-    model.fit(df)
+    model.fit(df_filtered)
 
     if show_result:
         # for cpd in model.get_cpds():
@@ -53,3 +56,19 @@ def train_lgbn_model(show_result=False):
         plt.show()
 
     return model
+
+@utils.print_execution_time
+def filter_3s_after_change(df: pd.DataFrame):
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    # Identify timestamps where the flag is True
+    flagged_times = df.loc[df['change_flag'], 'timestamp']
+
+    # Add a 3-second range for each flagged timestamp
+    mask = pd.Series(False, index=df.index)
+
+    for t in flagged_times:
+        mask |= (df['timestamp'] >= t) & (df['timestamp'] <= t + pd.Timedelta(seconds=3))
+
+    filtered_df = df[~mask]
+    return filtered_df
