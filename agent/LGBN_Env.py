@@ -4,6 +4,7 @@ import gymnasium
 import numpy as np
 import pandas as pd
 
+import utils
 from agent import agent_utils
 from slo_config import MB
 
@@ -13,8 +14,8 @@ class LGBN_Env(gymnasium.Env):
         super().__init__()
         self.state = None
         self.lgbn = None
-        self.reset()
         self.reload_lgbn_model()
+        self.reset()
         self.done = False  # TODO: How can I optimize rounds with done?
 
     # def get_current_state(self):
@@ -35,16 +36,23 @@ class LGBN_Env(gymnasium.Env):
         elif 6 <= action < 9:
             punishment_off = - 10
 
-        #TODO: Finish this; get sample from std and mean
-        self.lgbn.predict(pd.DataFrame({'pixel': [self.state[0]]}))
-        self.state[1] = 0
+        self.state[1] = self.sample_fps_from_lgbn(self.state[0])
 
         reward = np.sum(calculate_slo_reward(self.state)) + punishment_off
         return self.state, reward, self.done, False, {}
 
+    # @utils.print_execution_time
+    # TODO: Make this more modular
+    def sample_fps_from_lgbn(self, pixel):
+        var, mean, vari = self.lgbn.predict(pd.DataFrame({'pixel': [pixel]}))
+        mu, sigma = mean[0][0], np.sqrt(vari[0][0])
+        sample = np.random.normal(mu, sigma, 1)[0]
+        return sample
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.state = [randint(1, 20) * 100]
+        pixel = randint(1, 20) * 100
+        self.state = [pixel, self.sample_fps_from_lgbn(pixel)]
 
         return self.state, {}
 

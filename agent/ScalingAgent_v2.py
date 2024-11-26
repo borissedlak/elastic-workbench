@@ -34,14 +34,14 @@ class AIFAgent(Thread):
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         self.round_counter = 0
-        self.dqn = DQNAgent(state_dim=2, action_dim=3)
+        self.dqn = DQNAgent(state_dim=2, action_dim=9)
         self.env = LGBN_Env()
 
     def run(self):
         score = 0.0
         score_list = []
 
-        while self.round_counter < 40 * 500:
+        while self.round_counter < 200 * 500:
 
             initial_state = self.env.state.copy()
             action = self.dqn.choose_action(torch.FloatTensor(np.array(self.env.state)))
