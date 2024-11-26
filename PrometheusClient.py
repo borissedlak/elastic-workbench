@@ -3,7 +3,7 @@ from prometheus_api_client import PrometheusConnect
 import utils
 from slo_config import MB
 
-INTERVAL = "3s"
+# INTERVAL = "2s"
 
 
 class PrometheusClient:

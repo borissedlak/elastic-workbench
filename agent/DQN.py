@@ -20,6 +20,8 @@ logging.getLogger("multiscale").setLevel(logging.INFO)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using {"GPU (CUDA)" if torch.cuda.is_available() else "CPU"} for training")
 
+if not torch.cuda.is_available():
+    torch.set_num_threads(1)
 torch.autograd.set_detect_anomaly(True)
 
 NN_FOLDER = "../share/networks"
@@ -97,6 +99,8 @@ class DQN:
 
     @utils.print_execution_time
     def train_dqn_from_env(self):
+        # print(f"Threads: ", torch.get_num_threads())
+
         self.currently_training = True
 
         self.env.reload_lgbn_model()
@@ -158,11 +162,12 @@ class DQN:
         for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
 
-    def reset_q_networks(self):
-        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
-        self.Q_target.load_state_dict(self.Q.state_dict())
+    # def reset_q_networks(self):
+    #     self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
+    #     self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
+    #     self.Q_target.load_state_dict(self.Q.state_dict())
 
+    @utils.print_execution_time
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
         # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")

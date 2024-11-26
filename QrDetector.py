@@ -35,6 +35,7 @@ class QrDetector(VehicleService):
 
         self.webcam_stream = VideoReader()
         self.webcam_stream.start()
+        self.flag_next_metrics = False
 
     def process_one_iteration(self, config_params, frame) -> None:
 
@@ -77,7 +78,9 @@ class QrDetector(VehicleService):
                 # energy.labels(service_id="video", metric_id="energy").set(randint(1, 20))
                 cores.labels(service_id="video", metric_id="cores").set(self.cores)
 
-                metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores))
+                metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
+                                      self.flag_next_metrics))
+                self.flag_next_metrics = False
                 if len(metric_buffer) >= 15:
                     utils.write_metrics_to_csv(metric_buffer)
                     metric_buffer.clear()
@@ -98,6 +101,7 @@ class QrDetector(VehicleService):
 
     def change_config(self, config):
         self.service_conf = config
+        self.flag_next_metrics = True
         logger.info(f"QR Detector changed to {config}")
 
     # TODO: Takes too long with 106ms

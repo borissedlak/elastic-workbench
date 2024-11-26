@@ -10,7 +10,7 @@ import utils
 from DQN import DQN
 from DockerClient import DockerClient
 from HttpClient import HttpClient
-from PrometheusClient import INTERVAL, PrometheusClient
+from PrometheusClient import PrometheusClient
 from slo_config import MB
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -42,7 +42,7 @@ class AIFAgent(Thread):
         while True:
 
             #### TRAINING OCCASIONALLY #####
-            if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=1):
+            if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=30):
                 Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
 
             #### REAL INFERENCE ############
@@ -53,21 +53,20 @@ class AIFAgent(Thread):
             action_pw = self.dqn.choose_action(np.array(state_pw_f))
             # self.act_on_env(action_pw, state_pw_f)
 
-            time.sleep(1)  # TODO: Should be 5s
+            time.sleep(5)  # TODO: Should be 5s
 
     # def retrain_Q_network(self):
     #     self.train()
 
     def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
-        prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=INTERVAL)
+        prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period="2s")
         prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
 
         cpu_cores = os.cpu_count()
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
 
     def act_on_env(self, a_pixel, state_f):
-
         if 0 <= a_pixel < 3:
             delta_pixel = int((a_pixel - 1) * 100)
             pixel_abs = state_f[0] + delta_pixel
