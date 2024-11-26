@@ -35,11 +35,11 @@ class ReplayBuffer:
             s_prime_lst.append(s_prime)
             done_mask_lst.append([done_mask])
 
-        s_batch = torch.tensor(s_lst, dtype=torch.float)
-        a_batch = torch.tensor(np.array(a_lst), dtype=torch.float)
-        r_batch = torch.tensor(np.array(r_lst), dtype=torch.float)
-        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float)
-        d_batch = torch.tensor(done_mask_lst)
+        s_batch = torch.tensor(s_lst, dtype=torch.float).to(device)
+        a_batch = torch.tensor(np.array(a_lst), dtype=torch.float).to(device)
+        r_batch = torch.tensor(np.array(r_lst), dtype=torch.float).to(device)
+        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(device)
+        d_batch = torch.tensor(done_mask_lst).to(device)
 
         return s_batch, a_batch, r_batch, s_prime_batch, d_batch
 
@@ -55,9 +55,9 @@ class QNetwork(nn.Module):
         # self.fc_2 = nn.Linear(64, 32)
         # self.fc_out = nn.Linear(32, action_dim)
         # Interestingly, this is way better for my simple regression task
-        self.fc_1 = nn.Linear(state_dim, 8)
-        self.fc_2 = nn.Linear(8, 8)
-        self.fc_out = nn.Linear(8, action_dim)
+        self.fc_1 = nn.Linear(state_dim, 8).to(device)
+        self.fc_2 = nn.Linear(8, 8).to(device)
+        self.fc_out = nn.Linear(8, action_dim).to(device)
 
         # self.lr = q_lr
 
@@ -87,17 +87,19 @@ class DQNAgent:
         self.min_output = 100
         self.max_output = 2000
 
-        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
+        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Q-Network
+        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
         self.Q_target.load_state_dict(self.Q.state_dict())
 
     def choose_action(self, state):
+
+        s_tensor = torch.FloatTensor(state).to(device)
 
         if self.epsilon > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
             with torch.no_grad():
-                action = float(torch.argmax(self.Q(state)).numpy())
+                action = float(torch.argmax(self.Q(s_tensor)).cpu().numpy())
 
         return action
 

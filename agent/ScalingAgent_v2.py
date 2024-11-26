@@ -4,7 +4,6 @@ import time
 from threading import Thread
 
 import numpy as np
-import torch
 from matplotlib import pyplot as plt
 
 import utils
@@ -56,7 +55,7 @@ class AIFAgent(Thread):
         while round_counter < 20 * 500:
 
             initial_state = self.env.state.copy()
-            action = self.dqn.choose_action(torch.FloatTensor(np.array(self.env.state)))
+            action = self.dqn.choose_action(np.array(self.env.state))
             next_state, reward, done, _, _ = self.env.step(action)
             # print(f"State transition {initial_state}, {action} --> {next_state}")
 
