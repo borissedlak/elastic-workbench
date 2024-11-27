@@ -29,6 +29,7 @@ class AIFAgent(Thread):
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=4, action_dim=5)
         self.explore_initial = list(itertools.product([500, 1200], [3, 7]))
+        self.unchanged_iterations = 0
 
     def run(self):
         while True:
@@ -40,6 +41,7 @@ class AIFAgent(Thread):
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()
             state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'], state_pw['energy']]
+            logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
             # TODO: This should have an own exploration factor which is a consequence of the model quality
             if len(self.explore_initial) > 0:
@@ -47,14 +49,14 @@ class AIFAgent(Thread):
             else:
                 action_pw = self.dqn.choose_action(np.array(state_pw_f))
             self.act_on_env(action_pw, state_pw_f)
-            logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
-            time.sleep(4)
+            time.sleep(4.5)
 
     def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
-        # TODO: Make this dynamic according to the last change taken by the agent
-        prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period="2s")
+
+        obs_period = (self.unchanged_iterations + 1) * 2
+        prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=f"{obs_period}s")
 
         prom_parameter_states = {}
         while len(prom_parameter_states) < 2:
@@ -69,7 +71,11 @@ class AIFAgent(Thread):
     def act_on_env(self, action, state_f):
         if action == 0:
             logger.info(f"No change requested, system conf stays at {state_f[0], state_f[2]}")
-        elif 1 <= action <= 2:
+            self.unchanged_iterations += 1
+        else:
+            self.unchanged_iterations = 0
+
+        if 1 <= action <= 2:
             delta_pixel = -100 if action == 1 else 100
             pixel_abs = state_f[0] + delta_pixel
             pixel_abs = np.clip(pixel_abs, 100, 2000)

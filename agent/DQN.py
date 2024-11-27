@@ -166,7 +166,7 @@ class DQN:
     #     self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
     #     self.Q_target.load_state_dict(self.Q.state_dict())
 
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
         # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
