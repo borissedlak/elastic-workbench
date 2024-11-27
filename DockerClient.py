@@ -4,7 +4,9 @@ import docker
 
 import utils
 
+
 logger = logging.getLogger("multiscale")
+logging.getLogger("multiscale").setLevel(logging.INFO)
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
@@ -31,6 +33,15 @@ class DockerClient:
         else:
             return "Unknown"
 
+    @utils.print_execution_time
+    def get_container_stats(self, container_ref, stream_p=False):
+        try:
+            container = self.client.containers.get(container_ref)
+            stats = container.stats(stream=stream_p, decode=stream_p)
+            return stats
+        except Exception as e:
+            logger.error("Could not connect to docker container", e)
+
     # def get_max_cpus(self):
     #     container = self.client.containers.get("multiscaler-video-processing-1")
     #     cpu_set = container.attrs['HostConfig']['CpusetCpus']
@@ -43,4 +54,9 @@ class DockerClient:
 if __name__ == "__main__":
     client = DockerClient(DOCKER_SOCKET)
     # client.update_cpu("67959d3ff81a", 5)
-    print(client.get_container_id("multiscaler-video-processing-1"))
+    stream = client.get_container_stats("multiscaler-video-processing-1", stream=True)
+
+    for s in stream:
+        # print(utils.calculate_cpu_percentage(s))
+        print(1)
+    # print(utils.calculate_cpu_percentage(client.get_container_stats("multiscaler-video-processing-1")))

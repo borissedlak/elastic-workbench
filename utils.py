@@ -52,7 +52,7 @@ def print_execution_time(func):
         end_time = time.time()
         execution_time_ms = (end_time - start_time) * 1000.0
         logger.info(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
-        # print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
+        print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
         return result
 
     return wrapper
@@ -133,3 +133,12 @@ def write_metrics_to_csv(lines):
             writer.writerow(["timestamp", "fps", "pixel", "cores", "change_flag"])
 
         writer.writerows(lines)
+
+def calculate_cpu_percentage(stats):
+
+    cpu_delta: int = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+    system_delta: int = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+    number_of_cores: int = 16
+    cpu_percent: float = (cpu_delta / system_delta) * number_of_cores * 100
+
+    return int(cpu_percent)

@@ -9,17 +9,21 @@ from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
+from DockerClient import DockerClient
 from VehicleService import VehicleService
 from VideoReader import VideoReader
 
 DEVICE_NAME = utils.get_env_param("DEVICE_NAME", "Unknown")
+DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
 fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
-pixel = Gauge('pixel', 'Current processing FPS', ['service_id', 'metric_id'])
-# energy = Gauge('energy', 'Current processing FPS', ['service_id', 'metric_id'])
-cores = Gauge('cores', 'Current processing FPS', ['service_id', 'metric_id'])
+pixel = Gauge('pixel', 'Current configured pixel', ['service_id', 'metric_id'])
+energy = Gauge('energy', 'Current processing energy', ['service_id', 'metric_id'])
+cores = Gauge('cores', 'Current configured cores', ['service_id', 'metric_id'])
+
+docker_stats = None
 
 
 class QrDetector(VehicleService):
@@ -36,6 +40,10 @@ class QrDetector(VehicleService):
         self.webcam_stream = VideoReader()
         self.webcam_stream.start()
         self.flag_next_metrics = False
+        self.docker_client = DockerClient(DOCKER_SOCKET)
+        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-1", stream=True)
+
+        threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 
     def process_one_iteration(self, config_params, frame) -> None:
 
@@ -75,8 +83,15 @@ class QrDetector(VehicleService):
                 processing_fps = self.fps.get_current_fps()
                 fps.labels(service_id="video", metric_id="fps").set(processing_fps)
                 pixel.labels(service_id="video", metric_id="pixel").set(self.service_conf['pixel'])
-                # energy.labels(service_id="video", metric_id="energy").set(randint(1, 20))
                 cores.labels(service_id="video", metric_id="cores").set(self.cores)
+
+                try:
+                    cpu_load = utils.calculate_cpu_percentage(docker_stats)
+                except KeyError as e:
+                    logger.warning(f"Cannot load in first iteration, setting to 0 for now; {e.args}")
+                    cpu_load = 0
+                energy.labels(service_id="video", metric_id="energy").set(cpu_load)
+
 
                 metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
                                       self.flag_next_metrics))
@@ -115,6 +130,12 @@ class QrDetector(VehicleService):
         self.cores = c_threads
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
+
+# TODO: Must check the additional load to the thread
+def resolve_docker_load(stream_object):
+    global docker_stats
+    for stats in stream_object:
+        docker_stats = stats
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from agent import agent_utils
-from slo_config import calculate_slo_reward
+from slo_config import calculate_slo_reward, PW_MAX_CORES
 
 logger = logging.getLogger("multiscale")
 
@@ -21,26 +21,30 @@ class LGBN_Env(gymnasium.Env):
     def step(self, action):
         punishment_off = 0
 
-        if 0 <= action < 3:
-            delta_pixel = int((action - 1) * 100)
+        # Do nothing at 0
+        if 1 <= action <= 2:
+            delta_pixel = -100 if action == 1 else 100
             self.state[0] += delta_pixel
             if self.state[0] < 100 or self.state[0] > 2000:
                 self.state[0] = np.clip(self.state[0], 100, 2000)
                 punishment_off = - 10
-        elif 3 <= action < 6:
-            punishment_off = - 10
-        elif 6 <= action < 9:
-            punishment_off = - 10
 
-        self.state[1] = self.sample_fps_from_lgbn(self.state[0])
+        elif 3 <= action <= 4:
+            delta_cores = -1 if action == 3 else 1
+            self.state[2] += delta_cores
+            if self.state[2] < 1 or self.state[2] > PW_MAX_CORES:
+                self.state[2] = np.clip(self.state[2], 1, PW_MAX_CORES)
+                punishment_off = - 10
+
+        self.state[1] = self.sample_fps_from_lgbn(self.state[0], self.state[2])
 
         reward = np.sum(calculate_slo_reward(self.state)) + punishment_off
         return self.state, reward, self.done, False, {}
 
     # @utils.print_execution_time
     # TODO: Make this more modular
-    def sample_fps_from_lgbn(self, pixel):
-        var, mean, vari = self.lgbn.predict(pd.DataFrame({'pixel': [pixel]}))
+    def sample_fps_from_lgbn(self, pixel, cores):
+        var, mean, vari = self.lgbn.predict(pd.DataFrame({'pixel': [pixel], 'cores': [cores]}))
         mu, sigma = mean[0][0], np.sqrt(vari[0][0])
         sample = np.random.normal(mu, sigma, 1)[0]
         return sample
@@ -48,7 +52,8 @@ class LGBN_Env(gymnasium.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         pixel = randint(1, 20) * 100
-        self.state = [pixel, self.sample_fps_from_lgbn(pixel)]
+        cores = randint(1, PW_MAX_CORES)
+        self.state = [pixel, self.sample_fps_from_lgbn(pixel, cores), cores]
 
         return self.state, {}
 

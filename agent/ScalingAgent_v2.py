@@ -11,22 +11,12 @@ from DQN import DQN
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
-from slo_config import MB
+from slo_config import MB, PW_MAX_CORES
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.INFO)
-
-
-# TODO: So what the agent must do on a high level is:
-#  1) Collect sensory state from Prometheus --> Easy ✓
-#  2) Evaluate if SLOs are fulfilled --> Easy ✓
-#  3) Retrain its interpretation model --> Medium ✓
-#  4) Act so that SLO-F is optimized --> Hard ✓
-#  _
-#  However, I assume that the agent has the variable DAG and the SLO thresholds
-#  And I dont have to resolve variable names dynamically, but keep them hardcoded
 
 
 class AIFAgent(Thread):
@@ -36,7 +26,7 @@ class AIFAgent(Thread):
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
-        self.dqn = DQN(state_dim=2, action_dim=3)
+        self.dqn = DQN(state_dim=3, action_dim=5)
 
     def run(self):
         while True:
@@ -47,7 +37,7 @@ class AIFAgent(Thread):
 
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()
-            state_pw_f = [state_pw['pixel'], state_pw['fps']]
+            state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores']]
 
             # TODO: This should have an own exploration factor which is a consequence of the model quality
             action_pw = self.dqn.choose_action(np.array(state_pw_f))
@@ -57,6 +47,7 @@ class AIFAgent(Thread):
 
     def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
+        # TODO: Make this dynamic according to the last change taken by the agent
         prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period="2s")
 
         prom_parameter_states = {}
@@ -69,16 +60,23 @@ class AIFAgent(Thread):
         cpu_cores = os.cpu_count()
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
 
-    def act_on_env(self, a_pixel, state_f):
-        if 0 <= a_pixel < 3:
-            delta_pixel = int((a_pixel - 1) * 100)
+    def act_on_env(self, action, state_f):
+        if action == 0:
+            logger.info(f"No change requested, system conf stays at {state_f[0], state_f[2]}")
+        elif 1 <= action <= 2:
+            delta_pixel = -100 if action == 1 else 100
             pixel_abs = state_f[0] + delta_pixel
+            pixel_abs = np.clip(pixel_abs, 100, 2000)
 
-            if pixel_abs != state_f[0]:
-                logger.info(f"Request pixel to change to {pixel_abs}")
-                self.http_client.change_config("localhost", {'pixel': int(pixel_abs)})
-            else:
-                logger.info(f"No change requested, pixel stay at {pixel_abs}")
+            logger.info(f"Change pixel to {pixel_abs, state_f[2]}")
+            self.http_client.change_config("localhost", {'pixel': int(pixel_abs)})
+        elif 3 <= action <= 4:
+            delta_cores = -1 if action == 3 else 1
+            cores_abs = state_f[2] + delta_cores
+            cores_abs = np.clip(cores_abs, 1, PW_MAX_CORES)
+
+            logger.info(f"Change cores to {state_f[0], cores_abs}")
+            self.http_client.change_threads("localhost", int(cores_abs))
 
 
 if __name__ == '__main__':
