@@ -12,7 +12,7 @@ from DQN import DQN
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
-from slo_config import MB, PW_MAX_CORES
+from slo_config import MB, PW_MAX_CORES, calculate_slo_reward
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
@@ -47,6 +47,7 @@ class AIFAgent(Thread):
             else:
                 action_pw = self.dqn.choose_action(np.array(state_pw_f))
             self.act_on_env(action_pw, state_pw_f)
+            logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
             time.sleep(4)
 

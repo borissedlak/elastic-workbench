@@ -27,11 +27,11 @@ def calculate_slo_reward(state, slos=MB['slos']):
         t, neg, boost = slos[index]
 
         if neg:
-            slo_f = 1 / (value / t)
+            slo_f = 1 - (value / t)
         else:
             slo_f = (value / t)
 
-        slo_f = np.clip(slo_f, 0.0, 1.15) * boost
+        slo_f = np.clip(slo_f, 0.0, 1.10) * boost
 
         # punishment = 0
         # if index == 0 and slo_f > 1.15:
