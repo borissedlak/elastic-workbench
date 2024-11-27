@@ -57,7 +57,7 @@ def train_lgbn_model(show_result=False):
 
     return model
 
-@utils.print_execution_time
+# @utils.print_execution_time # Recently almost 500ms
 def filter_3s_after_change(df: pd.DataFrame):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 

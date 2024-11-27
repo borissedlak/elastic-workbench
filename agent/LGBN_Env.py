@@ -53,5 +53,5 @@ class LGBN_Env(gymnasium.Env):
         return self.state, {}
 
     def reload_lgbn_model(self):
-        self.lgbn = agent_utils.train_lgbn_model(show_result=False)
+        self.lgbn = agent_utils.train_lgbn_model(show_result=True)
         logger.info("Retrained LGBN model for Env")

@@ -105,12 +105,13 @@ class DQN:
             self.currently_training = True
         except LinAlgError as e:
             logger.warning(f"Could not initialize ENV due to {e.args[0]}, waiting for more samples")
+            return
 
         episode_score = 0.0
         score_list = []
         round_counter = 0
 
-        while round_counter < 5 * 100:
+        while round_counter < 20 * 500:
 
             initial_state = self.env.state.copy()
             action = self.choose_action(np.array(self.env.state))
@@ -125,7 +126,7 @@ class DQN:
 
             round_counter += 1
 
-            if round_counter % 100 == 0:
+            if round_counter % 500 == 0:
                 self.env.reset()
                 self.epsilon *= self.epsilon_decay
                 score_list.append(episode_score)
@@ -168,7 +169,7 @@ class DQN:
     @utils.print_execution_time
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
-        torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
+        # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
