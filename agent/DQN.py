@@ -69,10 +69,10 @@ class DQN:
 
         if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
             self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
-            self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
+            # self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
             logger.info("Loaded existing Q network on startup")
-        else:
-            self.Q_target.load_state_dict(self.Q.state_dict())
+        # else:
+        self.Q_target.load_state_dict(self.Q.state_dict())
 
         self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
         self.currently_training = False

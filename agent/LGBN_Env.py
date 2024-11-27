@@ -10,6 +10,7 @@ from slo_config import calculate_slo_reward
 
 logger = logging.getLogger("multiscale")
 
+
 class LGBN_Env(gymnasium.Env):
     def __init__(self):
         super().__init__()
@@ -52,6 +53,5 @@ class LGBN_Env(gymnasium.Env):
         return self.state, {}
 
     def reload_lgbn_model(self):
-        self.lgbn = agent_utils.train_lgbn_model(show_result=True)
+        self.lgbn = agent_utils.train_lgbn_model(show_result=False)
         logger.info("Retrained LGBN model for Env")
-

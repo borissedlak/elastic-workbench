@@ -4,20 +4,25 @@ import utils
 
 MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
       'parameter': ['pixel', 'cores'],
-      'slos': [(utils.sigmoid, 0.015, 450, 1.0),
-               (utils.sigmoid, 0.35, 25, 1.0)]}
+      'slos': [(800, utils.sigmoid, 0.015, 450, 1.0),
+               (30, utils.sigmoid, 0.35, 25, 1.0)]}
 
 
 def calculate_slo_reward(state, slos=MB['slos']):
     fuzzy_slof = []
 
     for index, value in enumerate(state):
-        func, k, c, boost = slos[index]
-        slo_f = boost * func(value, k, c)
+        t, func, k, c, boost = slos[index]
+        # slo_f = boost * func(value, k, c)
+        slo_f = (value / t)
 
-        # slo_f = np.clip(slo_f, 0.0, 1.0)
-        if slo_f > 1.15:
-            slo_f = 2.15 - slo_f
+        # TODO: Right now this only punished high pixel, but it also needs an explicit energy SLO
+        punishment = 0
+        if index == 0 and slo_f > 1.15:
+            punishment = (slo_f - 1.15) / 2 # Might need to scale this
+
+        slo_f = np.clip(slo_f, 0.0, 1.15)
+        slo_f -= punishment
 
         fuzzy_slof.append(slo_f)
 

@@ -55,13 +55,16 @@ class AIFAgent(Thread):
 
             time.sleep(4)
 
-    # def retrain_Q_network(self):
-    #     self.train()
-
     def get_state_PW(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
         prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period="2s")
-        prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
+
+        prom_parameter_states = {}
+        while len(prom_parameter_states) == 0:
+            prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
+            if len(prom_parameter_states) == 0:
+                logger.warning("Need to query parameters again, result was empty")
+                time.sleep(0.1)
 
         cpu_cores = os.cpu_count()
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
@@ -71,8 +74,11 @@ class AIFAgent(Thread):
             delta_pixel = int((a_pixel - 1) * 100)
             pixel_abs = state_f[0] + delta_pixel
 
-            logger.info(f"Request pixel to change to {pixel_abs}")
-            self.http_client.change_config("localhost", {'pixel': int(pixel_abs)})
+            if pixel_abs != state_f[0]:
+                logger.info(f"Request pixel to change to {pixel_abs}")
+                self.http_client.change_config("localhost", {'pixel': int(pixel_abs)})
+            else:
+                logger.info(f"No change requested, pixel stay at {pixel_abs}")
 
 
 if __name__ == '__main__':

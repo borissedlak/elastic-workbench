@@ -40,13 +40,13 @@ def train_lgbn_model(show_result=False):
     df = pd.read_csv("../share/metrics/LGBN.csv")
     df_filtered = filter_3s_after_change(df)
 
-    model = LinearGaussianBayesianNetwork([('pixel', 'fps')])
+    model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps')])
     XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df_filtered)
 
     if show_result:
-        # for cpd in model.get_cpds():
-        #     print(cpd)
+        for cpd in model.get_cpds():
+            print(cpd)
 
         states = ["pixel", "fps"]
         X_samples = model.simulate(1000, 35)
