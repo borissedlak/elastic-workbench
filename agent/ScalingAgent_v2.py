@@ -23,7 +23,7 @@ logger.setLevel(logging.INFO)
 #  1) Collect sensory state from Prometheus --> Easy ✓
 #  2) Evaluate if SLOs are fulfilled --> Easy ✓
 #  3) Retrain its interpretation model --> Medium ✓
-#  4) Act so that SLO-F is optimized --> Hard
+#  4) Act so that SLO-F is optimized --> Hard ✓
 #  _
 #  However, I assume that the agent has the variable DAG and the SLO thresholds
 #  And I dont have to resolve variable names dynamically, but keep them hardcoded
@@ -41,11 +41,11 @@ class AIFAgent(Thread):
     def run(self):
         while True:
 
-            #### TRAINING OCCASIONALLY #####
+            # TRAINING OCCASIONALLY #####
             if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=30):
                 Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
 
-            #### REAL INFERENCE ############
+            # REAL INFERENCE ############
             state_pw = self.get_state_PW()
             state_pw_f = [state_pw['pixel'], state_pw['fps']]
 
@@ -53,7 +53,7 @@ class AIFAgent(Thread):
             action_pw = self.dqn.choose_action(np.array(state_pw_f))
             self.act_on_env(action_pw, state_pw_f)
 
-            time.sleep(5)  # TODO: Should be 5s
+            time.sleep(4)
 
     # def retrain_Q_network(self):
     #     self.train()

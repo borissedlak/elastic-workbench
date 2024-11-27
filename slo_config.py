@@ -15,9 +15,9 @@ def calculate_slo_reward(state, slos=MB['slos']):
         func, k, c, boost = slos[index]
         slo_f = boost * func(value, k, c)
 
-        slo_f = np.clip(slo_f, 0.0, 1.0)
-        # if slo_f > 1:
-        #     slo_f = 2 - slo_f
+        # slo_f = np.clip(slo_f, 0.0, 1.0)
+        if slo_f > 1.15:
+            slo_f = 2.15 - slo_f
 
         fuzzy_slof.append(slo_f)
 

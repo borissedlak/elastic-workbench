@@ -1,1 +1,3 @@
 venv
+share/networks/*
+share/metrics/*

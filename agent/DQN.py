@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from matplotlib import pyplot as plt
+from numpy.linalg import LinAlgError
 
 import utils
 from agent.LGBN_Env import LGBN_Env
@@ -31,10 +32,7 @@ class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, q_lr):
         super(QNetwork, self).__init__()
 
-        # self.fc_1 = nn.Linear(state_dim, 64)
-        # self.fc_2 = nn.Linear(64, 32)
-        # self.fc_out = nn.Linear(32, action_dim)
-        # Interestingly, this is way better for my simple regression task
+        # TODO: Find optimal number of neurons
         self.fc_1 = nn.Linear(state_dim, 8).to(device)
         self.fc_2 = nn.Linear(8, 8).to(device)
         self.fc_out = nn.Linear(8, action_dim).to(device)
@@ -50,7 +48,7 @@ class QNetwork(nn.Module):
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim, force_restart = False):
+    def __init__(self, state_dim, action_dim, force_restart=False):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -67,13 +65,14 @@ class DQN:
         self.max_output = 2000
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Q-Network
+        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
 
         if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
             self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
+            self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
             logger.info("Loaded existing Q network on startup")
-
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
-        self.Q_target.load_state_dict(self.Q.state_dict())
+        else:
+            self.Q_target.load_state_dict(self.Q.state_dict())
 
         self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
         self.currently_training = False
@@ -99,14 +98,13 @@ class DQN:
 
     @utils.print_execution_time
     def train_dqn_from_env(self):
-        # print(f"Threads: ", torch.get_num_threads())
-
-        self.currently_training = True
 
         self.env.reload_lgbn_model()
-        self.env.reset()
-        # TODO: Resume training from intermediary point, this will also decrease the runtime
-        # self.reset_q_networks()
+        try:
+            self.env.reset()
+            self.currently_training = True
+        except LinAlgError as e:
+            logger.warning(f"Could not initialize ENV due to {e.args[0]}, waiting for more samples")
 
         episode_score = 0.0
         score_list = []
@@ -170,7 +168,7 @@ class DQN:
     @utils.print_execution_time
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
-        # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
+        torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
