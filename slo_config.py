@@ -1,12 +1,21 @@
 import numpy as np
 
-import utils
+# Define sigmoid using numpy
+# def sigmoid(x, k=1, c=0):
+#     return 1 / (1 + np.exp(-k * (x - c)))
+#
+#
+# def linear(x):
+#     max_val = 100 * PW_MAX_CORES
+#     return np.clip(max_val - (x * PW_MAX_CORES), 0, 100)
 
-MB = {'variables': ['fps', 'pixel', 'energy', 'cores'],
+
+MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'parameter': ['pixel', 'cores'],
-      'slos': [(800, utils.sigmoid, 0.015, 450, 1.0),
-               (30, utils.sigmoid, 0.35, 25, 1.0),
-               (1, utils.sigmoid, 0.35, 25, 1.0)]}
+      'slos': [(800, False, 1.0),
+               (30, False, 1.0),
+               (10, True, 0.5),  # No preference for # of cores
+               (100, True, 0.0)]}
 
 PW_MAX_CORES = 10
 
@@ -15,17 +24,20 @@ def calculate_slo_reward(state, slos=MB['slos']):
     fuzzy_slof = []
 
     for index, value in enumerate(state):
-        t, func, k, c, boost = slos[index]
-        # slo_f = boost * func(value, k, c)
-        slo_f = (value / t)
+        t, neg, boost = slos[index]
 
-        # TODO: Right now this only punished high pixel, but it also needs an explicit energy SLO
-        punishment = 0
-        if index == 0 and slo_f > 1.15:
-            punishment = (slo_f - 1.15) / 2 # Might need to scale this
+        if neg:
+            slo_f = 1 / (value / t)
+        else:
+            slo_f = (value / t)
 
-        slo_f = np.clip(slo_f, 0.0, 1.15)
-        slo_f -= punishment
+        slo_f = np.clip(slo_f, 0.0, 1.15) * boost
+
+        # punishment = 0
+        # if index == 0 and slo_f > 1.15:
+        #     punishment = (slo_f - 1.15) / 2  # Might need to scale this
+
+        # slo_f -= punishment
 
         fuzzy_slof.append(slo_f)
 

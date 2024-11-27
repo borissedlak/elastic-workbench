@@ -54,7 +54,7 @@ class DockerClient:
 if __name__ == "__main__":
     client = DockerClient(DOCKER_SOCKET)
     # client.update_cpu("67959d3ff81a", 5)
-    stream = client.get_container_stats("multiscaler-video-processing-1", stream=True)
+    stream = client.get_container_stats("multiscaler-video-processing-1", stream_p=True)
 
     for s in stream:
         # print(utils.calculate_cpu_percentage(s))

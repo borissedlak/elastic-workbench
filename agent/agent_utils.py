@@ -7,8 +7,6 @@ from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
 
-import utils
-
 logger = logging.getLogger('multiscale')
 
 
@@ -25,22 +23,12 @@ def print_execution_time(func):
     return wrapper
 
 
-# def get_regression_model(df):
-#     X = df[['pixel', 'cores']].values  # Predictor variable (must be 2D for sklearn)
-#     y = df['fps'].values  # Target variable
-#
-#     model = LinearRegression()
-#     model.fit(X, y)
-#
-#     return model
-
-
 # @print_execution_time # Roughly 1 to 1.5s
 def train_lgbn_model(show_result=False):
     df = pd.read_csv("../share/metrics/LGBN.csv")
     df_filtered = filter_3s_after_change(df)
 
-    model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps')])
+    model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')])
     XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df_filtered)
 
@@ -48,12 +36,12 @@ def train_lgbn_model(show_result=False):
         for cpd in model.get_cpds():
             print(cpd)
 
-        states = ["pixel", "fps"]
-        X_samples = model.simulate(1000, 35)
-        X_df = pd.DataFrame(X_samples, columns=states)
+        for states in [["pixel", "fps"], ["cores", "fps"], ["pixel", "energy"], ["cores", "energy"]]:
+            X_samples = model.simulate(1500, 35)
+            X_df = pd.DataFrame(X_samples, columns=states)
 
-        sns.jointplot(x=X_df["pixel"], y=X_df["fps"], kind="kde", height=10, space=0, cmap="viridis")
-        plt.show()
+            sns.jointplot(x=X_df[states[0]], y=X_df[states[1]], kind="kde", height=10, space=0, cmap="viridis")
+            plt.show()
 
     return model
 

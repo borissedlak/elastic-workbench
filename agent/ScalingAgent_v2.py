@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -26,7 +27,8 @@ class AIFAgent(Thread):
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
-        self.dqn = DQN(state_dim=3, action_dim=5)
+        self.dqn = DQN(state_dim=4, action_dim=5)
+        self.explore_initial = list(itertools.product([500, 1200], [3, 7]))
 
     def run(self):
         while True:
@@ -37,10 +39,13 @@ class AIFAgent(Thread):
 
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()
-            state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores']]
+            state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'], state_pw['energy']]
 
             # TODO: This should have an own exploration factor which is a consequence of the model quality
-            action_pw = self.dqn.choose_action(np.array(state_pw_f))
+            if len(self.explore_initial) > 0:
+                action_pw = 5  # Indicate exploration
+            else:
+                action_pw = self.dqn.choose_action(np.array(state_pw_f))
             self.act_on_env(action_pw, state_pw_f)
 
             time.sleep(4)
@@ -51,9 +56,9 @@ class AIFAgent(Thread):
         prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period="2s")
 
         prom_parameter_states = {}
-        while len(prom_parameter_states) == 0:
+        while len(prom_parameter_states) < 2:
             prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
-            if len(prom_parameter_states) == 0:
+            if len(prom_parameter_states) < 2:
                 logger.warning("Need to query parameters again, result was empty")
                 time.sleep(0.1)
 
@@ -77,6 +82,11 @@ class AIFAgent(Thread):
 
             logger.info(f"Change cores to {state_f[0], cores_abs}")
             self.http_client.change_threads("localhost", int(cores_abs))
+        elif action == 5:
+            pixel, cores = self.explore_initial.pop()
+            logger.info(f"Setting up interpolation, moving config to {pixel, cores}")
+            self.http_client.change_config("localhost", {'pixel': int(pixel)})
+            self.http_client.change_threads("localhost", int(cores))
 
 
 if __name__ == '__main__':

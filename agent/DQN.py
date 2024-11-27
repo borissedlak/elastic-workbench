@@ -33,9 +33,9 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
 
         # TODO: Find optimal number of neurons
-        self.fc_1 = nn.Linear(state_dim, 8).to(device)
-        self.fc_2 = nn.Linear(8, 8).to(device)
-        self.fc_out = nn.Linear(8, action_dim).to(device)
+        self.fc_1 = nn.Linear(state_dim, 16).to(device)
+        self.fc_2 = nn.Linear(16, 16).to(device)
+        self.fc_out = nn.Linear(16, action_dim).to(device)
 
         # TODO: Read more about Adam
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)

@@ -41,7 +41,7 @@ class QrDetector(VehicleService):
         self.webcam_stream.start()
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
-        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-1", stream=True)
+        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-1", stream_p=True)
 
         threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 
@@ -92,9 +92,8 @@ class QrDetector(VehicleService):
                     cpu_load = 0
                 energy.labels(service_id="video", metric_id="energy").set(cpu_load)
 
-
                 metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
-                                      self.flag_next_metrics))
+                                      cpu_load, self.flag_next_metrics))
                 self.flag_next_metrics = False
                 if len(metric_buffer) >= 15:
                     utils.write_metrics_to_csv(metric_buffer)
@@ -130,6 +129,7 @@ class QrDetector(VehicleService):
         self.cores = c_threads
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
+
 
 # TODO: Must check the additional load to the thread
 def resolve_docker_load(stream_object):

@@ -6,6 +6,8 @@ import time
 import cv2
 import numpy as np
 
+from slo_config import PW_MAX_CORES
+
 logger = logging.getLogger('multiscale')
 
 
@@ -106,10 +108,6 @@ def filter_tuple(t, name, index):
     return next((item for item in t if item[index] == name), None)
 
 
-# Define sigmoid using numpy
-def sigmoid(x, k=1, c=0):
-    return 1 / (1 + np.exp(-k * (x - c)))
-
 
 @print_execution_time
 def write_metrics_to_csv(lines):
@@ -130,7 +128,7 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "fps", "pixel", "cores", "change_flag"])
+            writer.writerow(["timestamp", "fps", "pixel", "cores", "energy", "change_flag"])
 
         writer.writerows(lines)
 
