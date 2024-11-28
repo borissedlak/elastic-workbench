@@ -28,7 +28,7 @@ class AIFAgent(Thread):
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=4, action_dim=5)
-        self.explore_initial = list(itertools.product([500, 1200], [3, 7]))
+        self.explore_initial = list(itertools.product([500, 1200], [3, 7])) # Explore 4 combinations of Pixel - Cores
         self.unchanged_iterations = 0
 
     def run(self):
@@ -43,11 +43,10 @@ class AIFAgent(Thread):
             state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'], state_pw['energy']]
             logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
-            # TODO: This should have an own exploration factor which is a consequence of the model quality
             if len(self.explore_initial) > 0:
-                action_pw = 5  # Indicate exploration
+                action_pw = 5  # Indicate exploration path
             else:
-                action_pw = self.dqn.choose_action(np.array(state_pw_f))
+                action_pw = self.dqn.choose_action(np.array(state_pw_f), rand=0.15)
             self.act_on_env(action_pw, state_pw_f)
 
             time.sleep(4.5)

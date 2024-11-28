@@ -113,7 +113,7 @@ def filter_tuple(t, name, index):
 def write_metrics_to_csv(lines):
     # Define the directory and file name
     directory = "./share/metrics"
-    file_name = "LGBN.csv"
+    file_name = "LGBN_2.csv"
     file_path = os.path.join(directory, file_name)
 
     # Ensure the directory exists

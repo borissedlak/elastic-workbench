@@ -17,7 +17,6 @@ class LGBN_Env(gymnasium.Env):
         super().__init__()
         self.state = None
         self.lgbn: LinearGaussianBayesianNetwork = None
-        self.done = False  # TODO: How can I optimize rounds with done?
 
     def step(self, action):
         punishment_off = 0
@@ -40,7 +39,7 @@ class LGBN_Env(gymnasium.Env):
         self.state[1], self.state[3] = self.sample_values_from_lgbn(self.state[0], self.state[2])
 
         reward = np.sum(calculate_slo_reward(self.state)) + punishment_off
-        return self.state, reward, self.done, False, {}
+        return self.state, reward, False, False, {}
 
     # @utils.print_execution_time
     # NTH: Make this more modular

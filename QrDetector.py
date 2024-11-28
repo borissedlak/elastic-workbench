@@ -88,7 +88,7 @@ class QrDetector(VehicleService):
                 try:
                     cpu_load = utils.calculate_cpu_percentage(docker_stats)
                 except KeyError as e:
-                    logger.warning(f"Cannot load in first iteration, setting to 0 for now; {e.args}")
+                    logger.warning(f"Cannot get CPU load, setting to 0 for now; {e.args}")
                     cpu_load = 0
                 energy.labels(service_id="video", metric_id="energy").set(cpu_load)
 
@@ -119,7 +119,7 @@ class QrDetector(VehicleService):
         logger.info(f"QR Detector changed to {config}")
 
     # TODO: Takes too long with 106ms
-    # @utils.print_execution_time
+    @utils.print_execution_time
     def change_threads(self, c_threads):
         self.terminate()
         # Wait until it is really terminated and then start new

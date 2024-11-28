@@ -79,10 +79,13 @@ class DQN:
         self.env = LGBN_Env()
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
-    def choose_action(self, state: np.ndarray):
+    def choose_action(self, state: np.ndarray, rand=None):
         s_tensor = torch.FloatTensor(state).to(device)
 
-        if self.epsilon > np.random.rand():  # Explore
+        if rand is None:
+            rand = self.epsilon
+
+        if rand > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
             action = torch.argmax(self.Q(s_tensor)).cpu().numpy()  # Must bring tensor to CPU for Numpy
@@ -144,7 +147,6 @@ class DQN:
     # @utils.print_execution_time
     def train_batch(self):
         mini_batch = self.memory.sample(self.batch_size)
-        # TODO: Check Done and other implementations
         s_batch, a_batch, r_batch, s_prime_batch, d_batch = mini_batch
         a_batch = a_batch.type(torch.int64)
 
