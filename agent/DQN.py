@@ -28,25 +28,6 @@ torch.autograd.set_detect_anomaly(True)
 NN_FOLDER = "../share/networks"
 
 
-class QNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, q_lr):
-        super(QNetwork, self).__init__()
-
-        # TODO: Find optimal number of neurons
-        self.fc_1 = nn.Linear(state_dim, 16).to(device)
-        self.fc_2 = nn.Linear(16, 16).to(device)
-        self.fc_out = nn.Linear(16, action_dim).to(device)
-
-        # TODO: Read more about Adam
-        self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
-
-    def forward(self, x):
-        q = F.leaky_relu(self.fc_1(x))
-        q = F.leaky_relu(self.fc_2(q))
-        q = self.fc_out(q)
-        return q
-
-
 class DQN:
     def __init__(self, state_dim, action_dim, force_restart=False):
         self.state_dim = state_dim
@@ -60,6 +41,7 @@ class DQN:
         self.buffer_size = 100000
         self.batch_size = 200
         self.memory = ReplayBuffer(self.buffer_size)
+        self.training_rounds = 1.0
 
         self.min_output = 100
         self.max_output = 2000
@@ -70,6 +52,7 @@ class DQN:
         if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
             self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
             # self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
+            self.training_rounds = 0.5
             logger.info("Loaded existing Q network on startup")
         # else:
         self.Q_target.load_state_dict(self.Q.state_dict())
@@ -113,8 +96,12 @@ class DQN:
         episode_score = 0.0
         score_list = []
         round_counter = 0
+        EPISODE_LENGTH = 100
+        NO_EPISODE = 80
 
-        while round_counter < 20 * 500:
+        self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
+        print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
+        while round_counter < (NO_EPISODE * self.training_rounds) * EPISODE_LENGTH:
 
             initial_state = self.env.state.copy()
             action = self.choose_action(np.array(self.env.state))
@@ -129,7 +116,7 @@ class DQN:
 
             round_counter += 1
 
-            if round_counter % 500 == 0:
+            if round_counter % EPISODE_LENGTH == 0:
                 self.env.reset()
                 self.epsilon *= self.epsilon_decay
                 score_list.append(episode_score)
@@ -143,6 +130,8 @@ class DQN:
         self.store_dqn_as_file()
         self.last_time_trained = datetime.now()
         self.currently_training = False
+        self.training_rounds = np.clip(self.training_rounds - 0.1, 0.15, 1.0)
+        self.epsilon = 1.0
 
     # @utils.print_execution_time
     def train_batch(self):
@@ -172,6 +161,25 @@ class DQN:
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
         # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
+
+
+class QNetwork(nn.Module):
+    def __init__(self, state_dim, action_dim, q_lr):
+        super(QNetwork, self).__init__()
+
+        # TODO: Find optimal number of neurons
+        self.fc_1 = nn.Linear(state_dim, 16).to(device)
+        self.fc_2 = nn.Linear(16, 16).to(device)
+        self.fc_out = nn.Linear(16, action_dim).to(device)
+
+        # TODO: Read more about Adam
+        self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
+
+    def forward(self, x):
+        q = F.leaky_relu(self.fc_1(x))
+        q = F.leaky_relu(self.fc_2(q))
+        q = self.fc_out(q)
+        return q
 
 
 # ReplayBuffer from https://github.com/seungeunrho/minimalRL
@@ -204,3 +212,15 @@ class ReplayBuffer:
 
     def size(self):
         return len(self.buffer)
+
+
+if __name__ == '__main__':
+    # dqn = DQN(state_dim=4, action_dim=5, force_restart=True)
+    # dqn.train_dqn_from_env()
+
+    dqn = DQN(state_dim=4, action_dim=5)
+    dqn.train_dqn_from_env()
+    dqn.train_dqn_from_env()
+    dqn.train_dqn_from_env()
+    dqn.train_dqn_from_env()
+    dqn.train_dqn_from_env()

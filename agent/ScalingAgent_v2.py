@@ -28,14 +28,14 @@ class AIFAgent(Thread):
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=4, action_dim=5)
-        self.explore_initial = list(itertools.product([500, 1200], [3, 7])) # Explore 4 combinations of Pixel - Cores
+        self.explore_initial = list(itertools.product([500, 1200], [3, 7]))  # Explore 4 combinations of Pixel - Cores
         self.unchanged_iterations = 0
 
     def run(self):
         while True:
 
             # TRAINING OCCASIONALLY #####
-            if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=30):
+            if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=60):
                 Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
 
             # REAL INFERENCE ############

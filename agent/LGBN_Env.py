@@ -58,6 +58,7 @@ class LGBN_Env(gymnasium.Env):
         super().reset(seed=seed)
         pixel = randint(1, 20) * 100
         cores = randint(1, PW_MAX_CORES)
+        avail_cores = PW_MAX_CORES - cores - randint(0, PW_MAX_CORES - cores)
         fps, energy = self.sample_values_from_lgbn(pixel, cores)
         self.state = [pixel, fps, cores, energy]
 
