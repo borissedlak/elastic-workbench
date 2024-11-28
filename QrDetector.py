@@ -41,7 +41,8 @@ class QrDetector(VehicleService):
         self.webcam_stream.start()
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
-        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-1", stream_p=True)
+        # TODO: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
+        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-a-1", stream_p=True)
 
         threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 

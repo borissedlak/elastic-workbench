@@ -49,12 +49,11 @@ def change_config():
 def change_threads():
     threads_num = int(request.args.get('thread_number'))
 
-    # TODO: Ideally, I would get maximum utilization from 1:1 assignment
     # Change the number of threads of the application
     qd.change_threads(threads_num)
 
     # Change the number of cores available for docker
-    docker_client.update_cpu("multiscaler-video-processing-1", threads_num)
+    # docker_client.update_cpu("multiscaler-video-processing-1", threads_num)
 
     return ""
 

@@ -1,11 +1,15 @@
 import logging
 import time
+from datetime import datetime
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
+
+from slo_config import PW_MAX_CORES
 
 logger = logging.getLogger('multiscale')
 
@@ -60,3 +64,13 @@ def filter_3s_after_change(df: pd.DataFrame):
 
     filtered_df = df[~mask]
     return filtered_df
+
+def get_free_cores(core_dict):
+    if len(core_dict) == 0:
+        return PW_MAX_CORES
+
+    free_cores = PW_MAX_CORES - np.sum([item[1] for item in core_dict.items()])
+    return free_cores
+
+def was_qn_ever_trained(qn):
+    return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
