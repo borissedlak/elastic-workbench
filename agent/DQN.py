@@ -54,9 +54,8 @@ class DQN:
             # self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
             self.training_rounds = 0.5
             logger.info("Loaded existing Q network on startup")
-        # else:
-        self.Q_target.load_state_dict(self.Q.state_dict())
 
+        self.Q_target.load_state_dict(self.Q.state_dict())
         self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
         self.currently_training = False
         self.env = LGBN_Env()
@@ -100,7 +99,7 @@ class DQN:
         NO_EPISODE = 80
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
-        print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
+        # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
         while round_counter < (NO_EPISODE * self.training_rounds) * EPISODE_LENGTH:
 
             initial_state = self.env.state.copy()
@@ -122,7 +121,7 @@ class DQN:
                 score_list.append(episode_score)
                 episode_score = 0.0
 
-        if logger.level == logging.INFO:
+        if logger.level <= logging.INFO:
             logger.info(f"Average Score for 5 last rounds: {np.average(score_list[-5:])}")
             plt.plot(score_list)
             plt.show()
@@ -163,14 +162,15 @@ class DQN:
         # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
 
 
+NO_NEURONS = 16
 class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, q_lr):
         super(QNetwork, self).__init__()
 
         # TODO: Find optimal number of neurons
-        self.fc_1 = nn.Linear(state_dim, 16).to(device)
-        self.fc_2 = nn.Linear(16, 16).to(device)
-        self.fc_out = nn.Linear(16, action_dim).to(device)
+        self.fc_1 = nn.Linear(state_dim, NO_NEURONS).to(device)
+        self.fc_2 = nn.Linear(NO_NEURONS, NO_NEURONS).to(device)
+        self.fc_out = nn.Linear(NO_NEURONS, action_dim).to(device)
 
         # TODO: Read more about Adam
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)

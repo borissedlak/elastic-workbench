@@ -18,7 +18,7 @@ from slo_config import MB, calculate_slo_reward
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 logger = logging.getLogger("multiscale")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 core_state = {}
 access_state = threading.Lock()
