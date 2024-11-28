@@ -1,6 +1,5 @@
 import itertools
 import logging
-import os
 import threading
 import time
 from datetime import datetime, timedelta
@@ -35,12 +34,17 @@ class AIFAgent(Thread):
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=5, action_dim=5)
         # Explore 4 combinations of Pixel / Cores if the model was not trained before
-        self.explore_initial =  list(itertools.product([500, 1200], [3, 7])) if self.dqn.training_rounds != 0.5 else []
+        self.explore_initial = list(itertools.product([500, 1200], [3, 7])) if self.dqn.training_rounds != 0.5 else []
         self.unchanged_iterations = 0
 
     def run(self):
-        while True:
+        global core_state
 
+        initial_state = self.get_state_PW()
+        with access_state:
+            core_state = core_state | {self.observed_container: initial_state['cores']}
+
+        while True:
             # TRAINING OCCASIONALLY #####
             if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=60):
                 Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
@@ -48,7 +52,8 @@ class AIFAgent(Thread):
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()
             state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'],
-                          state_pw['free_cores'], state_pw['free_cores']]
+                          state_pw['energy'], state_pw['free_cores']]
+            logger.info(f"Current state before change is {state_pw_f}")
             logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
             if len(self.explore_initial) > 0:
@@ -69,7 +74,6 @@ class AIFAgent(Thread):
             if len(prom_metric_states) < 2:
                 logger.warning("Need to query metrics again, result was incomplete")
                 time.sleep(0.1)
-
 
         prom_parameter_states = {}
         while len(prom_parameter_states) < 2:
@@ -102,7 +106,11 @@ class AIFAgent(Thread):
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
             if delta_cores == +1 and state_f[4] == 0:
-                logger.warning(f"Agent tried to scale a core, but none available")
+                logger.warning(f"Agent tried to scale up a core, but none available")
+                return
+
+            if delta_cores == -1 and state_f[2] == 0:
+                logger.warning(f"Agent tried to scale down a core, but only one using")
                 return
 
             cores_abs = state_f[2] + delta_cores
