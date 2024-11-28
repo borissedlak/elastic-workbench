@@ -53,8 +53,8 @@ class AIFAgent(Thread):
             state_pw = self.get_state_PW()
             state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'],
                           state_pw['energy'], state_pw['free_cores']]
-            logger.info(f"Current state before change is {state_pw_f}")
-            logger.info(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
+            logger.debug(f"Current state before change is {state_pw_f}")
+            logger.debug(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
             if len(self.explore_initial) > 0:
                 action_pw = 5  # Indicate exploration path

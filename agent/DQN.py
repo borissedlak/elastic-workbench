@@ -130,7 +130,7 @@ class DQN:
         self.store_dqn_as_file()
         self.last_time_trained = datetime.now()
         self.currently_training = False
-        self.training_rounds = np.clip(self.training_rounds - 0.1, 0.15, 1.0)
+        self.training_rounds = np.clip(self.training_rounds - 0.2, 0.15, 1.0)
         self.epsilon = 1.0
 
     # @utils.print_execution_time
