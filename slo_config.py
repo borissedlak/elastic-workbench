@@ -5,7 +5,8 @@ MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'slos': [(800, False, 1.0),
                (30, False, 1.0),
                (10, True, 0.5),
-               (100, True, 0.0)]}
+               (100, True, 0.0),
+               (1, False, 0.0)]}
 
 PW_MAX_CORES = 10
 

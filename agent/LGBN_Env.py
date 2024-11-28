@@ -31,10 +31,14 @@ class LGBN_Env(gymnasium.Env):
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
-            self.state[2] += delta_cores
-            if self.state[2] < 1 or self.state[2] > PW_MAX_CORES:
-                self.state[2] = np.clip(self.state[2], 1, PW_MAX_CORES)
+
+            if delta_cores == -1 and self.state[2] == 1: # Want to go lower
                 punishment_off = - 10
+            elif delta_cores == +1 and self.state[4] == 0: # Want to consume what does not exist
+                punishment_off = - 10
+            else:
+                self.state[2] += delta_cores
+                self.state[4] -= delta_cores
 
         self.state[1], self.state[3] = self.sample_values_from_lgbn(self.state[0], self.state[2])
 
@@ -60,7 +64,7 @@ class LGBN_Env(gymnasium.Env):
         cores = randint(1, PW_MAX_CORES)
         avail_cores = PW_MAX_CORES - cores - randint(0, PW_MAX_CORES - cores)
         fps, energy = self.sample_values_from_lgbn(pixel, cores)
-        self.state = [pixel, fps, cores, energy]
+        self.state = [pixel, fps, cores, energy, avail_cores]
 
         return self.state, {}
 

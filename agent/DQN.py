@@ -218,7 +218,7 @@ if __name__ == '__main__':
     # dqn = DQN(state_dim=4, action_dim=5, force_restart=True)
     # dqn.train_dqn_from_env()
 
-    dqn = DQN(state_dim=4, action_dim=5)
+    dqn = DQN(state_dim=5, action_dim=5)
     dqn.train_dqn_from_env()
     dqn.train_dqn_from_env()
     dqn.train_dqn_from_env()
