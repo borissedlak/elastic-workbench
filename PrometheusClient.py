@@ -23,5 +23,5 @@ class PrometheusClient:
 if __name__ == "__main__":
     client = PrometheusClient("http://172.18.0.2:9090")
     print("Metric assignments:",
-          client.get_metrics("|".join(list(set(MB['variables']) - set(MB['parameter']))), period="10s", instance="172.18.0.4:8000"))
-    print("Parameter assignments:", client.get_metrics("|".join(MB['parameter']), instance="172.18.0.4:8000"))
+          client.get_metrics("|".join(list(set(MB['variables']) - set(MB['parameter']))), period="10s", instance="172.18.0.4"))
+    print("Parameter assignments:", client.get_metrics("|".join(MB['parameter']), instance="172.18.0.4"))

@@ -43,10 +43,10 @@ class QrDetector(VehicleService):
         self.webcam_stream.start()
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
-        # TODO: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
-        self.stats_stream = self.docker_client.get_container_stats(CONTAINER_REF, stream_p=True)
 
-        threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
+        # TODO: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
+        # self.stats_stream = self.docker_client.get_container_stats(CONTAINER_REF, stream_p=True)
+        # threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 
     def process_one_iteration(self, config_params, frame) -> None:
 
@@ -88,11 +88,12 @@ class QrDetector(VehicleService):
                 pixel.labels(service_id="video", metric_id="pixel").set(self.service_conf['pixel'])
                 cores.labels(service_id="video", metric_id="cores").set(self.cores)
 
-                try:
-                    cpu_load = utils.calculate_cpu_percentage(docker_stats)
-                except KeyError as e:
-                    logger.warning(f"Cannot get CPU load, setting to 0 for now; {e.args}")
-                    cpu_load = 0
+                cpu_load = 0
+                # try:
+                #     cpu_load = utils.calculate_cpu_percentage(docker_stats)
+                # except KeyError as e:
+                #     logger.warning(f"Cannot get CPU load, setting to 0 for now; {e.args}")
+                #     cpu_load = 0
                 energy.labels(service_id="video", metric_id="energy").set(cpu_load)
 
                 metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,

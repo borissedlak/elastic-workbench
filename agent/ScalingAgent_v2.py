@@ -18,10 +18,11 @@ from slo_config import MB, calculate_slo_reward, Full_State
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 logger = logging.getLogger("multiscale")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 core_state = {}
 access_state = threading.Lock()
+
 
 class AIFAgent(Thread):
     def __init__(self, container: DockerInfo, prom_server, thresholds):
@@ -44,6 +45,7 @@ class AIFAgent(Thread):
         initial_state = self.get_state_PW()
         with access_state:
             core_state = core_state | {self.container.id: initial_state.cores}
+            logger.info(core_state)
 
         while True:
             # TRAINING OCCASIONALLY ##### # TODO: Pause this for now, it only destroys the result
@@ -92,7 +94,7 @@ class AIFAgent(Thread):
     def act_on_env(self, action, state_f: Full_State):
         global core_state
         if action == 0:
-            logger.info(f"No change requested, system conf stays at {state_f.pixel, state_f.cores}")
+            logger.info(f"{self.container.alias}| No change requested, system stays at {state_f.pixel, state_f.cores}")
             self.unchanged_iterations += 1
         else:
             self.unchanged_iterations = 0
@@ -102,42 +104,41 @@ class AIFAgent(Thread):
             pixel_abs = state_f.pixel + delta_pixel
             pixel_abs = np.clip(pixel_abs, 100, 2000)
 
-            logger.info(f"Change pixel to {pixel_abs, state_f.cores}")
+            logger.info(f"{self.container.alias}| Change pixel to {pixel_abs, state_f.cores}")
             self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel_abs)})
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
             if delta_cores == +1 and state_f.free_cores == 0:
-                logger.warning(f"Agent tried to scale up a core, but none available")
+                logger.warning(f"{self.container.alias}| Agent tried to scale up a core, but none available")
                 return
 
             if delta_cores == -1 and state_f.cores == 1:
-                logger.warning(f"Agent tried to scale down a core, but only one using")
+                logger.warning(f"{self.container.alias}| Agent tried to scale down a core, but only one using")
                 return
 
             cores_abs = state_f.cores + delta_cores
-            logger.info(f"Change cores to {state_f.pixel, cores_abs}")
-            # TODO: This is very error prone to forgetting one part + slow due to 2 requests
-            # self.docker_client.update_cpu(self.container.id, int(cores_abs))
+            logger.info(f"{self.container.alias}| Change cores to {state_f.pixel, cores_abs}")
             self.http_client.change_threads(self.container.ip_a, int(cores_abs))
 
             with access_state:
                 core_state = core_state | {self.container.id: cores_abs}
+                logger.info(core_state)
 
         elif action == 5:
             pixel, cores = self.explore_initial.pop()
-            logger.info(f"Setting up interpolation, moving config to {pixel, cores}")
+            logger.info(f"{self.container.alias}| Setting up interpolation, moving config to {pixel, cores}")
 
             self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel)})
-            # self.docker_client.update_cpu(self.container.id, int(cores))
             self.http_client.change_threads(self.container.ip_a, int(cores))
             with access_state:
                 core_state = core_state | {self.container.id: cores}
+                logger.info(core_state)
 
 
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
-    AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4"), prom_server=ps,
-             thresholds=(800, 25)).start()
-    # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5"), prom_server=ps,
-    #          thresholds=(400, 25)).start()
+    AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
+             thresholds=(1000, 25)).start()
+    AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
+             thresholds=(1000, 25)).start()

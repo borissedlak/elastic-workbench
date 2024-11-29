@@ -17,7 +17,7 @@ class DockerClient:
         self.client = docker.DockerClient(base_url=url)
 
     # TODO: Takes too long with 90ms
-    # @utils.print_execution_time
+    @utils.print_execution_time
     def update_cpu(self, container_ref, cpus):
         try:
             container = self.client.containers.get(container_ref)
@@ -25,14 +25,6 @@ class DockerClient:
             logger.info(f"Container set to work with {cpus} cores")
         except Exception as e:
             logger.error("Could not connect to docker container", e)
-
-    # @utils.print_execution_time # Takes 6 ms
-    def get_container_id(self, container_name):
-        container = self.client.containers.list(filters={'name': container_name})
-        if container:
-            return str(container[0].id)[:12]
-        else:
-            return "Unknown"
 
     @utils.print_execution_time
     def get_container_stats(self, container_ref, stream_p=False):
@@ -43,23 +35,16 @@ class DockerClient:
         except Exception as e:
             logger.error("Could not connect to docker container", e)
 
-    # def get_max_cpus(self):
-    #     container = self.client.containers.get("multiscaler-video-processing-1")
-    #     cpu_set = container.attrs['HostConfig']['CpusetCpus']
-    #
-    #     # Calculate the number of cores
-    #     max_cores = len(cpu_set.split(',')) if cpu_set else "No CPU limits set"
-    #     print(f"Maximum cores: {max_cores}")
-
 
 class DockerInfo(NamedTuple):
     id: str
     ip_a: str
+    alias: str
 
 if __name__ == "__main__":
     client = DockerClient(DOCKER_SOCKET)
     # client.update_cpu("67959d3ff81a", 5)
-    stream = client.get_container_stats("multiscaler-video-processing-a-1", stream_p=True)
+    stream = client.get_container_stats("multiscaler-video-processing-b-1", stream_p=True)
 
     for s in stream:
         # print(utils.calculate_cpu_percentage(s))

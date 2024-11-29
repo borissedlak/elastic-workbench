@@ -5,7 +5,7 @@ import numpy as np
 PW_MAX_CORES = 5
 MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'parameter': ['pixel', 'cores'],
-      'slos': [(1.0, False, 1.0),
+      'slos': [(1.0, False, 0.85),
                (1.0, False, 1.0),
                (10, True, 0.4),
                (1, False, 0.0),
