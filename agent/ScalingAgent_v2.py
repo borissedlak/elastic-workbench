@@ -25,17 +25,19 @@ access_state = threading.Lock()
 
 
 class AIFAgent(Thread):
-    def __init__(self, observed_container):
+    def __init__(self, observed_container, slos):
         super().__init__()
 
         self.prom_client = PrometheusClient()
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.observed_container = observed_container
         self.http_client = HttpClient()
-        self.dqn = DQN(state_dim=5, action_dim=5)
+        self.dqn = DQN(state_dim=6, action_dim=5)
+
         # Explore 4 combinations of Pixel / Cores if the model was not trained before
         self.explore_initial = list(itertools.product([500, 1200], [3, 7])) if self.dqn.training_rounds != 0.5 else []
         self.unchanged_iterations = 0
+        self.slos = slos
 
     def run(self):
         global core_state
@@ -52,7 +54,7 @@ class AIFAgent(Thread):
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()
             state_pw_f = [state_pw['pixel'], state_pw['fps'], state_pw['cores'],
-                          state_pw['energy'], state_pw['free_cores']]
+                          state_pw['free_cores'], self.slos[0], self.slos[1]]
             logger.debug(f"Current state before change is {state_pw_f}")
             logger.debug(f"Current SLO-F before change is {calculate_slo_reward(state_pw_f)}")
 
@@ -105,7 +107,7 @@ class AIFAgent(Thread):
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
-            if delta_cores == +1 and state_f[4] == 0:
+            if delta_cores == +1 and state_f[3] == 0:
                 logger.warning(f"Agent tried to scale up a core, but none available")
                 return
 

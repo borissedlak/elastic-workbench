@@ -7,7 +7,7 @@ import pandas as pd
 from pgmpy.models import LinearGaussianBayesianNetwork
 
 from agent import agent_utils
-from slo_config import calculate_slo_reward, PW_MAX_CORES
+from slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
 
 logger = logging.getLogger("multiscale")
 
@@ -15,34 +15,37 @@ logger = logging.getLogger("multiscale")
 class LGBN_Env(gymnasium.Env):
     def __init__(self):
         super().__init__()
-        self.state = None
+        self.state: Full_State = None
         self.lgbn: LinearGaussianBayesianNetwork = None
 
     def step(self, action):
         punishment_off = 0
+        new_state_dict = self.state._asdict()
 
         # Do nothing at 0
         if 1 <= action <= 2:
             delta_pixel = -100 if action == 1 else 100
-            self.state[0] += delta_pixel
-            if self.state[0] < 100 or self.state[0] > 2000:
-                self.state[0] = np.clip(self.state[0], 100, 2000)
-                punishment_off = - 10
+            if new_state_dict['pixel'] <= 100 or new_state_dict['pixel'] >= 2000:
+                punishment_off = - 5
+            else:
+                new_state_dict['pixel'] = new_state_dict['pixel'] + delta_pixel
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
 
-            if delta_cores == -1 and self.state[2] == 1: # Want to go lower
-                punishment_off = - 10
-            elif delta_cores == +1 and self.state[4] == 0: # Want to consume what does not exist
-                punishment_off = - 10
+            if delta_cores == -1 and new_state_dict['cores'] == 1:  # Want to go lower
+                punishment_off = - 5
+            elif delta_cores == +1 and new_state_dict['free_cores'] == 0:  # Want to consume what does not exist
+                punishment_off = - 5
             else:
-                self.state[2] += delta_cores
-                self.state[4] -= delta_cores
+                new_state_dict['cores'] = new_state_dict['cores'] + delta_cores
+                new_state_dict['free_cores'] = new_state_dict['free_cores'] - delta_cores
 
-        self.state[1], self.state[3] = self.sample_values_from_lgbn(self.state[0], self.state[2])
+        new_state_dict['fps'], new_state_dict['energy'] = self.sample_values_from_lgbn(new_state_dict['pixel'],
+                                                                                       new_state_dict['cores'])
+        self.state = Full_State(**new_state_dict)
 
-        reward = np.sum(calculate_slo_reward(self.state)) + punishment_off
+        reward = np.sum(calculate_slo_reward(self.state.for_tensor())) + punishment_off
         return self.state, reward, False, False, {}
 
     # @utils.print_execution_time
@@ -52,11 +55,12 @@ class LGBN_Env(gymnasium.Env):
 
         samples = {}
         for index, v in enumerate(var):
-            mu, sigma = mean[0][index], np.sqrt(vari[index][index]) # [[  255.21202708 27200.09321573], [  788.21188594 19991.6047412 ]]
+            mu, sigma = mean[0][index], np.sqrt(
+                vari[index][index])  # [[  255.21202708 27200.09321573], [  788.21188594 19991.6047412 ]]
             sample_val = np.random.normal(mu, sigma, 1)[0]
             samples = samples | {v: sample_val}
 
-        return samples['fps'], samples['energy']
+        return float(samples['fps']), int(samples['energy'])
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -64,8 +68,11 @@ class LGBN_Env(gymnasium.Env):
         cores = randint(1, PW_MAX_CORES)
         avail_cores = PW_MAX_CORES - cores - randint(0, PW_MAX_CORES - cores)
         fps, energy = self.sample_values_from_lgbn(pixel, cores)
-        self.state = [pixel, fps, cores, energy, avail_cores]
+        pixel_thresh = randint(6, 10) * 100
+        fps_thresh = randint(15, 45)
 
+        self.state = Full_State(pixel, pixel_thresh, fps, fps_thresh, energy, cores, avail_cores)
+        # [pixel, fps, cores, avail_cores, pixel_thresh, fps_thresh]
         return self.state, {}
 
     def reload_lgbn_model(self):

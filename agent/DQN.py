@@ -43,9 +43,6 @@ class DQN:
         self.memory = ReplayBuffer(self.buffer_size)
         self.training_rounds = 1.0
 
-        self.min_output = 100
-        self.max_output = 2000
-
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
 
@@ -102,12 +99,13 @@ class DQN:
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
         while round_counter < (NO_EPISODE * self.training_rounds) * EPISODE_LENGTH:
 
-            initial_state = self.env.state.copy()
-            action = self.choose_action(np.array(self.env.state))
+            initial_state = self.env.state
+            action = self.choose_action(np.array(self.env.state.for_tensor()))
             next_state, reward, done, _, _ = self.env.step(action)
-            # print(f"State transition {initial_state}, {action} --> {next_state}")
+            print(f"State transition {initial_state}, {action} --> {next_state}")
+            print(f"Reward {reward}")
 
-            self.memory.put((initial_state, action, reward, next_state, done))
+            self.memory.put((initial_state.for_tensor(), action, reward, next_state.for_tensor(), done))
             episode_score += reward
 
             if self.memory.size() > self.batch_size:
@@ -215,12 +213,6 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-    # dqn = DQN(state_dim=4, action_dim=5, force_restart=True)
-    # dqn.train_dqn_from_env()
 
-    dqn = DQN(state_dim=5, action_dim=5)
-    dqn.train_dqn_from_env()
-    dqn.train_dqn_from_env()
-    dqn.train_dqn_from_env()
-    dqn.train_dqn_from_env()
+    dqn = DQN(state_dim=5, action_dim=5, force_restart=True)
     dqn.train_dqn_from_env()
