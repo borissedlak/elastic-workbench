@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 500ms
+  scrape_interval: 400ms
 
 
 scrape_configs:

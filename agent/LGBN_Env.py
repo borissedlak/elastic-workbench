@@ -20,30 +20,29 @@ class LGBN_Env(gymnasium.Env):
 
     def step(self, action):
         punishment_off = 0
-        new_state_dict = self.state._asdict()
+        new_state = self.state._asdict()
 
         # Do nothing at 0
         if 1 <= action <= 2:
             delta_pixel = -100 if action == 1 else 100
-            if new_state_dict['pixel'] == 100 or new_state_dict['pixel'] >= 2000:
+            if new_state['pixel'] == 100 or new_state['pixel'] >= 2000:
                 punishment_off = - 5
             else:
-                new_state_dict['pixel'] = new_state_dict['pixel'] + delta_pixel
+                new_state['pixel'] = new_state['pixel'] + delta_pixel
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
 
-            if delta_cores == -1 and new_state_dict['cores'] == 1:  # Want to go lower
-                punishment_off = - 5
-            elif delta_cores == +1 and new_state_dict['free_cores'] == 0:  # Want to consume what does not exist
-                punishment_off = - 5
+            if delta_cores == -1 and new_state['cores'] == 1:  # Want to go lower
+                punishment_off = - 10
+            elif delta_cores == +1 and new_state['free_cores'] <= 0:  # Want to consume what does not exist
+                punishment_off = - 10
             else:
-                new_state_dict['cores'] = new_state_dict['cores'] + delta_cores
-                new_state_dict['free_cores'] = new_state_dict['free_cores'] - delta_cores
+                new_state['cores'] = new_state['cores'] + delta_cores
+                new_state['free_cores'] = new_state['free_cores'] - delta_cores
 
-        new_state_dict['fps'], new_state_dict['energy'] = self.sample_values_from_lgbn(new_state_dict['pixel'],
-                                                                                       new_state_dict['cores'])
-        self.state = Full_State(**new_state_dict)
+        new_state['fps'], new_state['energy'] = self.sample_values_from_lgbn(new_state['pixel'], new_state['cores'])
+        self.state = Full_State(**new_state)
 
         reward = np.sum(calculate_slo_reward(self.state.for_tensor())) + punishment_off
         return self.state, reward, False, False, {}

@@ -18,7 +18,7 @@ from slo_config import MB, calculate_slo_reward, Full_State
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 logger = logging.getLogger("multiscale")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 core_state = {}
 access_state = threading.Lock()
@@ -63,7 +63,7 @@ class AIFAgent(Thread):
                 action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
             self.act_on_env(action_pw, state_pw)
 
-            time.sleep(4.5)
+            time.sleep(4.0)
 
     def get_state_PW(self) -> Full_State:
         metric_str = "|".join(list(set(MB['variables']) - set(MB['parameter'])))
@@ -139,6 +139,6 @@ class AIFAgent(Thread):
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
     AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
-             thresholds=(1000, 25)).start()
-    AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
-             thresholds=(1000, 25)).start()
+             thresholds=(1400, 25)).start()
+    # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
+    #          thresholds=(1400, 25)).start()
