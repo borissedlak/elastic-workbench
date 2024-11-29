@@ -21,7 +21,7 @@ MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'parameter': ['pixel', 'cores'],
       'slos': [(1.0, False, 1.0),
                (1.0, False, 1.0),
-               (10, True, 0.5),
+               (10, True, 0.4),
                (1, False, 0.0),
                (1, False, 0.0),
                (1, False, 0.0)]}
