@@ -3,8 +3,6 @@ from prometheus_api_client import PrometheusConnect
 import utils
 from slo_config import MB
 
-PROM = ":8000"
-HTTP = ":8080"
 
 class PrometheusClient:
     def __init__(self, url):

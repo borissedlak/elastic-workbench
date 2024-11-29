@@ -10,7 +10,7 @@ import utils
 from DQN import DQN
 from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
-from PrometheusClient import PrometheusClient, HTTP, PROM
+from PrometheusClient import PrometheusClient
 from agent.agent_utils import get_free_cores
 from slo_config import MB, calculate_slo_reward, Full_State
 
@@ -137,6 +137,7 @@ class AIFAgent(Thread):
 
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
-    agent = AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4"), prom_server=ps,
-                     thresholds=(800, 25))
-    agent.start()
+    AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4"), prom_server=ps,
+             thresholds=(800, 25)).start()
+    # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5"), prom_server=ps,
+    #          thresholds=(400, 25)).start()
