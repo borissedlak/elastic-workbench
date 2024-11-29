@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 DEVICE_NAME = utils.get_env_param('DEVICE_NAME', "Unknown")
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
 http_client = HttpClient()
 qd = QrDetector()
@@ -51,9 +52,8 @@ def change_threads():
 
     # Change the number of threads of the application
     qd.change_threads(threads_num)
-
     # Change the number of cores available for docker
-    # docker_client.update_cpu("multiscaler-video-processing-1", threads_num)
+    docker_client.update_cpu(CONTAINER_REF, threads_num)
 
     return ""
 

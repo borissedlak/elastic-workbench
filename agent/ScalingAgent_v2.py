@@ -118,7 +118,7 @@ class AIFAgent(Thread):
             cores_abs = state_f.cores + delta_cores
             logger.info(f"Change cores to {state_f.pixel, cores_abs}")
             # TODO: This is very error prone to forgetting one part + slow due to 2 requests
-            self.docker_client.update_cpu(self.container.id, int(cores_abs))
+            # self.docker_client.update_cpu(self.container.id, int(cores_abs))
             self.http_client.change_threads(self.container.ip_a, int(cores_abs))
 
             with access_state:
@@ -129,7 +129,7 @@ class AIFAgent(Thread):
             logger.info(f"Setting up interpolation, moving config to {pixel, cores}")
 
             self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel)})
-            self.docker_client.update_cpu(self.container.id, int(cores))
+            # self.docker_client.update_cpu(self.container.id, int(cores))
             self.http_client.change_threads(self.container.ip_a, int(cores))
             with access_state:
                 core_state = core_state | {self.container.id: cores}
