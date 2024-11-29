@@ -47,9 +47,9 @@ class AIFAgent(Thread):
             core_state = core_state | {self.observed_container: initial_state.cores}
 
         while True:
-            # TRAINING OCCASIONALLY #####
-            if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=60):
-                Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
+            # TRAINING OCCASIONALLY ##### # TODO: Pause this for now, it only destroys the result
+            # if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=60):
+            #     Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
 
             # REAL INFERENCE ############
             state_pw = self.get_state_PW()

@@ -29,7 +29,7 @@ NN_FOLDER = "../share/networks"
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim, force_restart=False):
+    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -43,8 +43,8 @@ class DQN:
         self.memory = ReplayBuffer(self.buffer_size)
         self.training_rounds = 1.0
 
-        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Q-Network
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr).to(device)  # Target Network
+        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
+        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
 
         if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
             self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
@@ -93,7 +93,7 @@ class DQN:
         score_list = []
         round_counter = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 70
+        NO_EPISODE = 120
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -149,26 +149,21 @@ class DQN:
         for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
 
-    # def reset_q_networks(self):
-    #     self.Q = QNetwork(self.state_dim, self.action_dim, self.lr)  # Q-Network
-    #     self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr)  # Target Network
-    #     self.Q_target.load_state_dict(self.Q.state_dict())
-
     # @utils.print_execution_time
     def store_dqn_as_file(self):
         torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
         # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
 
 
-NO_NEURONS = 16
+# NO_NEURONS = 16
 class QNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, q_lr):
+    def __init__(self, state_dim, action_dim, q_lr, neurons):
         super(QNetwork, self).__init__()
 
         # TODO: Find optimal number of neurons
-        self.fc_1 = nn.Linear(state_dim, NO_NEURONS).to(device)
-        self.fc_2 = nn.Linear(NO_NEURONS, NO_NEURONS).to(device)
-        self.fc_out = nn.Linear(NO_NEURONS, action_dim).to(device)
+        self.fc_1 = nn.Linear(state_dim, neurons).to(device)
+        self.fc_2 = nn.Linear(neurons, neurons).to(device)
+        self.fc_out = nn.Linear(neurons, action_dim).to(device)
 
         # TODO: Read more about Adam
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
@@ -213,8 +208,4 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-
-    dqn = DQN(state_dim=7, action_dim=5, force_restart=True)
-    dqn.train_dqn_from_env()
-    dqn.train_dqn_from_env()
-    dqn.train_dqn_from_env()
+    DQN(state_dim=7, action_dim=5, force_restart=True).train_dqn_from_env()
