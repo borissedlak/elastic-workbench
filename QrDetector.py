@@ -13,8 +13,10 @@ from DockerClient import DockerClient
 from VehicleService import VehicleService
 from VideoReader import VideoReader
 
-DEVICE_NAME = utils.get_env_param("DEVICE_NAME", "Unknown")
+# DEVICE_NAME = utils.get_env_param("DEVICE_NAME", "Unknown")
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
@@ -42,7 +44,7 @@ class QrDetector(VehicleService):
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
         # TODO: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
-        self.stats_stream = self.docker_client.get_container_stats("multiscaler-video-processing-a-1", stream_p=True)
+        self.stats_stream = self.docker_client.get_container_stats(CONTAINER_REF, stream_p=True)
 
         threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 

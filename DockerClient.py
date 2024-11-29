@@ -1,6 +1,7 @@
 import logging
 
 import docker
+from typing import NamedTuple
 
 import utils
 
@@ -50,6 +51,10 @@ class DockerClient:
     #     max_cores = len(cpu_set.split(',')) if cpu_set else "No CPU limits set"
     #     print(f"Maximum cores: {max_cores}")
 
+
+class DockerInfo(NamedTuple):
+    id: str
+    ip_a: str
 
 if __name__ == "__main__":
     client = DockerClient(DOCKER_SOCKET)

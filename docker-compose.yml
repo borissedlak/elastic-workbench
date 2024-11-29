@@ -2,33 +2,23 @@ services:
 
   video-processing-a:
     build: .
-    ports:
-      - "8080:8080" # Flask HTTP Server
-      - "8000:8000" # Prometheus Server
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
+      - DOCKER_SOCKET=unix:///var/run/docker.sock
+      - CONTAINER_REF=multiscaler-video-processing-a-1
     volumes:
       - /home/boris/development/multiScaler/share:/src/share
 #      - /c/users/boris/development/multiScaler/metrics:/src/metrics
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '2.0' # BUG with "Conflicting options: CPU Quota cannot be updated as NanoCPUs has already been set""
-
-  #    restart: always
 
   video-processing-b:
-    image: multiscaler-video-processing
-#    ports:
-#      - "8080:8080" # Flask HTTP Server
-#      - "8000:8000" # Prometheus Server
+    image: multiscaler-video-processing-a
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # /home/boris/.docker/desktop/docker.sock
+      - DOCKER_SOCKET=unix:///var/run/docker.sock
+      - CONTAINER_REF=multiscaler-video-processing-b-1
     volumes:
       - /home/boris/development/multiScaler/share:/src/share
       #      - /c/users/boris/development/multiScaler/metrics:/src/metrics

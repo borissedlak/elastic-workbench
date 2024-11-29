@@ -2,14 +2,13 @@ import itertools
 import logging
 import threading
 import time
-from datetime import datetime, timedelta
 from threading import Thread
 
 import numpy as np
 
 import utils
 from DQN import DQN
-from DockerClient import DockerClient
+from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from agent.agent_utils import get_free_cores
@@ -25,12 +24,12 @@ access_state = threading.Lock()
 
 
 class AIFAgent(Thread):
-    def __init__(self, observed_container, thresholds):
+    def __init__(self, container: DockerInfo, thresholds):
         super().__init__()
 
-        self.prom_client = PrometheusClient()
+        self.container = container
+        self.prom_client = PrometheusClient(self.container.ip_a)
         self.docker_client = DockerClient(DOCKER_SOCKET)
-        self.observed_container = observed_container
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=7, action_dim=5)
 
@@ -44,7 +43,7 @@ class AIFAgent(Thread):
 
         initial_state = self.get_state_PW()
         with access_state:
-            core_state = core_state | {self.observed_container: initial_state.cores}
+            core_state = core_state | {self.container.id: initial_state.cores}
 
         while True:
             # TRAINING OCCASIONALLY ##### # TODO: Pause this for now, it only destroys the result
@@ -104,7 +103,7 @@ class AIFAgent(Thread):
             pixel_abs = np.clip(pixel_abs, 100, 2000)
 
             logger.info(f"Change pixel to {pixel_abs, state_f.cores}")
-            self.http_client.change_config("localhost", {'pixel': int(pixel_abs)})
+            self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel_abs)})
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
@@ -119,23 +118,23 @@ class AIFAgent(Thread):
             cores_abs = state_f.cores + delta_cores
             logger.info(f"Change cores to {state_f.pixel, cores_abs}")
             # TODO: This is very error prone to forgetting one part + slow due to 2 requests
-            self.docker_client.update_cpu(self.observed_container, int(cores_abs))
-            self.http_client.change_threads("localhost", int(cores_abs))
+            self.docker_client.update_cpu(self.container.id, int(cores_abs))
+            self.http_client.change_threads(self.container.ip_a, int(cores_abs))
 
             with access_state:
-                core_state = core_state | {self.observed_container: cores_abs}
+                core_state = core_state | {self.container.id: cores_abs}
 
         elif action == 5:
             pixel, cores = self.explore_initial.pop()
             logger.info(f"Setting up interpolation, moving config to {pixel, cores}")
 
-            self.http_client.change_config("localhost", {'pixel': int(pixel)})
-            self.docker_client.update_cpu(self.observed_container, int(cores))
-            self.http_client.change_threads("localhost", int(cores))
+            self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel)})
+            self.docker_client.update_cpu(self.container.id, int(cores))
+            self.http_client.change_threads(self.container.ip_a, int(cores))
             with access_state:
-                core_state = core_state | {self.observed_container: cores}
+                core_state = core_state | {self.container.id: cores}
 
 
 if __name__ == '__main__':
-    agent = AIFAgent(observed_container="multiscaler-video-processing-a-1", thresholds=(800, 25))
+    agent = AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4:8000"), thresholds=(800, 25))
     agent.start()
