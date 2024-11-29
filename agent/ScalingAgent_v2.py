@@ -10,7 +10,7 @@ import utils
 from DQN import DQN
 from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
-from PrometheusClient import PrometheusClient
+from PrometheusClient import PrometheusClient, HTTP, PROM
 from agent.agent_utils import get_free_cores
 from slo_config import MB, calculate_slo_reward, Full_State
 
@@ -24,11 +24,11 @@ access_state = threading.Lock()
 
 
 class AIFAgent(Thread):
-    def __init__(self, container: DockerInfo, thresholds):
+    def __init__(self, container: DockerInfo, prom_server, thresholds):
         super().__init__()
 
         self.container = container
-        self.prom_client = PrometheusClient(self.container.ip_a)
+        self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         self.dqn = DQN(state_dim=7, action_dim=5)
@@ -64,27 +64,27 @@ class AIFAgent(Thread):
             time.sleep(4.5)
 
     def get_state_PW(self) -> Full_State:
-        metric_vars = list(set(MB['variables']) - set(MB['parameter']))
+        metric_str = "|".join(list(set(MB['variables']) - set(MB['parameter'])))
 
-        obs_period = (self.unchanged_iterations + 1) * 2
-        prom_metric_states = {}
-        while len(prom_metric_states) < 2:
-            prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=f"{obs_period}s")
-            if len(prom_metric_states) < 2:
+        period = (self.unchanged_iterations + 1) * 2
+        prom_metrics = {}
+        while len(prom_metrics) < 2:
+            prom_metrics = self.prom_client.get_metrics(metric_str, period=f"{period}s", instance=self.container.ip_a)
+            if len(prom_metrics) < 2:
                 logger.warning("Need to query metrics again, result was incomplete")
                 time.sleep(0.1)
 
-        prom_parameter_states = {}
-        while len(prom_parameter_states) < 2:
-            prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
-            if len(prom_parameter_states) < 2:
+        prom_parameters = {}
+        while len(prom_parameters) < 2:
+            prom_parameters = self.prom_client.get_metrics("|".join(MB['parameter']), instance=self.container.ip_a)
+            if len(prom_parameters) < 2:
                 logger.warning("Need to query parameters again, result was incomplete")
                 time.sleep(0.1)
 
         with access_state:
             free_cores = get_free_cores(core_state)
 
-        state_dict = prom_metric_states | prom_parameter_states | {"free_cores": free_cores}
+        state_dict = prom_metrics | prom_parameters | {"free_cores": free_cores}
         state_pw_f = Full_State(state_dict['pixel'], self.thresholds[0], state_dict['fps'], self.thresholds[1],
                                 state_dict['energy'], state_dict['cores'], state_dict['free_cores'])
         return state_pw_f
@@ -136,5 +136,7 @@ class AIFAgent(Thread):
 
 
 if __name__ == '__main__':
-    agent = AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4:8000"), thresholds=(800, 25))
+    ps = "http://172.18.0.2:9090"
+    agent = AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4"), prom_server=ps,
+                     thresholds=(800, 25))
     agent.start()

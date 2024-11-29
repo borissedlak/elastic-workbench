@@ -93,8 +93,8 @@ class AIFAgent(Thread):
 
     def get_current_state(self):
         metric_vars = list(set(MB['variables']) - set(MB['parameter']))
-        prom_metric_states = self.prom_client.get_metric_values("|".join(metric_vars), period=INTERVAL)
-        prom_parameter_states = self.prom_client.get_metric_values("|".join(MB['parameter']))
+        prom_metric_states = self.prom_client.get_metrics("|".join(metric_vars), period=INTERVAL)
+        prom_parameter_states = self.prom_client.get_metrics("|".join(MB['parameter']))
 
         cpu_cores = os.cpu_count()
         return prom_metric_states | prom_parameter_states | {"max_cores": cpu_cores}
