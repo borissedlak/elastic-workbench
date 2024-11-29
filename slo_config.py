@@ -14,15 +14,14 @@ class Full_State(NamedTuple):
 
     def for_tensor(self):
         return [self.pixel / self.pixel_thresh, self.fps / self.fps_thresh, self.cores,
-                self.pixel > 100, self.pixel < 2000, self.cores > 1, self.free_cores > 0]
+                self.pixel > 100, self.pixel < 2000, self.free_cores]
 
 
 MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'parameter': ['pixel', 'cores'],
       'slos': [(1.0, False, 1.0),
                (1.0, False, 1.0),
-               (10, True, 0.35),
-               (1, False, 0.0),
+               (10, True, 0.5),
                (1, False, 0.0),
                (1, False, 0.0),
                (1, False, 0.0)]}

@@ -11,6 +11,7 @@ from DQN import DQN
 from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
+from agent.DQN import STATE_DIM
 from agent.agent_utils import get_free_cores
 from slo_config import MB, calculate_slo_reward, Full_State
 
@@ -22,7 +23,6 @@ logger.setLevel(logging.DEBUG)
 core_state = {}
 access_state = threading.Lock()
 
-
 class AIFAgent(Thread):
     def __init__(self, container: DockerInfo, prom_server, thresholds):
         super().__init__()
@@ -31,7 +31,7 @@ class AIFAgent(Thread):
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
-        self.dqn = DQN(state_dim=7, action_dim=5)
+        self.dqn = DQN(state_dim=STATE_DIM, action_dim=5)
 
         # Explore 4 combinations of Pixel / Cores if the model was not trained before
         self.explore_initial = list(itertools.product([500, 1200], [3, 7])) if self.dqn.training_rounds != 0.5 else []

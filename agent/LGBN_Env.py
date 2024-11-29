@@ -72,7 +72,6 @@ class LGBN_Env(gymnasium.Env):
         fps_thresh = randint(15, 45)
 
         self.state = Full_State(pixel, pixel_thresh, fps, fps_thresh, energy, cores, avail_cores)
-        # [pixel, fps, cores, avail_cores, pixel_thresh, fps_thresh]
         return self.state, {}
 
     def reload_lgbn_model(self):

@@ -26,7 +26,7 @@ if not torch.cuda.is_available():
 torch.autograd.set_detect_anomaly(True)
 
 NN_FOLDER = "../share/networks"
-
+STATE_DIM = 6
 
 class DQN:
     def __init__(self, state_dim, action_dim, force_restart=False, neurons=16):
@@ -208,4 +208,4 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-    DQN(state_dim=7, action_dim=5, force_restart=True).train_dqn_from_env()
+    DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True).train_dqn_from_env()
