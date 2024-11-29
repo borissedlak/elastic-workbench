@@ -25,7 +25,7 @@ class LGBN_Env(gymnasium.Env):
         # Do nothing at 0
         if 1 <= action <= 2:
             delta_pixel = -100 if action == 1 else 100
-            if new_state_dict['pixel'] <= 100 or new_state_dict['pixel'] >= 2000:
+            if new_state_dict['pixel'] == 100 or new_state_dict['pixel'] >= 2000:
                 punishment_off = - 5
             else:
                 new_state_dict['pixel'] = new_state_dict['pixel'] + delta_pixel

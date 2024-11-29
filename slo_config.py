@@ -14,25 +14,7 @@ class Full_State(NamedTuple):
 
     def for_tensor(self):
         return [self.pixel / self.pixel_thresh, self.fps / self.fps_thresh, self.cores,
-                self.can_change_pixel(), self.free_cores]
-
-    # return +1 if I can only change up, and -1 if I can only decrease, 0 if all possible
-    def can_change_pixel(self):
-        if self.pixel == 100:
-            return 1.0
-        elif self.pixel == 2000:
-            return -1
-        else:
-            return 0
-
-    # # return +1 if I can only change up, and -1 if I can only decrease, 0 if all possible
-    # def can_change_cores(self):
-    #     if self.free_cores > 0:
-    #         return 1.0
-    #     elif self.pixel == 2000:
-    #         return -1
-    #     else:
-    #         return 0
+                self.pixel > 100, self.pixel < 2000, self.cores > 1, self.free_cores > 0]
 
 
 MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
@@ -40,6 +22,8 @@ MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
       'slos': [(1.0, False, 1.0),
                (1.0, False, 1.0),
                (10, True, 0.5),
+               (1, False, 0.0),
+               (1, False, 0.0),
                (1, False, 0.0),
                (1, False, 0.0)]}
 

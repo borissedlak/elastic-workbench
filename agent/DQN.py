@@ -214,5 +214,5 @@ class ReplayBuffer:
 
 if __name__ == '__main__':
 
-    dqn = DQN(state_dim=5, action_dim=5, force_restart=True)
+    dqn = DQN(state_dim=7, action_dim=5, force_restart=True)
     dqn.train_dqn_from_env()
