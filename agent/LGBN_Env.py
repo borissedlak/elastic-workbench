@@ -66,8 +66,8 @@ class LGBN_Env(gymnasium.Env):
         cores = randint(1, PW_MAX_CORES)
         avail_cores = PW_MAX_CORES - cores - randint(0, PW_MAX_CORES - cores)
         fps, energy = self.sample_values_from_lgbn(pixel, cores)
-        pixel_thresh = randint(6, 10) * 100
-        fps_thresh = randint(15, 45)
+        pixel_thresh = randint(5, 12) * 100
+        fps_thresh = randint(20, 40)
 
         self.state = Full_State(pixel, pixel_thresh, fps, fps_thresh, energy, cores, avail_cores)
         return self.state, {}
