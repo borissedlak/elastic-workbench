@@ -33,9 +33,6 @@ PW_MAX_CORES = 10
 def calculate_slo_reward(state, slos=MB['slos']):
     fuzzy_slof = []
 
-    # slos[0] = (state[4], True, 1.0)
-    # slos[1] = (state[5], True, 1.0)
-
     for index, value in enumerate(state):
         t, neg, boost = slos[index]
 

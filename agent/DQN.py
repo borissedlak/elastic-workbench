@@ -93,7 +93,7 @@ class DQN:
         score_list = []
         round_counter = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 80
+        NO_EPISODE = 70
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -102,8 +102,8 @@ class DQN:
             initial_state = self.env.state
             action = self.choose_action(np.array(self.env.state.for_tensor()))
             next_state, reward, done, _, _ = self.env.step(action)
-            print(f"State transition {initial_state}, {action} --> {next_state}")
-            print(f"Reward {reward}")
+            # print(f"State transition {initial_state}, {action} --> {next_state}")
+            # print(f"Reward {reward}")
 
             self.memory.put((initial_state.for_tensor(), action, reward, next_state.for_tensor(), done))
             episode_score += reward
@@ -215,4 +215,6 @@ class ReplayBuffer:
 if __name__ == '__main__':
 
     dqn = DQN(state_dim=7, action_dim=5, force_restart=True)
+    dqn.train_dqn_from_env()
+    dqn.train_dqn_from_env()
     dqn.train_dqn_from_env()
