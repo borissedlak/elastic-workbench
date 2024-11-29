@@ -54,8 +54,7 @@ class LGBN_Env(gymnasium.Env):
 
         samples = {}
         for index, v in enumerate(var):
-            mu, sigma = mean[0][index], np.sqrt(
-                vari[index][index])  # [[  255.21202708 27200.09321573], [  788.21188594 19991.6047412 ]]
+            mu, sigma = mean[0][index], np.sqrt(vari[index][index])
             sample_val = np.random.normal(mu, sigma, 1)[0]
             samples = samples | {v: sample_val}
 
@@ -73,6 +72,6 @@ class LGBN_Env(gymnasium.Env):
         self.state = Full_State(pixel, pixel_thresh, fps, fps_thresh, energy, cores, avail_cores)
         return self.state, {}
 
-    def reload_lgbn_model(self):
-        self.lgbn = agent_utils.train_lgbn_model(show_result=False)
+    def reload_lgbn_model(self, df):
+        self.lgbn = agent_utils.train_lgbn_model(df, show_result=False)
         logger.info("Retrained LGBN model for Env")

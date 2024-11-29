@@ -1,4 +1,6 @@
+import csv
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -9,7 +11,7 @@ from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
 
-from slo_config import PW_MAX_CORES
+from slo_config import PW_MAX_CORES, Full_State
 
 logger = logging.getLogger('multiscale')
 
@@ -28,12 +30,11 @@ def print_execution_time(func):
 
 
 # @print_execution_time # Roughly 1 to 1.5s
-def train_lgbn_model(show_result=False):
-    df = pd.read_csv("../share/metrics/LGBN.csv")
-    df_filtered = filter_3s_after_change(df)
+def train_lgbn_model(df, show_result=False):
+    df_filtered = filter_3s_after_change(df.copy())
 
     model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')])
-    XMLBIFWriter(model).write_xmlbif("../model.xml")
+    # XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df_filtered)
 
     if show_result:
@@ -48,6 +49,7 @@ def train_lgbn_model(show_result=False):
             plt.show()
 
     return model
+
 
 # @utils.print_execution_time # Recently almost 500ms
 def filter_3s_after_change(df: pd.DataFrame):
@@ -65,6 +67,7 @@ def filter_3s_after_change(df: pd.DataFrame):
     filtered_df = df[~mask]
     return filtered_df
 
+
 def get_free_cores(core_dict):
     if len(core_dict) == 0:
         return PW_MAX_CORES
@@ -72,5 +75,25 @@ def get_free_cores(core_dict):
     free_cores = PW_MAX_CORES - np.sum([item[1] for item in core_dict.items()])
     return free_cores
 
+
 def was_qn_ever_trained(qn):
     return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
+
+
+# TODO: Must log to correct directory
+def log_agent_experience(state: Full_State, prefix):
+    # Define the directory and file name
+    directory = "./"
+    file_name = "slo_f.csv"
+    file_path = os.path.join(directory, file_name)
+
+    file_exists = os.path.isfile(file_path)
+
+    # Open the file in append mode
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        if not file_exists or os.path.getsize(file_path) == 0:
+            writer.writerow(["id", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
+
+        writer.writerow([prefix, datetime.now()] +  list(state))

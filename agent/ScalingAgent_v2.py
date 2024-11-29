@@ -7,12 +7,12 @@ from threading import Thread
 import numpy as np
 
 import utils
-from DQN import DQN
+from agent.DQN import DQN
 from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from agent.DQN import STATE_DIM
-from agent.agent_utils import get_free_cores
+from agent.agent_utils import get_free_cores, log_agent_experience
 from slo_config import MB, calculate_slo_reward, Full_State
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -25,19 +25,24 @@ access_state = threading.Lock()
 
 
 class AIFAgent(Thread):
-    def __init__(self, container: DockerInfo, prom_server, thresholds):
+    def __init__(self, container: DockerInfo, prom_server, thresholds, dqn=None, log=None):
         super().__init__()
 
         self.container = container
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
-        self.dqn = DQN(state_dim=STATE_DIM, action_dim=5)
+        self.log = log
+
+        self.dqn = dqn
+        if self.dqn is None:
+            self.dqn = DQN(state_dim=STATE_DIM, action_dim=5)
 
         # Explore 4 combinations of Pixel / Cores if the model was not trained before
         self.explore_initial = list(itertools.product([500, 1200], [3, 7])) if self.dqn.training_rounds != 0.5 else []
         self.unchanged_iterations = 0
         self.thresholds = thresholds
+        self._running = True
 
     def run(self):
         global core_state
@@ -47,7 +52,7 @@ class AIFAgent(Thread):
             core_state = core_state | {self.container.id: initial_state.cores}
             logger.info(core_state)
 
-        while True:
+        while self._running:
             # TRAINING OCCASIONALLY ##### # TODO: Pause this for now, it only destroys the result
             # if not self.dqn.currently_training and datetime.now() - self.dqn.last_time_trained > timedelta(seconds=60):
             #     Thread(target=self.dqn.train_dqn_from_env, args=(), daemon=True).start()
@@ -56,6 +61,7 @@ class AIFAgent(Thread):
             state_pw = self.get_state_PW()
             logger.debug(f"Current state before change is {state_pw}")
             logger.debug(f"Current SLO-F before change is {calculate_slo_reward(state_pw.for_tensor())}")
+            log_agent_experience(state_pw, self.log) if self.log else None
 
             if len(self.explore_initial) > 0:
                 action_pw = 5  # Indicate exploration path
@@ -63,7 +69,10 @@ class AIFAgent(Thread):
                 action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
             self.act_on_env(action_pw, state_pw)
 
-            time.sleep(4.0)
+            time.sleep(5)
+
+    def stop(self):
+        self._running = False
 
     def get_state_PW(self) -> Full_State:
         metric_str = "|".join(list(set(MB['variables']) - set(MB['parameter'])))
@@ -139,6 +148,6 @@ class AIFAgent(Thread):
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
     AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
-             thresholds=(1400, 25)).start()
+             thresholds=(1400, 25), log="abc").start()
     # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
     #          thresholds=(1400, 25)).start()

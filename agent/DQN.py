@@ -5,6 +5,7 @@ from collections import deque
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -25,11 +26,12 @@ if not torch.cuda.is_available():
     torch.set_num_threads(1)
 torch.autograd.set_detect_anomaly(True)
 
-NN_FOLDER = "../share/networks"
 STATE_DIM = 6
 
+
 class DQN:
-    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16):
+    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16, nn_folder="../share/networks",
+                 suffix=None):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -46,9 +48,8 @@ class DQN:
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
 
-        if not force_restart and os.path.exists(NN_FOLDER + "/Q.pt"):
-            self.Q.load_state_dict(torch.load(NN_FOLDER + "/Q.pt", weights_only=True))
-            # self.Q_target.load_state_dict(torch.load(NN_FOLDER + "/Q_target.pt", weights_only=True))
+        if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
+            self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
             self.training_rounds = 0.5
             logger.info("Loaded existing Q network on startup")
 
@@ -56,6 +57,7 @@ class DQN:
         self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
         self.currently_training = False
         self.env = LGBN_Env()
+        self.nn_folder = nn_folder
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
     def choose_action(self, state: np.ndarray, rand=None):
@@ -63,7 +65,6 @@ class DQN:
 
         if rand is None:
             rand = self.epsilon
-
         if rand > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
@@ -79,9 +80,9 @@ class DQN:
         return target
 
     @utils.print_execution_time
-    def train_dqn_from_env(self):
+    def train_dqn_from_env(self, df, suffix=None):
 
-        self.env.reload_lgbn_model()
+        self.env.reload_lgbn_model(df)
         try:
             self.env.reset()
             self.currently_training = True
@@ -92,8 +93,8 @@ class DQN:
         episode_score = 0.0
         score_list = []
         round_counter = 0
-        EPISODE_LENGTH = 120
-        NO_EPISODE = 120
+        EPISODE_LENGTH = 100
+        NO_EPISODE = 80
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -124,7 +125,7 @@ class DQN:
             plt.plot(score_list)
             plt.show()
 
-        self.store_dqn_as_file()
+        self.store_dqn_as_file(suffix=suffix)
         self.last_time_trained = datetime.now()
         self.currently_training = False
         self.training_rounds = np.clip(self.training_rounds - 0.2, 0.15, 1.0)
@@ -150,9 +151,8 @@ class DQN:
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
 
     # @utils.print_execution_time
-    def store_dqn_as_file(self):
-        torch.save(self.Q.state_dict(), NN_FOLDER + "/Q.pt")
-        # torch.save(self.Q_target.state_dict(), NN_FOLDER + "/Q_target.pt")
+    def store_dqn_as_file(self, suffix=""):
+        torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"" + suffix if suffix else ""}.pt")
 
 
 # NO_NEURONS = 16
@@ -208,4 +208,5 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-    DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True).train_dqn_from_env()
+    df_t = pd.read_csv("../share/metrics/LGBN.csv")
+    DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True).train_dqn_from_env(df_t)
