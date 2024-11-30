@@ -151,7 +151,7 @@ class DQN:
             param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
 
     # @utils.print_execution_time
-    def store_dqn_as_file(self, suffix=""):
+    def store_dqn_as_file(self, suffix=None):
         torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"" + suffix if suffix else ""}.pt")
 
 

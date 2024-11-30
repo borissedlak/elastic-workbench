@@ -68,11 +68,11 @@ def filter_3s_after_change(df: pd.DataFrame):
     return filtered_df
 
 
-def get_free_cores(core_dict):
+def get_free_cores(core_dict, max_cores):
     if len(core_dict) == 0:
-        return PW_MAX_CORES
+        return max_cores
 
-    free_cores = PW_MAX_CORES - np.sum([item[1] for item in core_dict.items()])
+    free_cores = max_cores - np.sum([item[1] for item in core_dict.items()])
     return free_cores
 
 

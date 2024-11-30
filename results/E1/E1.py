@@ -1,3 +1,5 @@
+import csv
+import os
 import time
 from random import randint
 
@@ -12,7 +14,8 @@ from agent.ScalingAgent_v2 import AIFAgent
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
 nn = "./networks"
-reps = 10
+routine_file = "test_routine.csv"
+reps = 1
 partitions = 5
 container = DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice")
 http_client = HttpClient()
@@ -23,31 +26,58 @@ def train_networks():
     file_path = "LGBN.csv"
     df = pd.read_csv(file_path)
 
-    for i in range(1, partitions + 1):
-        partition_size = int(len(df) * (i / partitions))
-        partition_df = df.iloc[:partition_size]
+    df_size = len(df)
+    end_indices = [166, 262, int(df_size * 3 / 5), int(df_size * 4 / 5), df_size]
+
+    for i, val in enumerate(end_indices):
+        partition_df = df.iloc[:val]
 
         dqn = DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True, nn_folder=nn)
-        dqn.train_dqn_from_env(df=partition_df, suffix=f"{i}")
+        dqn.train_dqn_from_env(df=partition_df, suffix=f"{i + 1}")
 
-        print(f"{(i / partitions) * 100}% finished")
+        print(f"{((i + 1) / partitions) * 100}% finished")
 
 
 def eval_networks():
-    for i in range(1, partitions + 1):
-        pixel_t = randint(7, 10) * 100
-        fps_t = randint(25, 35)
+    with open(routine_file, mode='r') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)
 
-        for j in range(1, reps + 1):
-            reset_container_params()
+        for row in csv_reader:
+            i, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
+            reset_container_params(pixel, cores)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
-            agent = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t), dqn=dqn, log=f"{i}_{j}")
+            agent = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
+                             dqn=dqn, log=f"{i}", max_cores=max_cores)
             agent.start()
-            time.sleep(60)
+            time.sleep(50)
             agent.stop()
 
-        print(f"{(i / partitions) * 100}% finished")
+            # TODO: Fix counter
+            print(f"{(i / sum(1 for row in csv_reader)) * 100}% finished")
+
+def create_test_routine():
+    runs = [["index" ,"pixel", "cores", "pixel_t", "fps_t", "max_cores"]]
+    for i in range(1, partitions + 1):
+        for j in range(1, reps + 1):
+
+            pixel = randint(1, 20) * 100
+            max_cores = randint(1, PW_MAX_CORES)
+            cores = randint(1, max_cores)
+            pixel_t = randint(7, 10) * 100
+            fps_t = randint(25, 35)
+
+            runs.append([i ,pixel, cores, pixel_t, fps_t, max_cores])
+
+    with open(routine_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(runs)
+
+
+def reset_container_params(pixel, cores):
+    http_client.change_config(container.ip_a, {'pixel': int(pixel)})
+    http_client.change_threads(container.ip_a, int(cores))
 
 
 def visualize_data():
@@ -61,14 +91,8 @@ def visualize_data():
     plt.show()
 
 
-def reset_container_params():
-    pixel = randint(1, 20) * 100
-    cores = randint(1, PW_MAX_CORES)
-    http_client.change_config(container.ip_a, {'pixel': int(pixel)})
-    http_client.change_threads(container.ip_a, int(cores))
-
-
 if __name__ == '__main__':
     # train_networks()
-    # eval_networks()
-    visualize_data()
+    # create_test_routine()
+    eval_networks()
+    # visualize_data()

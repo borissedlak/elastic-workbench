@@ -13,9 +13,10 @@ from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from agent.DQN import STATE_DIM
 from agent.agent_utils import get_free_cores, log_agent_experience
-from slo_config import MB, calculate_slo_reward, Full_State
+from slo_config import MB, calculate_slo_reward, Full_State, PW_MAX_CORES
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+# MAX_CORES = utils.get_env_param('MAX_CORES', 10)
 
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
@@ -25,7 +26,7 @@ access_state = threading.Lock()
 
 
 class AIFAgent(Thread):
-    def __init__(self, container: DockerInfo, prom_server, thresholds, dqn=None, log=None):
+    def __init__(self, container: DockerInfo, prom_server, thresholds, dqn=None, log=None, max_cores=PW_MAX_CORES):
         super().__init__()
 
         self.container = container
@@ -33,6 +34,7 @@ class AIFAgent(Thread):
         self.docker_client = DockerClient(DOCKER_SOCKET)
         self.http_client = HttpClient()
         self.log = log
+        self.max_cores = max_cores
 
         self.dqn = dqn
         if self.dqn is None:
@@ -93,7 +95,7 @@ class AIFAgent(Thread):
                 time.sleep(0.1)
 
         with access_state:
-            free_cores = get_free_cores(core_state)
+            free_cores = get_free_cores(core_state, self.max_cores)
 
         state_dict = prom_metrics | prom_parameters | {"free_cores": free_cores}
         state_pw_f = Full_State(state_dict['pixel'], self.thresholds[0], state_dict['fps'], self.thresholds[1],
@@ -148,6 +150,6 @@ class AIFAgent(Thread):
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
     AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
-             thresholds=(1400, 25), log="abc").start()
+             thresholds=(1400, 25)).start()
     # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
     #          thresholds=(1400, 25)).start()
