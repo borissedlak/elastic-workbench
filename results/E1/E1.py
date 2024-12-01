@@ -1,5 +1,4 @@
 import csv
-import os
 import time
 from random import randint
 
@@ -15,7 +14,7 @@ from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
 nn = "./networks"
 routine_file = "test_routine.csv"
-reps = 1
+reps = 5
 partitions = 5
 container = DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice")
 http_client = HttpClient()
@@ -44,31 +43,30 @@ def eval_networks():
         next(csv_reader)
 
         for row in csv_reader:
-            i, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
+            i, j, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
             reset_container_params(pixel, cores)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
             agent = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
-                             dqn=dqn, log=f"{i}", max_cores=max_cores)
+                             dqn=dqn, log=f"{i}_{j}", max_cores=max_cores)
             agent.start()
             time.sleep(50)
             agent.stop()
 
-            # TODO: Fix counter
-            print(f"{(i / sum(1 for row in csv_reader)) * 100}% finished")
+            print(f"{((i * reps) / (reps * partitions)) * 100}% finished")
+
 
 def create_test_routine():
-    runs = [["index" ,"pixel", "cores", "pixel_t", "fps_t", "max_cores"]]
+    runs = [["index", "rep", "pixel", "cores", "pixel_t", "fps_t", "max_cores"]]
     for i in range(1, partitions + 1):
         for j in range(1, reps + 1):
-
             pixel = randint(1, 20) * 100
             max_cores = randint(1, PW_MAX_CORES)
             cores = randint(1, max_cores)
             pixel_t = randint(7, 10) * 100
             fps_t = randint(25, 35)
 
-            runs.append([i ,pixel, cores, pixel_t, fps_t, max_cores])
+            runs.append([i, j, pixel, cores, pixel_t, fps_t, max_cores])
 
     with open(routine_file, mode='w', newline='') as file:
         writer = csv.writer(file)
