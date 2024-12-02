@@ -14,7 +14,7 @@ from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
 nn = "./networks"
 routine_file = "test_routine.csv"
-reps = 2
+reps = 5
 partitions = 5
 container = DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice")
 http_client = HttpClient()
@@ -105,7 +105,6 @@ def visualize_data():
             slo_f_run = [np.sum(calculate_slo_reward(s.for_tensor())) for s in states]
             slo_fs_index.append(slo_f_run)
 
-
         array = np.array(slo_fs_index)
         mean_per_field = np.mean(array, axis=0)
         std_per_field = np.std(array, axis=0)
@@ -130,14 +129,15 @@ def visualize_data():
 
     # Fill the range for the standard deviation
     plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
+    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Change configuration', linestyles="--")
 
+    plt.xlim(-0.1, 49.1)
+    plt.ylim(1.4, 2.6)
     # Add labels and legend
     plt.xlabel('X-axis')
     plt.ylabel('Values')
     plt.title('Mean with Standard Deviation')
     plt.legend()
-
-    # Show the plot
     plt.show()
 
 
