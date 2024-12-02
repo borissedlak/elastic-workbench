@@ -151,5 +151,5 @@ if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
     AIFAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
              thresholds=(1400, 25)).start()
-    # AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
-    #          thresholds=(1400, 25)).start()
+    AIFAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
+             thresholds=(1400, 25)).start()
