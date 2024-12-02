@@ -1,7 +1,7 @@
 from agent.ScalingAgent_v2 import ScalingAgent
 
 
-class Global_Lock_Optimizer:
+class Global_Service_Optimizer:
     def __init__(self, agents: [ScalingAgent]):
         self.s_agents = agents
 

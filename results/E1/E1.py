@@ -83,8 +83,9 @@ def visualize_data():
     del df['timestamp']
     del df['id']
 
+    # TODO: Need to put the ID here, group by the run, and calculate the mean and std
     states = [Full_State(*row) for row in df.itertuples(index=False, name=None)]
-    slo_fs = [np.sum(calculate_slo_reward(state.for_tensor())) for state in states]
+    slo_fs = [np.sum(calculate_slo_reward(s.for_tensor())) for s in states]
     plt.plot(slo_fs)
     plt.show()
 
@@ -92,5 +93,5 @@ def visualize_data():
 if __name__ == '__main__':
     # train_networks()
     # create_test_routine()
-    eval_networks()
-    # visualize_data()
+    # eval_networks()
+    visualize_data()
