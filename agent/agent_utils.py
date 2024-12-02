@@ -80,7 +80,6 @@ def was_qn_ever_trained(qn):
     return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
 
 
-# TODO: Must log to correct directory
 def log_agent_experience(state: Full_State, prefix):
     # Define the directory and file name
     directory = "./"

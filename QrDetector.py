@@ -13,7 +13,6 @@ from DockerClient import DockerClient
 from VehicleService import VehicleService
 from VideoReader import VideoReader
 
-# DEVICE_NAME = utils.get_env_param("DEVICE_NAME", "Unknown")
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
@@ -44,7 +43,7 @@ class QrDetector(VehicleService):
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
 
-        # TODO: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
+        # TOD: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
         # self.stats_stream = self.docker_client.get_container_stats(CONTAINER_REF, stream_p=True)
         # threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 
@@ -135,7 +134,6 @@ class QrDetector(VehicleService):
         self.start_process()
 
 
-# TODO: Must check the additional load to the thread
 def resolve_docker_load(stream_object):
     global docker_stats
     for stats in stream_object:

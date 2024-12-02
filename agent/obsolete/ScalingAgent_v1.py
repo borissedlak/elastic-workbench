@@ -16,16 +16,6 @@ from slo_config import MB
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 
-# TODO: So what the agent must do on a high level is:
-#  1) Collect sensory state from Prometheus --> Easy ✓
-#  2) Evaluate if SLOs are fulfilled --> Easy ✓
-#  3) Retrain its interpretation model --> Medium
-#  4) Act so that SLO-F is optimized --> Hard
-#  _
-#  However, I assume that the agent has the variable DAG and the SLO thresholds
-#  And I dont have to resolve variable names dynamically, but keep them hardcoded
-
-
 class AIFAgent(Thread):
     def __init__(self):
         super().__init__()
@@ -87,7 +77,6 @@ class AIFAgent(Thread):
                 score_list.append(score)
                 score = 0.0
 
-        # TODO: DO this through an animation or interactive plot
         plt.plot(score_list)
         plt.show()
 

@@ -5,7 +5,8 @@ import pandas as pd
 
 from DockerClient import DockerInfo
 from agent.DQN import DQN, STATE_DIM
-from agent.ScalingAgent_v2 import AIFAgent
+from agent.Global_Lock_Optimizer import Global_Lock_Optimizer
+from agent.ScalingAgent_v2 import ScalingAgent
 from slo_config import PW_MAX_CORES
 
 container = DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice")
@@ -19,26 +20,29 @@ pixel_t, fps_t = 900, 25
 dqn = DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True, nn_folder=nn)
 dqn.train_dqn_from_env(df=df, suffix=f"5")
 
-
-def start_agents():
-    agent_1 = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
+agent_1 = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
                        dqn=dqn, log=f"S1.1", max_cores=max_cores)
-    agent_1.start()
-    agent_2 = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
+agent_2 = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
                        dqn=dqn, log=f"S1.2", max_cores=max_cores)
-    agent_2.start()
-    time.sleep(50)  # May extend when things work
 
-    agent_1.stop()
-    agent_2.stop()
+glo = Global_Lock_Optimizer(agents=[agent_1, agent_2])
+
+
+def start_greedy_agents():
+    agent_1.start()
+    agent_2.start()
+    time.sleep(15)
+
+    # agent_1.stop()
+    # agent_2.stop()
 
 
 # TODO: 2) We will let the main class analyze how the SLO-F can be improved
-def calculate_improvement():
-
-
 # TODO: 3) This is orchestrated and we measure the improvement
+def improve_global_slof():
+    glo.estimate_swapping()
+
 
 if __name__ == '__main__':
-    start_agents()
-    calculate_improvement()
+    start_greedy_agents()
+    improve_global_slof()

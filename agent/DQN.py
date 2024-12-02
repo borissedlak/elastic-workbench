@@ -160,7 +160,6 @@ class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, q_lr, neurons):
         super(QNetwork, self).__init__()
 
-        # TODO: Find optimal number of neurons
         self.fc_1 = nn.Linear(state_dim, neurons).to(device)
         self.fc_2 = nn.Linear(neurons, neurons).to(device)
         self.fc_out = nn.Linear(neurons, action_dim).to(device)

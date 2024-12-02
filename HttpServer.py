@@ -1,6 +1,5 @@
 import ast
 import logging
-import os
 
 from flask import Flask, request
 
@@ -15,7 +14,6 @@ app = Flask(__name__)
 # logging.getLogger('multiscale').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
-DEVICE_NAME = utils.get_env_param('DEVICE_NAME', "Unknown")
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 

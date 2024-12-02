@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from DockerClient import DockerInfo
 from HttpClient import HttpClient
 from agent.DQN import DQN, STATE_DIM
-from agent.ScalingAgent_v2 import AIFAgent
+from agent.ScalingAgent_v2 import ScalingAgent
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
 nn = "./networks"
@@ -47,8 +47,8 @@ def eval_networks():
             reset_container_params(pixel, cores)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
-            agent = AIFAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
-                             dqn=dqn, log=f"{i}_{j}", max_cores=max_cores)
+            agent = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
+                                 dqn=dqn, log=f"{i}_{j}", max_cores=max_cores)
             agent.start()
             time.sleep(50)
             agent.stop()
