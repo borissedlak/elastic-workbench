@@ -44,7 +44,7 @@ def eval_networks():
 
         for row in csv_reader:
             i, j, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
-            reset_container_params(pixel, cores)
+            reset_container_params(container, pixel, cores)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
             agent = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
@@ -73,19 +73,24 @@ def create_test_routine():
         writer.writerows(runs)
 
 
-def reset_container_params(pixel, cores):
-    http_client.change_config(container.ip_a, {'pixel': int(pixel)})
-    http_client.change_threads(container.ip_a, int(cores))
+def reset_container_params(c, pixel, cores):
+    http_client.change_config(c.ip_a, {'pixel': int(pixel)})
+    http_client.change_threads(c.ip_a, int(cores))
 
 
 def visualize_data():
     df = pd.read_csv("slo_f.csv")
     del df['timestamp']
-    del df['id']
 
-    # TODO: Need to put the ID here, group by the run, and calculate the mean and std
-    states = [Full_State(*row) for row in df.itertuples(index=False, name=None)]
-    slo_fs = [np.sum(calculate_slo_reward(s.for_tensor())) for s in states]
+    states = [(row[0], Full_State(*row[1:])) for row in df.itertuples(index=False, name=None)]
+    slo_fs = [(s[0], np.sum(calculate_slo_reward(s[1].for_tensor()))) for s in states]
+    avg = []
+
+    for i in range(partitions + 1):
+        partition_df = df[df['index'] == i]
+        # TODO: Now split in {reps} arrays, extract slof, and add them together, preserving mean and std
+        print(partition_df)
+
     plt.plot(slo_fs)
     plt.show()
 
