@@ -9,12 +9,12 @@ from matplotlib import pyplot as plt
 from DockerClient import DockerInfo
 from HttpClient import HttpClient
 from agent.DQN import DQN, STATE_DIM
-from agent.ScalingAgent_v2 import ScalingAgent
+from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
 nn = "./networks"
 routine_file = "test_routine.csv"
-reps = 5
+reps = 2
 partitions = 5
 container = DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice")
 http_client = HttpClient()
@@ -45,10 +45,11 @@ def eval_networks():
         for row in csv_reader:
             i, j, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
             reset_container_params(container, pixel, cores)
+            reset_core_states()
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
             agent = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
-                                 dqn=dqn, log=f"{i}_{j}", max_cores=max_cores)
+                                 dqn=dqn, log=(i, j), max_cores=max_cores)
             agent.start()
             time.sleep(50)
             agent.stop()
@@ -72,6 +73,8 @@ def create_test_routine():
         writer = csv.writer(file)
         writer.writerows(runs)
 
+    print("Created new test routine")
+
 
 def reset_container_params(c, pixel, cores):
     http_client.change_config(c.ip_a, {'pixel': int(pixel)})
@@ -82,16 +85,59 @@ def visualize_data():
     df = pd.read_csv("slo_f.csv")
     del df['timestamp']
 
-    states = [(row[0], Full_State(*row[1:])) for row in df.itertuples(index=False, name=None)]
-    slo_fs = [(s[0], np.sum(calculate_slo_reward(s[1].for_tensor()))) for s in states]
-    avg = []
+    # states = [(row[0], Full_State(*row[1:])) for row in df.itertuples(index=False, name=None)]
+    # slo_fs = [(s[0], np.sum(calculate_slo_reward(s[1].for_tensor()))) for s in states]
+    means = []
+    stds = []
 
-    for i in range(partitions + 1):
+    for i in range(1, partitions + 1):
         partition_df = df[df['index'] == i]
         # TODO: Now split in {reps} arrays, extract slof, and add them together, preserving mean and std
-        print(partition_df)
+        # print(partition_df)
 
-    plt.plot(slo_fs)
+        parts = np.array_split(partition_df, reps)
+        slo_fs_index = []
+
+        # Step 2: Reindex each part
+        for j in range(len(parts)):
+            # parts[j] = parts[j].reset_index(drop=True)
+            states = [Full_State(*row[2:]) for row in parts[j].itertuples(index=False, name=None)]
+            slo_f_run = [np.sum(calculate_slo_reward(s.for_tensor())) for s in states]
+            slo_fs_index.append(slo_f_run)
+
+
+        array = np.array(slo_fs_index)
+        mean_per_field = np.mean(array, axis=0)
+        std_per_field = np.std(array, axis=0)
+
+        means.extend(mean_per_field)
+        stds.extend(std_per_field)
+
+    # plt.plot(means)
+    # plt.show()
+
+    x = np.arange(len(means))
+
+    # Calculate the upper and lower bounds of the standard deviation
+    lower_bound = np.array(means) - np.array(stds)
+    upper_bound = np.array(means) + np.array(stds)
+
+    # Create the plot
+    plt.figure(figsize=(8, 5))
+
+    # Plot the mean as a line
+    plt.plot(x, means, label='Mean', color='blue', linewidth=2)
+
+    # Fill the range for the standard deviation
+    plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
+
+    # Add labels and legend
+    plt.xlabel('X-axis')
+    plt.ylabel('Values')
+    plt.title('Mean with Standard Deviation')
+    plt.legend()
+
+    # Show the plot
     plt.show()
 
 

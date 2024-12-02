@@ -93,6 +93,6 @@ def log_agent_experience(state: Full_State, prefix):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["id", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
+            writer.writerow(["index", "rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
 
-        writer.writerow([prefix, datetime.now()] +  list(state))
+        writer.writerow([prefix[0], prefix[1], datetime.now()] +  list(state))

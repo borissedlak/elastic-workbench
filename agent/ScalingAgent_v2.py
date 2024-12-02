@@ -81,9 +81,9 @@ class ScalingAgent(Thread):
 
         period = (self.unchanged_iterations + 1) * 2
         prom_metrics = {}
-        while len(prom_metrics) < 2:
+        while len(prom_metrics) < 1:
             prom_metrics = self.prom_client.get_metrics(metric_str, period=f"{period}s", instance=self.container.ip_a)
-            if len(prom_metrics) < 2:
+            if len(prom_metrics) < 1:
                 logger.warning("Need to query metrics again, result was incomplete")
                 time.sleep(0.1)
 
@@ -99,7 +99,7 @@ class ScalingAgent(Thread):
 
         state_dict = prom_metrics | prom_parameters | {"free_cores": free_cores}
         state_pw_f = Full_State(state_dict['pixel'], self.thresholds[0], state_dict['fps'], self.thresholds[1],
-                                state_dict['energy'], state_dict['cores'], state_dict['free_cores'])
+                                0, state_dict['cores'], state_dict['free_cores'])
         return state_pw_f
 
     def act_on_env(self, action, state_f: Full_State):
@@ -146,6 +146,10 @@ class ScalingAgent(Thread):
                 core_state = core_state | {self.container.id: cores}
                 logger.info(core_state)
 
+def reset_core_states():
+    global core_state
+    with access_state:
+        core_state = {}
 
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"

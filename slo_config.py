@@ -3,7 +3,7 @@ from typing import NamedTuple
 import numpy as np
 
 PW_MAX_CORES = 10
-MB = {'variables': ['pixel', 'fps', 'cores', 'energy'],
+MB = {'variables': ['pixel', 'fps', 'cores'],
       'parameter': ['pixel', 'cores'],
       'slos': [(1.0, False, 0.85),
                (1.0, False, 1.0),
