@@ -134,8 +134,8 @@ def visualize_data():
     plt.xlim(-0.1, 49.1)
     plt.ylim(1.4, 2.6)
     # Add labels and legend
-    plt.xlabel('X-axis')
-    plt.ylabel('Values')
+    plt.xlabel('Time (min)')
+    plt.ylabel('SLO Fulfillment')
     plt.title('Mean with Standard Deviation')
     plt.legend()
     plt.show()
