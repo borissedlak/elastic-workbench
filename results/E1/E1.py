@@ -47,7 +47,7 @@ def eval_networks():
             i, j, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
             reset_container_params(container, pixel, cores)
             reset_core_states(container, cores)
-            time.sleep(1)
+            time.sleep(2)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
             agent = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
@@ -103,7 +103,33 @@ def reset_container_params(c, pixel, cores):
     http_client.change_threads(c.ip_a, int(cores))
 
 
-def visualize_data(slof_file, output_file):
+def visualize_data(slof_files, output_file):
+    m_meth, std_meth = calculate_mean_std(slof_files[0])
+    m_base, _ = calculate_mean_std(slof_files[1])
+
+
+    x = np.arange(len(m_meth))
+    lower_bound = np.array(m_meth) - np.array(std_meth)
+    upper_bound = np.array(m_meth) + np.array(std_meth)
+
+    plt.figure(figsize=(7, 4.5))
+    # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
+    plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='blue', linewidth=2)
+    plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
+    plt.plot(x, m_base, label='Baseline Scaler', color='red', linewidth=1)
+    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
+
+    plt.xlim(-0.1, 49.1)
+    plt.ylim(1.4, 2.6)
+
+    plt.xlabel('Scaling Agent Iterations (50 cycles = 250 seconds)')
+    plt.ylabel('SLO Fulfillment')
+    # plt.title('Mean SLO Fulfillment')
+    plt.legend()
+    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
+    plt.show()
+
+def calculate_mean_std(slof_file):
     df = pd.read_csv(slof_file)
     del df['timestamp']
 
@@ -130,30 +156,12 @@ def visualize_data(slof_file, output_file):
         means.extend(mean_per_field)
         stds.extend(std_per_field)
 
-    x = np.arange(len(means))
-    lower_bound = np.array(means) - np.array(stds)
-    upper_bound = np.array(means) + np.array(stds)
-
-    plt.figure(figsize=(7, 4.5))
-    plt.plot(x, means, label='Mean SLO Fulfillment', color='blue', linewidth=2)
-    plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
-    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
-
-    plt.xlim(-0.1, 49.1)
-    plt.ylim(1.4, 2.6)
-
-    plt.xlabel('Scaling Agent Iterations (50 cycles = 250 seconds)')
-    plt.ylabel('SLO Fulfillment')
-    # plt.title('Mean SLO Fulfillment')
-    plt.legend()
-    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
-    plt.show()
-
+    return means, stds
 
 if __name__ == '__main__':
     # train_networks()
     # create_test_routine()
-    eval_networks()
-    eval_baseline()
-    # visualize_data("slo_f.csv", "./plots/.png")
-    # visualize_data("slo_f_b.csv", "./plots/baseline_agent.png")
+    # eval_networks()
+    # eval_baseline()
+    visualize_data(["slo_f_meth.csv", "slo_f_base.csv"], "./plots/comparison.png")
+    # visualize_data("slo_f_base.csv", "./plots/baseline_agent.png")

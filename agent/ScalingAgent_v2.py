@@ -152,6 +152,11 @@ def reset_core_states(container: DockerInfo, core):
     with access_state:
         core_state = {container.id: core}
 
+def reset_core_states_2(container: [DockerInfo], core):
+    global core_state
+    with access_state:
+        core_state = {container[0].id: core[0], container[1].id: core[1]}
+
 
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
