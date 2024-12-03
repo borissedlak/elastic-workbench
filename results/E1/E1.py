@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 
 from DockerClient import DockerInfo
 from HttpClient import HttpClient
+from agent.BaseAgent import BaseAgent
 from agent.DQN import DQN, STATE_DIM
 from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
@@ -45,7 +46,8 @@ def eval_networks():
         for row in csv_reader:
             i, j, pixel, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
             reset_container_params(container, pixel, cores)
-            reset_core_states()
+            reset_core_states(container, cores)
+            time.sleep(1)
 
             dqn = DQN(state_dim=STATE_DIM, action_dim=5, nn_folder=nn, suffix=f"{i}")
             agent = ScalingAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
@@ -54,7 +56,27 @@ def eval_networks():
             time.sleep(50)
             agent.stop()
 
-            print(f"{((i * reps) / (reps * partitions)) * 100}% finished")
+            print(f"{(((i * partitions) + j) / (reps * partitions)) * 100}% finished")
+
+
+def eval_baseline():
+    with open(routine_file, mode='r') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)
+
+        for row in csv_reader:
+            i, j, _, cores, pixel_t, fps_t, max_cores = tuple(map(int, row))
+            reset_container_params(container, pixel_t, cores)
+            reset_core_states(container, cores)
+            time.sleep(1)
+
+            agent = BaseAgent(container=container, prom_server=p_s, thresholds=(pixel_t, fps_t),
+                              log=(i, j), max_cores=max_cores)
+            agent.start()
+            time.sleep(50)
+            agent.stop()
+
+            print(f"{(((i * partitions) + j) / (reps * partitions)) * 100}% finished")
 
 
 def create_test_routine():
@@ -81,19 +103,15 @@ def reset_container_params(c, pixel, cores):
     http_client.change_threads(c.ip_a, int(cores))
 
 
-def visualize_data():
-    df = pd.read_csv("slo_f.csv")
+def visualize_data(slof_file, output_file):
+    df = pd.read_csv(slof_file)
     del df['timestamp']
 
-    # states = [(row[0], Full_State(*row[1:])) for row in df.itertuples(index=False, name=None)]
-    # slo_fs = [(s[0], np.sum(calculate_slo_reward(s[1].for_tensor()))) for s in states]
     means = []
     stds = []
 
     for i in range(1, partitions + 1):
         partition_df = df[df['index'] == i]
-        # TODO: Now split in {reps} arrays, extract slof, and add them together, preserving mean and std
-        # print(partition_df)
 
         parts = np.array_split(partition_df, reps)
         slo_fs_index = []
@@ -112,37 +130,30 @@ def visualize_data():
         means.extend(mean_per_field)
         stds.extend(std_per_field)
 
-    # plt.plot(means)
-    # plt.show()
-
     x = np.arange(len(means))
-
-    # Calculate the upper and lower bounds of the standard deviation
     lower_bound = np.array(means) - np.array(stds)
     upper_bound = np.array(means) + np.array(stds)
 
-    # Create the plot
-    plt.figure(figsize=(8, 5))
-
-    # Plot the mean as a line
-    plt.plot(x, means, label='Mean', color='blue', linewidth=2)
-
-    # Fill the range for the standard deviation
+    plt.figure(figsize=(7, 4.5))
+    plt.plot(x, means, label='Mean SLO Fulfillment', color='blue', linewidth=2)
     plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
-    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Change configuration', linestyles="--")
+    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(-0.1, 49.1)
     plt.ylim(1.4, 2.6)
-    # Add labels and legend
-    plt.xlabel('Time (min)')
+
+    plt.xlabel('Scaling Agent Iterations (50 cycles = 250 seconds)')
     plt.ylabel('SLO Fulfillment')
-    plt.title('Mean with Standard Deviation')
+    # plt.title('Mean SLO Fulfillment')
     plt.legend()
+    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
     plt.show()
 
 
 if __name__ == '__main__':
     # train_networks()
     # create_test_routine()
-    # eval_networks()
-    visualize_data()
+    eval_networks()
+    eval_baseline()
+    # visualize_data("slo_f.csv", "./plots/.png")
+    # visualize_data("slo_f_b.csv", "./plots/baseline_agent.png")

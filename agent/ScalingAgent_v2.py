@@ -7,10 +7,10 @@ from threading import Thread
 import numpy as np
 
 import utils
-from agent.DQN import DQN
 from DockerClient import DockerClient, DockerInfo
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
+from agent.DQN import DQN
 from agent.DQN import STATE_DIM
 from agent.agent_utils import get_free_cores, log_agent_experience
 from slo_config import MB, calculate_slo_reward, Full_State, PW_MAX_CORES
@@ -146,10 +146,12 @@ class ScalingAgent(Thread):
                 core_state = core_state | {self.container.id: cores}
                 logger.info(core_state)
 
-def reset_core_states():
+
+def reset_core_states(container: DockerInfo, core):
     global core_state
     with access_state:
-        core_state = {}
+        core_state = {container.id: core}
+
 
 if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
