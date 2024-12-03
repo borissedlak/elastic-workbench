@@ -76,6 +76,14 @@ class ScalingAgent(Thread):
     def stop(self):
         self._running = False
 
+
+    def has_free_cores(self):
+        with access_state:
+            free_cores = get_free_cores(core_state, self.max_cores)
+
+        return free_cores > 0
+
+
     def get_state_PW(self) -> Full_State:
         metric_str = "|".join(list(set(MB['variables']) - set(MB['parameter'])))
 
@@ -162,5 +170,5 @@ if __name__ == '__main__':
     ps = "http://172.18.0.2:9090"
     ScalingAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
                  thresholds=(1400, 25)).start()
-    ScalingAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
-                 thresholds=(1400, 25)).start()
+    # ScalingAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
+    #              thresholds=(1400, 25)).start()
