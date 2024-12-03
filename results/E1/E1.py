@@ -13,6 +13,9 @@ from agent.DQN import DQN, STATE_DIM
 from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
+
+plt.rcParams.update({'font.size': 12})
+
 nn = "./networks"
 routine_file = "test_routine.csv"
 reps = 5
@@ -112,7 +115,7 @@ def visualize_data(slof_files, output_file):
     lower_bound = np.array(m_meth) - np.array(std_meth)
     upper_bound = np.array(m_meth) + np.array(std_meth)
 
-    plt.figure(figsize=(7, 4.5))
+    plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
     plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='blue', linewidth=2)
     plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
@@ -120,7 +123,7 @@ def visualize_data(slof_files, output_file):
     plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(-0.1, 49.1)
-    plt.ylim(1.4, 2.6)
+    plt.ylim(1.4, 2.4)
 
     plt.xlabel('Scaling Agent Iterations (50 cycles = 250 seconds)')
     plt.ylabel('SLO Fulfillment')
@@ -163,5 +166,5 @@ if __name__ == '__main__':
     # create_test_routine()
     # eval_networks()
     # eval_baseline()
-    visualize_data(["slo_f_meth.csv", "slo_f_base.csv"], "./plots/comparison.png")
+    visualize_data(["slo_f_meth.csv", "slo_f_base.csv"], "./plots/tight_constraints_comparison.png")
     # visualize_data("slo_f_base.csv", "./plots/baseline_agent.png")
