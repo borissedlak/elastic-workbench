@@ -45,6 +45,7 @@ class ScalingAgent(Thread):
         self.unchanged_iterations = 0
         self.thresholds = thresholds
         self._running = True
+        self._idle = False
 
     def run(self):
         global core_state
@@ -69,13 +70,17 @@ class ScalingAgent(Thread):
                 action_pw = 5  # Indicate exploration path
             else:
                 action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
-            self.act_on_env(action_pw, state_pw)
+
+            if not self._idle:
+                self.act_on_env(action_pw, state_pw)
 
             time.sleep(5)
 
     def stop(self):
         self._running = False
 
+    def set_idle(self, idle):
+        self._idle = idle
 
     def has_free_cores(self):
         with access_state:

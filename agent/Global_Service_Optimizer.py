@@ -12,13 +12,11 @@ http_client = HttpClient()
 
 logger = logging.getLogger("multiscale")
 
+
 class Global_Service_Optimizer:
     def __init__(self, agents: [ScalingAgent]):
         self.s_agents = agents
         self.lgbn = agent_utils.train_lgbn_model(pd.read_csv("./LGBN.csv"), show_result=False)
-
-    def evaluate_slof(self):
-        pass
 
     def estimate_swapping(self):
         state_1: Full_State = self.s_agents[0].get_state_PW()

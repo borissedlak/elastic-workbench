@@ -117,9 +117,9 @@ def visualize_data(slof_files, output_file):
 
     plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
-    plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='blue', linewidth=2)
-    plt.fill_between(x, lower_bound, upper_bound, color='blue', alpha=0.2, label='Standard Deviation')
-    plt.plot(x, m_base, label='Baseline Scaler', color='red', linewidth=1)
+    plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='red', linewidth=2)
+    plt.fill_between(x, lower_bound, upper_bound, color='red', alpha=0.2, label='Standard Deviation')
+    plt.plot(x, m_base, label='Baseline Scaler', color='black', linewidth=1.5)
     plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(-0.1, 49.1)
