@@ -13,7 +13,6 @@ from agent.DQN import DQN, STATE_DIM
 from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states
 from slo_config import PW_MAX_CORES, Full_State, calculate_slo_reward
 
-
 plt.rcParams.update({'font.size': 12})
 
 nn = "./networks"
@@ -109,7 +108,7 @@ def reset_container_params(c, pixel, cores):
 def visualize_data(slof_files, output_file):
     m_meth, std_meth = calculate_mean_std(slof_files[0])
     m_base, _ = calculate_mean_std(slof_files[1])
-
+    changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
 
     x = np.arange(len(m_meth))
     lower_bound = np.array(m_meth) - np.array(std_meth)
@@ -118,9 +117,9 @@ def visualize_data(slof_files, output_file):
     plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
     plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='red', linewidth=2)
-    plt.fill_between(x, lower_bound, upper_bound, color='red', alpha=0.2, label='Standard Deviation')
-    plt.plot(x, m_base, label='Baseline Scaler', color='black', linewidth=1.5)
-    plt.vlines([10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
+    plt.fill_between(x, lower_bound, upper_bound, color='red', alpha=0.2)  # , label='Standard Deviation')
+    plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
+    plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(-0.1, 49.1)
     plt.ylim(1.4, 2.4)
@@ -131,6 +130,18 @@ def visualize_data(slof_files, output_file):
     plt.legend()
     plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
     plt.show()
+
+
+def get_changed_lines(slof_file):
+    df = pd.read_csv(slof_file)
+
+    df['cores_change'] = df['cores'].ne(df['cores'].shift())
+    df['pixel_change'] = df['pixel'].ne(df['pixel'].shift())
+
+    # Combine the change indicators
+    df['change'] = df['cores_change'] | df['pixel_change']
+    return df['change']
+
 
 def calculate_mean_std(slof_file):
     df = pd.read_csv(slof_file)
@@ -160,6 +171,7 @@ def calculate_mean_std(slof_file):
         stds.extend(std_per_field)
 
     return means, stds
+
 
 if __name__ == '__main__':
     # train_networks()
