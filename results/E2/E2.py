@@ -84,7 +84,7 @@ def visualize_data():
 
     x = np.arange(len(slo_f_alice))
 
-    plt.figure(figsize=(6.0, 3.3))
+    plt.figure(figsize=(6.0, 2.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
     plt.plot(x, slo_f_alice, label='Alice: SLO Fulfillment', color='red', linewidth=2)
     plt.plot(x, slo_f_bob, label='Bob: SLO Fulfillment', color='blue', linewidth=2)
