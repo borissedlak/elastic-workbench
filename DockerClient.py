@@ -1,10 +1,9 @@
 import logging
-
-import docker
 from typing import NamedTuple
 
-import utils
+import docker
 
+import utils
 
 logger = logging.getLogger("multiscale")
 logging.getLogger("multiscale").setLevel(logging.INFO)
@@ -26,14 +25,17 @@ class DockerClient:
         except Exception as e:
             logger.error("Could not connect to docker container", e)
 
-    @utils.print_execution_time
-    def get_container_stats(self, container_ref, stream_p=False):
+    # @utils.print_execution_time # 3ms
+    def get_container_stats(self, container_ref):
         try:
             container = self.client.containers.get(container_ref)
-            stats = container.stats(stream=stream_p, decode=stream_p)
-            return stats
+            return container
         except Exception as e:
             logger.error("Could not connect to docker container", e)
+
+    def get_container_ip(self, container_ref):
+        c_stats = self.get_container_stats(container_ref)
+        return c_stats.attrs['NetworkSettings']['Networks']['elastic-workbench_default']['IPAddress']
 
 
 class DockerInfo(NamedTuple):
@@ -41,12 +43,9 @@ class DockerInfo(NamedTuple):
     ip_a: str
     alias: str
 
-if __name__ == "__main__":
-    client = DockerClient()
-    # client.update_cpu("67959d3ff81a", 5)
-    stream = client.get_container_stats("elastic-workbench-video-processing-a-1", stream_p=True)
 
-    for s in stream:
-        # print(utils.calculate_cpu_percentage(s))
-        print(1)
-    # print(utils.calculate_cpu_percentage(client.get_container_stats("multiscaler-video-processing-1")))
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    client = DockerClient()
+    ip = client.get_container_ip("elastic-workbench-video-processing-1")
+    print(ip)

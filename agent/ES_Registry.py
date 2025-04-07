@@ -3,22 +3,23 @@ import logging
 
 logger = logging.getLogger("multiscale")
 
+
 class ES_Registry:
-    _es_activate_default = {'elastic-workbench-video-processing': ['vertical_scaling', 'quality_scaling']}
+    _ES_activate_default = {'elastic-workbench-video-processing': ['vertical_scaling', 'quality_scaling']}
 
     def __init__(self):
-        self.es_activated = self._es_activate_default
-        with open('strategy_registry.json', 'r') as f:
+        self.ES_activated = self._ES_activate_default
+        with open('es_registry.json', 'r') as f:
             self.es_api = json.load(f)
 
-    def is_es_supported(self, service_type, es_name):
+    def is_ES_supported(self, service_type, es_name):
         strategies = self.es_api.get("strategies", [])
         for strategy in strategies:
             if (
                     strategy.get("service_type") == service_type and
                     strategy.get("ES_name") == es_name
             ):
-                if es_name in self.es_activated.get(service_type, []):
+                if es_name in self.ES_activated.get(service_type, []):
                     return True
                 else:
                     logger.info(f"Strategy <{service_type},{es_name}> is registered, but not activated")
@@ -27,6 +28,18 @@ class ES_Registry:
         logger.info("No corresponding strategy registered")
         return False
 
+    def get_ES_information(self, service_type, es_name):
+        for strategy in self.es_api.get("strategies", []):
+            if strategy["service_type"] == service_type and strategy["ES_name"] == es_name:
+                return strategy.get("endpoints", [])
+        return []
+
+    def ES_random_execution(self, host, service_type, es_name):
+        if not self.is_ES_supported(service_type, es_name):
+            raise RuntimeError(f"Requesting unknown strategy <{service_type},{es_name}>")
+
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     es_reg = ES_Registry()
-    print(es_reg.is_es_supported("elastic-workbench-video-processing", "vertical_scaling"))
+    print(es_reg.get_ES_information('elastic-workbench-video-processing', 'vertical_scaling'))

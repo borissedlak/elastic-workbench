@@ -49,8 +49,8 @@ class ScalingAgent(Thread):
 
             # TODO: This will need a better wrapper most likely
             for s_local in self.services_local:
-                print(self.es_registry.es_api)
-                print(self.es_registry.es_api['strategies'])
+                print(self.es_registry.ES_random_execution(s_local,'elastic-workbench-video-processing', 'vertical_scaling'))
+                # print(self.es_registry.es_api['strategies'])
                 print(s_local)
 
             # state_pw = self.get_state_PW()
