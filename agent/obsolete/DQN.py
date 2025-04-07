@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 from numpy.linalg import LinAlgError
 
 import utils
-from agent.LGBN_Env import LGBN_Env
+from agent.obsolete.LGBN_Env import LGBN_Env
 
 logger = logging.getLogger("multiscale")
 logging.getLogger("multiscale").setLevel(logging.INFO)
@@ -207,5 +207,5 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-    df_t = pd.read_csv("../share/metrics/LGBN.csv")
+    df_t = pd.read_csv("../../share/metrics/LGBN.csv")
     DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True).train_dqn_from_env(df_t)

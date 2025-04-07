@@ -13,8 +13,8 @@ DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.soc
 
 
 class DockerClient:
-    def __init__(self, url):
-        self.client = docker.DockerClient(base_url=url)
+    def __init__(self):
+        self.client = docker.DockerClient(base_url=DOCKER_SOCKET)
 
     # TODO: Takes too long with 90ms
     @utils.print_execution_time
@@ -42,7 +42,7 @@ class DockerInfo(NamedTuple):
     alias: str
 
 if __name__ == "__main__":
-    client = DockerClient(DOCKER_SOCKET)
+    client = DockerClient()
     # client.update_cpu("67959d3ff81a", 5)
     stream = client.get_container_stats("elastic-workbench-video-processing-a-1", stream_p=True)
 

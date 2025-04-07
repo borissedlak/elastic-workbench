@@ -1,9 +1,18 @@
 import utils
 
+from DockerClient import DockerClient
+
+# DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
+CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
 class IoTService:
     def __init__(self):
-        pass
+        self.service_id = CONTAINER_REF
+        self._terminated = True
+        self._running = False
+        self.service_conf = {}
+
+        self.docker_client = DockerClient()
 
     def process_one_iteration(self, params, frame) -> None:
         pass

@@ -9,12 +9,9 @@ from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
-from DockerClient import DockerClient
 from VideoReader import VideoReader
 from iot_services.IoTService import IoTService
 
-DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
-CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
 logger = logging.getLogger("multiscale")
 
@@ -30,8 +27,6 @@ docker_stats = None
 class QrDetector(IoTService):
     def __init__(self):
         super().__init__()
-        self._terminated = True
-        self._running = False
         self.service_conf = {'pixel': 800}
         self.cores = 2
         self.thread_multiplier = 4
@@ -41,7 +36,6 @@ class QrDetector(IoTService):
         self.webcam_stream = VideoReader()
         self.webcam_stream.start()
         self.flag_next_metrics = False
-        self.docker_client = DockerClient(DOCKER_SOCKET)
 
     def process_one_iteration(self, config_params, frame) -> None:
 
@@ -79,13 +73,13 @@ class QrDetector(IoTService):
 
                 # This is only executed once, and not for every frame
                 processing_fps = self.fps.get_current_fps()
-                fps.labels(service_id="video", metric_id="fps").set(processing_fps)
-                pixel.labels(service_id="video", metric_id="pixel").set(self.service_conf['pixel'])
-                cores.labels(service_id="video", metric_id="cores").set(self.cores)
+                fps.labels(service_id=self.service_id, metric_id="fps").set(processing_fps)
+                pixel.labels(service_id=self.service_id, metric_id="pixel").set(self.service_conf['pixel'])
+                cores.labels(service_id=self.service_id, metric_id="cores").set(self.cores)
 
                 cpu_load = 0
                 # cpu_load = utils.calculate_cpu_percentage(docker_stats)
-                energy.labels(service_id="video", metric_id="energy").set(cpu_load)
+                energy.labels(service_id=self.service_id, metric_id="energy").set(cpu_load)
 
                 metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
                                       cpu_load, self.flag_next_metrics))

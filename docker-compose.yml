@@ -1,6 +1,6 @@
 services:
 
-  video-processing-a:
+  video-processing:
     build:
       context: .
       dockerfile: ./iot_services/QrDetector/Dockerfile
@@ -14,8 +14,8 @@ services:
 #      - /c/users/boris/development/multiScaler/metrics:/src/share
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
-  video-processing-b:
-    image: elastic-workbench-video-processing-a:latest
+  video-processing-1:
+    image: elastic-workbench-video-processing:latest
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out

@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 
 from DockerClient import DockerInfo
 from HttpClient import HttpClient
-from agent.DQN import DQN, STATE_DIM
-from agent.Global_Service_Optimizer import Global_Service_Optimizer
+from agent.obsolete.DQN import DQN, STATE_DIM
+from agent.obsolete.Global_Service_Optimizer import Global_Service_Optimizer
 from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states_2
 from slo_config import Full_State, calculate_slo_reward
 

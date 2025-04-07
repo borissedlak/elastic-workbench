@@ -14,8 +14,8 @@ app = Flask(__name__)
 # logging.getLogger('multiscale').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
-DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+DEFAULT_CORES = utils.get_env_param("DEFAULT_CORES", 2)
 
 
 def init_service(s_type):
@@ -28,15 +28,18 @@ def init_service(s_type):
 class ServiceWrapper:
     def __init__(self, s_type, start_processing=False):
         self.service: IoTService = init_service(s_type)
-        self.docker_client = DockerClient(DOCKER_SOCKET)
+        self.docker_client = DockerClient()
+
         if start_processing:
             self.start_processing()
+            self.scale_cores(DEFAULT_CORES)
 
         self.app = Flask(__name__)
         self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['POST'])
         self.app.add_url_rule('/stop_all', 'stop_all', self.terminate_processing, methods=['POST'])
         self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
-        self.app.add_url_rule('/vertical_scaling', 'vertical_scaling', self.vertical_scaling, methods=['PUT'])
+        self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
+        self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
 
     # @utils.print_execution_time
@@ -56,14 +59,25 @@ class ServiceWrapper:
         self.service.change_config(service_d)
         return ""
 
-    # @app.route("/vertical_scaling", methods=['PUT'])
-    def vertical_scaling(self):
-        cpu_cores = int(request.args.get('cpu_cores'))
+    # TODO: THis will be different according to the service
+    # @app.route("/change_config", methods=['PUT'])
+    def quality_scaling(self):
+        quality = int(request.args.get('quality'))
+        s_conf = self.service.service_conf
+        s_conf.pixel=quality
+        self.service.change_config(s_conf)
+        return ""
 
+    # @app.route("/vertical_scaling", methods=['PUT'])
+    def resource_scaling(self):
+        cpu_cores = int(request.args.get('cpu_cores'))
+        return self.scale_cores(cpu_cores)
+
+    def scale_cores(self, cores):
         # 1) Change the number of threads of the application
-        self.service.vertical_scaling(cpu_cores)
+        self.service.vertical_scaling(cores)
         # 2) Change the number of cores available for docker
-        self.docker_client.update_cpu(CONTAINER_REF, cpu_cores)
+        self.docker_client.update_cpu(CONTAINER_REF, cores)
 
         return ""
 
