@@ -12,3 +12,4 @@ docker update --cpus 4.0 multiscaler-video-processing-1
 docker update --cpu-shares 1024 multiscaler-video-processing-1
 
 docker update --cpuset-cpus 1,2,3,4 multiscaler-video-processing-1
+elastic-workbench-video-processing-a-1

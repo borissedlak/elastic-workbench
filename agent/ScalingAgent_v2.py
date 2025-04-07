@@ -172,8 +172,8 @@ def reset_core_states_2(container: [DockerInfo], core):
 
 
 if __name__ == '__main__':
-    ps = "http://172.18.0.2:9090"
+    ps = "http://localhost:9090"
     ScalingAgent(container=DockerInfo("multiscaler-video-processing-a-1", "172.18.0.4", "Alice"), prom_server=ps,
-                 thresholds=(1400, 25)).start()
+                 thresholds=(600, 25)).start()
     # ScalingAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
     #              thresholds=(1400, 25)).start()

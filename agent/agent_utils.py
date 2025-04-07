@@ -6,8 +6,10 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import pgmpy
 import seaborn as sns
 from matplotlib import pyplot as plt
+from pgmpy.estimators import AICScore, HillClimbSearch
 from pgmpy.models import LinearGaussianBayesianNetwork
 from pgmpy.readwrite import XMLBIFWriter
 
@@ -29,18 +31,26 @@ def print_execution_time(func):
     return wrapper
 
 
-# @print_execution_time # Roughly 1 to 1.5s
+@print_execution_time # Roughly 1 to 1.5s
 def train_lgbn_model(df, show_result=False):
     df_filtered = filter_3s_after_change(df.copy())
 
+    # If I don't pass the DAG I have to train it myself, which takes time.
+    # scoring_method = AICScore(data=df_filtered)  # BDeuScore | AICScore
+    # estimator = HillClimbSearch(data=df_filtered)
+    #
+    # dag: pgmpy.base.DAG = estimator.estimate(
+    #     scoring_method=scoring_method, max_indegree=5, epsilon=1,
+    # )
+    # model = LinearGaussianBayesianNetwork(ebunch=dag)
     model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')])
     # XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df_filtered)
 
-    if show_result:
-        for cpd in model.get_cpds():
-            print(cpd)
+    for cpd in model.get_cpds():
+        print(cpd)
 
+    if show_result:
         for states in [["pixel", "fps"], ["cores", "fps"], ["pixel", "energy"], ["cores", "energy"]]:
             X_samples = model.simulate(1500, 35)
             X_df = pd.DataFrame(X_samples, columns=states)

@@ -48,7 +48,7 @@ class LGBN_Env(gymnasium.Env):
         return self.state, reward, False, False, {}
 
     # @utils.print_execution_time
-    # NTH: Make this more modular
+    # TODO: The variance is actually important for the uncertainty
     def sample_values_from_lgbn(self, pixel, cores):
         var, mean, vari = self.lgbn.predict(pd.DataFrame({'pixel': [pixel], 'cores': [cores]}))
 

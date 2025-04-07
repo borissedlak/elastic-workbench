@@ -10,8 +10,12 @@ from pyzbar.pyzbar import decode
 
 import utils
 from DockerClient import DockerClient
-from VehicleService import VehicleService
 from VideoReader import VideoReader
+from iot_services.IoTService import IoTService
+
+# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.insert(0, parent_dir)
+# from IoTService import IoTService
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
@@ -27,7 +31,7 @@ cores = Gauge('cores', 'Current configured cores', ['service_id', 'metric_id'])
 docker_stats = None
 
 
-class QrDetector(VehicleService):
+class QrDetector(IoTService):
     def __init__(self):
         super().__init__()
         self._terminated = True
@@ -42,10 +46,6 @@ class QrDetector(VehicleService):
         self.webcam_stream.start()
         self.flag_next_metrics = False
         self.docker_client = DockerClient(DOCKER_SOCKET)
-
-        # TOD: Ideally, this is not part of the service; after all, it can run alone monitoring and providing
-        # self.stats_stream = self.docker_client.get_container_stats(CONTAINER_REF, stream_p=True)
-        # threading.Thread(target=resolve_docker_load, args=(self.stats_stream,), daemon=True).start()
 
     def process_one_iteration(self, config_params, frame) -> None:
 
@@ -88,11 +88,7 @@ class QrDetector(VehicleService):
                 cores.labels(service_id="video", metric_id="cores").set(self.cores)
 
                 cpu_load = 0
-                # try:
-                #     cpu_load = utils.calculate_cpu_percentage(docker_stats)
-                # except KeyError as e:
-                #     logger.warning(f"Cannot get CPU load, setting to 0 for now; {e.args}")
-                #     cpu_load = 0
+                # cpu_load = utils.calculate_cpu_percentage(docker_stats)
                 energy.labels(service_id="video", metric_id="energy").set(cpu_load)
 
                 metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
