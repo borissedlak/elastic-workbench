@@ -27,7 +27,7 @@ class BaseAgent(ScalingAgent):
 
         initial_state = self.get_state_PW()
         with access_state:
-            core_state = core_state | {self.container.id: initial_state.cores}
+            core_state = core_state | {self.container.container_id: initial_state.cores}
             logger.info(core_state)
 
         while self._running:

@@ -21,17 +21,6 @@ def get_env_param(var, default) -> str:
     return env
 
 
-# def get_local_ip():
-#     interfaces = netifaces.interfaces()
-#     for interface in interfaces:
-#         ifaddresses = netifaces.ifaddresses(interface)
-#         if netifaces.AF_INET in ifaddresses:
-#             for addr in ifaddresses[netifaces.AF_INET]:
-#                 ip = addr.get('addr')
-#                 if ip and ip.startswith('192.168'):
-#                     return ip
-#     return None
-
 def highlight_qr_codes(frame, decoded_objects):
     for obj in decoded_objects:
         points = obj.polygon

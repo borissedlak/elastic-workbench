@@ -8,27 +8,30 @@ services:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock
-      - CONTAINER_REF=multiscaler-video-processing-a-1
+      - CONTAINER_REF=elastic-workbench-video-processing-a-1
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share
-#      - /c/users/boris/development/multiScaler/metrics:/src/metrics
+#      - /c/users/boris/development/multiScaler/metrics:/src/share
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
-#  video-processing-b:
-#    image: multiscaler-video-processing-a
-#    environment:
-#      - FLASK_ENV=development
-#      - PYTHONUNBUFFERED=0 # Always flushes out
-#      - DOCKER_SOCKET=unix:///var/run/docker.sock
-#      - CONTAINER_REF=multiscaler-video-processing-b-1
-#    volumes:
-#      - /home/boris/development/multiScaler/share:/src/share
-#      #      - /c/users/boris/development/multiScaler/metrics:/src/metrics
-#      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+  video-processing-b:
+    image: elastic-workbench-video-processing-a:latest
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=0 # Always flushes out
+      - DOCKER_SOCKET=unix:///var/run/docker.sock
+      - CONTAINER_REF=elastic-workbench-video-processing-b-1
+    volumes:
+      - /home/boris/development/elastic-workbench/share:/src/share
+      #      - /c/users/boris/development/multiScaler/metrics:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.19.0.2
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
@@ -41,8 +44,36 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.19.0.3
     ports:
       - "3000:3000" # Grafana UI
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
+
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    container_name: cadvisor
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.19.0.4
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    restart: always
+    privileged: true
+
+# I think this network does not show effects
+#networks:
+#  docker_network:
+#    driver: bridge
+#    ipam:
+#      config:
+#        - subnet: 172.19.0.0/24

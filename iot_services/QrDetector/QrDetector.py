@@ -13,10 +13,6 @@ from DockerClient import DockerClient
 from VideoReader import VideoReader
 from iot_services.IoTService import IoTService
 
-# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.insert(0, parent_dir)
-# from IoTService import IoTService
-
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
@@ -119,7 +115,7 @@ class QrDetector(IoTService):
 
     # TODO: Takes too long with 106ms
     @utils.print_execution_time
-    def change_threads(self, c_threads):
+    def vertical_scaling(self, c_threads):
         self.terminate()
         # Wait until it is really terminated and then start new
         while not self._terminated:
@@ -129,11 +125,6 @@ class QrDetector(IoTService):
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
 
-
-def resolve_docker_load(stream_object):
-    global docker_stats
-    for stats in stream_object:
-        docker_stats = stats
 
 
 if __name__ == '__main__':

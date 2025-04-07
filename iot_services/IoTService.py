@@ -3,7 +3,7 @@ import utils
 
 class IoTService:
     def __init__(self):
-        self.device_metric_reporter = None
+        pass
 
     def process_one_iteration(self, params, frame) -> None:
         pass
@@ -11,11 +11,11 @@ class IoTService:
     def start_process(self):
         pass
 
-    def report_to_mongo(self, metrics) -> None:
-        self.device_metric_reporter.report_metrics(utils.COLLECTION_NAME, metrics)
-
     def terminate(self):
         pass
 
     def change_config(self, service_d):
+        pass
+
+    def vertical_scaling(self, threads_num):
         pass

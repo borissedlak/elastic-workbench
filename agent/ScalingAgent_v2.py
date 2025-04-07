@@ -52,7 +52,7 @@ class ScalingAgent(Thread):
 
         initial_state = self.get_state_PW()
         with access_state:
-            core_state = core_state | {self.container.id: initial_state.cores}
+            core_state = core_state | {self.container.container_id: initial_state.cores}
             logger.info(core_state)
 
         while self._running:
@@ -146,7 +146,7 @@ class ScalingAgent(Thread):
             self.http_client.change_threads(self.container.ip_a, int(cores_abs))
 
             with access_state:
-                core_state = core_state | {self.container.id: cores_abs}
+                core_state = core_state | {self.container.container_id: cores_abs}
                 logger.info(core_state)
 
         elif action == 5:
@@ -156,19 +156,19 @@ class ScalingAgent(Thread):
             self.http_client.change_config(self.container.ip_a, {'pixel': int(pixel)})
             self.http_client.change_threads(self.container.ip_a, int(cores))
             with access_state:
-                core_state = core_state | {self.container.id: cores}
+                core_state = core_state | {self.container.container_id: cores}
                 logger.info(core_state)
 
 
 def reset_core_states(container: DockerInfo, core):
     global core_state
     with access_state:
-        core_state = {container.id: core}
+        core_state = {container.container_id: core}
 
 def reset_core_states_2(container: [DockerInfo], core):
     global core_state
     with access_state:
-        core_state = {container[0].id: core[0], container[1].id: core[1]}
+        core_state = {container[0].container_id: core[0], container[1].container_id: core[1]}
 
 
 if __name__ == '__main__':
