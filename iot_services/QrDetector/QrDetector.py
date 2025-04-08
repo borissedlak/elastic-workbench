@@ -8,8 +8,8 @@ from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
-from VideoReader import VideoReader
 from iot_services.IoTService import IoTService
+from iot_services.QrDetector.VideoReader import VideoReader
 
 logger = logging.getLogger("multiscale")
 
@@ -68,14 +68,13 @@ class QrDetector(IoTService):
             pixel.labels(service_id=self.docker_container_ref, metric_id="pixel").set(self.service_conf['pixel'])
             cores.labels(service_id=self.docker_container_ref, metric_id="cores").set(self.cores_reserved)
 
-            # if self.store_to_csv:
-            #     metric_buffer.append(
-            #         (datetime.datetime.now(), processed_item_counter, self.service_conf['pixel'], self.cores_reserved,
-            #          0, self.flag_next_metrics))
-            #     self.flag_next_metrics = False
-            #     if len(metric_buffer) >= 15:
-            #         utils.write_metrics_to_csv(metric_buffer)
-            #         metric_buffer.clear()
+            if self.store_to_csv:
+                metric_buffer.append((datetime.datetime.now(), processed_item_counter, self.service_conf,
+                                      self.cores_reserved, self.flag_next_metrics))
+                self.flag_next_metrics = False
+                # if len(metric_buffer) >= 15: # TODO: Might need to fill buffer further
+                utils.write_metrics_to_csv(metric_buffer)
+                metric_buffer.clear()
 
             if self.simulate_arrival_interval:
                 self.simulate_interval(start_time)
@@ -83,7 +82,6 @@ class QrDetector(IoTService):
         self._terminated = True
         logger.info(f"{self.service_type} stopped")
 
-    # TODO: Maybe I can also move this to IoTService.class ?
     def has_processing_timeout(self, start_time):
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
         return time_elapsed >= self.available_timeframe

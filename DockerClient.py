@@ -15,8 +15,7 @@ class DockerClient:
     def __init__(self):
         self.client = docker.DockerClient(base_url=DOCKER_SOCKET)
 
-    # TODO: Takes too long with 90ms
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def update_cpu(self, container_ref, cpus):
         try:
             container = self.client.containers.get(container_ref)
@@ -35,7 +34,7 @@ class DockerClient:
 
     def get_container_ip(self, container_ref):
         c_stats = self.get_container_stats(container_ref)
-        return c_stats.attrs['NetworkSettings']['Networks']['elastic-workbench_default']['IPAddress']
+        return c_stats.attrs['NetworkSettings']['Networks']['elastic-workbench_docker_network']['IPAddress']
 
 
 class DockerInfo(NamedTuple):
