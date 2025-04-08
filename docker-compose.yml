@@ -4,8 +4,8 @@ services:
     build:
       context: .
       dockerfile: ./iot_services/QrDetector/Dockerfile
-#    networks:
-#      docker_network:
+    networks:
+      docker_network:
 #        ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
@@ -18,25 +18,29 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
     ports:
       - "8080:8080" # Only needed on Windows
+    depends_on:
+      - cadvisor
+      - grafana
+      - prometheus
 
-  video-processing-1:
-    image: elastic-workbench-video-processing:latest
-    environment:
-      - FLASK_ENV=development
-      - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-      - CONTAINER_REF=elastic-workbench-video-processing-b-1
-    volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
-      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+#  video-processing-1:
+#    image: elastic-workbench-video-processing:latest
+#    environment:
+#      - FLASK_ENV=development
+#      - PYTHONUNBUFFERED=0 # Always flushes out
+#      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+#      - CONTAINER_REF=elastic-workbench-video-processing-b-1
+#    volumes:
+##      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+#      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.2
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.2
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
@@ -49,22 +53,24 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.3
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.3
     ports:
       - "3000:3000" # Grafana UI
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
+    depends_on:
+      - prometheus
 
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     container_name: cadvisor
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.4
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.4
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -76,9 +82,9 @@ services:
     privileged: true
 
 # I think this network does not show effects
-#networks:
-#  docker_network:
-#    driver: bridge
-#    ipam:
-#      config:
-#        - subnet: 172.20.0.0/24
+networks:
+  docker_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
