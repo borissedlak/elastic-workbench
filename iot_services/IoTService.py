@@ -21,13 +21,12 @@ class IoTService:
         self.cores_reserved = 2
 
         self.docker_client = DockerClient()
-        self.flag_next_metrics = False
+        self.flag_next_metrics = True  # Start with flag
 
     def process_one_iteration(self, params, frame) -> None:
         pass
 
     def start_process(self):
-
         self._terminated = False
         self._running = True
 
@@ -55,8 +54,9 @@ class IoTService:
             time.sleep(0.01)
 
         self.cores_reserved = c_cores
-        logger.info(f"{self.service_type} set to {c_cores} cores")
         self.start_process()
+        self.flag_next_metrics = True
+        logger.info(f"{self.service_type} set to {c_cores} cores")
 
     def change_request_arrival(self, arrival_number):
         pass

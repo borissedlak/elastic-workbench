@@ -69,8 +69,8 @@ class QrDetector(IoTService):
             cores.labels(service_id=self.docker_container_ref, metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
-                metric_buffer.append((datetime.datetime.now(), processed_item_counter, self.service_conf,
-                                      self.cores_reserved, self.flag_next_metrics))
+                metric_buffer.append((datetime.datetime.now(), self.service_type, processed_item_counter,
+                                      self.service_conf, self.cores_reserved, self.flag_next_metrics))
                 self.flag_next_metrics = False
                 # if len(metric_buffer) >= 15: # TODO: Might need to fill buffer further
                 utils.write_metrics_to_csv(metric_buffer)

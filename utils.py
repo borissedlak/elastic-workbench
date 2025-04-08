@@ -6,8 +6,6 @@ import time
 import cv2
 import numpy as np
 
-from slo_config import PW_MAX_CORES
-
 logger = logging.getLogger('multiscale')
 
 
@@ -97,12 +95,11 @@ def filter_tuple(t, name, index):
     return next((item for item in t if item[index] == name), None)
 
 
-
 # @print_execution_time
 def write_metrics_to_csv(lines):
     # Define the directory and file name
     directory = "./share/metrics"
-    file_name = "LGBN.csv"
+    file_name = "metrics.csv"
     file_path = os.path.join(directory, file_name)
 
     # Ensure the directory exists
@@ -117,12 +114,12 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "fps", "pixel", "cores", "energy", "change_flag"])
+            writer.writerow(["timestamp", "service_type", "fps", "s_config", "cores", "change_flag"])
 
         writer.writerows(lines)
 
-def calculate_cpu_percentage(stats):
 
+def calculate_cpu_percentage(stats):
     cpu_delta: int = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
     system_delta: int = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
     number_of_cores: int = 16

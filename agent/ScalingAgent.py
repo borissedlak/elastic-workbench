@@ -38,5 +38,6 @@ class ScalingAgent(Thread):
 
 
 if __name__ == '__main__':
-    ps = "http://172.19.0.1:9090"
+    # TODO: This should not crash down only because the service is not available
+    ps = "http://172.20.0.5:9090"
     ScalingAgent(services_local=["elastic-workbench-video-processing-1"], prom_server=ps).start()
