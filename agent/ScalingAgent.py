@@ -49,7 +49,9 @@ class ScalingAgent(Thread):
 
             # TODO: This will need a better wrapper most likely
             for s_local in self.services_local:
-                print(self.es_registry.ES_random_execution(s_local,'elastic-workbench-video-processing', 'vertical_scaling'))
+                host_address = self.docker_client.get_container_ip(s_local)
+                self.es_registry.ES_random_execution(host_address, 'elastic-workbench-video-processing',
+                                                     'vertical_scaling')
                 # print(self.es_registry.es_api['strategies'])
                 print(s_local)
 
@@ -79,7 +81,6 @@ class ScalingAgent(Thread):
     #         free_cores = get_free_cores(core_state, self.max_cores)
     #
     #     return free_cores > 0
-
 
     # def get_state_PW(self) -> Full_State:
     #     metric_str = "|".join(list(set(MB['variables']) - set(MB['parameter'])))
