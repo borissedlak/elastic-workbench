@@ -12,7 +12,6 @@ import utils
 from VideoReader import VideoReader
 from iot_services.IoTService import IoTService
 
-
 logger = logging.getLogger("multiscale")
 
 start_http_server(8000)
@@ -25,16 +24,20 @@ docker_stats = None
 
 
 class QrDetector(IoTService):
-    def __init__(self):
+    def __init__(self, store_to_csv=True):
         super().__init__()
         self.service_conf = {'pixel': 800}
-        self.cores = 2
-        self.thread_multiplier = 4
-        self.number_threads = self.cores * self.thread_multiplier
+        self.cores = 10
+        # self.thread_multiplier = 4
+        self.number_threads = self.cores  # * self.thread_multiplier
         self.fps = utils.FPS_()
+        self.store_to_csv = store_to_csv
 
-        self.webcam_stream = VideoReader()
-        self.webcam_stream.start()
+        self.simulate_arrival_interval = True
+        self.available_timeframe = 1000  # ms
+        self.batch_size = 200
+        self.video_stream = VideoReader()
+        # self.webcam_stream.start()
         self.flag_next_metrics = False
 
     def process_one_iteration(self, config_params, frame) -> None:
@@ -59,7 +62,8 @@ class QrDetector(IoTService):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.number_threads) as executor:
             while self._running:
 
-                buffer = self.webcam_stream.get_buffer_size_n(self.number_threads)
+                start_time = datetime.datetime.now()
+                buffer = self.video_stream.get_batch(self.batch_size)
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
                                for frame in buffer}
 
@@ -81,12 +85,17 @@ class QrDetector(IoTService):
                 # cpu_load = utils.calculate_cpu_percentage(docker_stats)
                 energy.labels(service_id=self.service_id, metric_id="energy").set(cpu_load)
 
-                metric_buffer.append((datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
-                                      cpu_load, self.flag_next_metrics))
-                self.flag_next_metrics = False
-                if len(metric_buffer) >= 15:
-                    utils.write_metrics_to_csv(metric_buffer)
-                    metric_buffer.clear()
+                if self.store_to_csv:
+                    metric_buffer.append(
+                        (datetime.datetime.now(), processing_fps, self.service_conf['pixel'], self.cores,
+                         cpu_load, self.flag_next_metrics))
+                    # self.flag_next_metrics = False
+                    if len(metric_buffer) >= 15:
+                        utils.write_metrics_to_csv(metric_buffer)
+                        metric_buffer.clear()
+
+                if self.simulate_arrival_interval:
+                    self.simulate_interval(start_time)
 
         self._terminated = True
         logger.info("QR Detector stopped")
@@ -119,10 +128,15 @@ class QrDetector(IoTService):
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
 
+    def simulate_interval(self, start_time):
+        overall_time = int((datetime.datetime.now() - start_time).microseconds / 1000)
+        if overall_time < self.available_timeframe:
+            # print(overall_time, self.available_timeframe)
+            time.sleep((self.available_timeframe - overall_time) / 1000)
 
 
 if __name__ == '__main__':
-    qd = QrDetector()
+    qd = QrDetector(store_to_csv=False)
     qd.start_process()
 
     while True:
