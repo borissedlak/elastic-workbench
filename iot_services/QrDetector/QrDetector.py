@@ -27,9 +27,9 @@ class QrDetector(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
         self.service_conf = {'pixel': 800}
-        self.cores = 1
+        # self.cores = 2
         # self.thread_multiplier = 4
-        self.number_threads = self.cores  # * self.thread_multiplier
+        self.number_threads = 2  # * self.thread_multiplier
         self.fps = utils.FPS_()
         self.store_to_csv = store_to_csv
 
@@ -81,11 +81,11 @@ class QrDetector(IoTService):
             # This is only executed once after the batch is processed
             fps.labels(service_id=self.service_id, metric_id="fps").set(processed_item_counter)
             pixel.labels(service_id=self.service_id, metric_id="pixel").set(self.service_conf['pixel'])
-            cores.labels(service_id=self.service_id, metric_id="cores").set(self.cores)
+            cores.labels(service_id=self.service_id, metric_id="cores").set(self.number_threads)
 
             if self.store_to_csv:
                 metric_buffer.append(
-                    (datetime.datetime.now(), processed_item_counter, self.service_conf['pixel'], self.cores,
+                    (datetime.datetime.now(), processed_item_counter, self.service_conf['pixel'], self.number_threads,
                      0, self.flag_next_metrics))
                 # self.flag_next_metrics = False
                 if len(metric_buffer) >= 15:
@@ -122,7 +122,7 @@ class QrDetector(IoTService):
         while not self._terminated:
             time.sleep(0.01)
 
-        self.cores = c_threads
+        self.number_threads = c_threads
         logger.info(f"QR Detector set to {c_threads} threads")
         self.start_process()
 

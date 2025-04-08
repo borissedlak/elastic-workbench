@@ -39,7 +39,7 @@ class VideoReader:
             self.grabbed, self.frame = self.vcap.read()
             self.buffer.append(self.frame)
 
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def get_batch(self, batch_size):
         return self.buffer[:batch_size]
 
