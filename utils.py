@@ -98,7 +98,7 @@ def filter_tuple(t, name, index):
 
 
 
-@print_execution_time
+# @print_execution_time
 def write_metrics_to_csv(lines):
     # Define the directory and file name
     directory = "./share/metrics"

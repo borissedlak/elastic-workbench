@@ -53,6 +53,13 @@ class ServiceWrapper:
         self.service.terminate()
         return ""
 
+
+    def change_arriving_requests(self):
+        self.service.change_request_arrival()
+        return ""
+
+    ######################################
+
     # @app.route("/change_config", methods=['PUT'])
     def change_config(self):
         service_d = ast.literal_eval(request.args.get('service_description'))
