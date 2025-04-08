@@ -1,13 +1,17 @@
 import json
 import logging
 
+from HttpClient import HttpClient
+from agent import agent_utils
+
 logger = logging.getLogger("multiscale")
 
 
 class ES_Registry:
-    _ES_activate_default = {'elastic-workbench-video-processing': ['vertical_scaling', 'quality_scaling']}
+    _ES_activate_default = {'elastic-workbench-video-processing': ['resource_scaling', 'quality_scaling']}
 
     def __init__(self):
+        self.http_client = HttpClient()
         self.ES_activated = self._ES_activate_default
         with open('es_registry.json', 'r') as f:
             self.es_api = json.load(f)
@@ -37,6 +41,15 @@ class ES_Registry:
     def ES_random_execution(self, host, service_type, es_name):
         if not self.is_ES_supported(service_type, es_name):
             raise RuntimeError(f"Requesting unknown strategy <{service_type},{es_name}>")
+
+        ES_endpoint = self.get_ES_information(service_type, es_name)
+        for endpoint in ES_endpoint:
+            random_params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
+            # print(random_params)
+            self.http_client.call_ES_endpoint(host, endpoint['target'], random_params)
+
+            logger.info(f"Calling random ES <{service_type},{es_name}> with {random_params}")
+
 
 
 if __name__ == "__main__":

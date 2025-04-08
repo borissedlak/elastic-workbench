@@ -2,15 +2,15 @@
   "strategies": [
     {
       "service_type": "elastic-workbench-video-processing",
-      "ES_name": "vertical_scaling",
+      "ES_name": "resource_scaling",
       "endpoints": [
         {
-          "target": "*target*/resource_scaling",
-          "parameter": [
+          "target": "/resource_scaling",
+          "parameters": [
             {
-              "name": "cores",
+              "name": "cpu_cores",
               "min": 1,
-              "max": 10
+              "max": 8
             }
           ]
         }

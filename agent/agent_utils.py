@@ -1,19 +1,17 @@
 import csv
 import logging
 import os
+import random
 import time
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
-import pgmpy
 import seaborn as sns
 from matplotlib import pyplot as plt
-from pgmpy.estimators import AICScore, HillClimbSearch
 from pgmpy.models import LinearGaussianBayesianNetwork
-from pgmpy.readwrite import XMLBIFWriter
 
-from slo_config import PW_MAX_CORES, Full_State
+from slo_config import Full_State
 
 logger = logging.getLogger('multiscale')
 
@@ -31,7 +29,7 @@ def print_execution_time(func):
     return wrapper
 
 
-@print_execution_time # Roughly 1 to 1.5s
+@print_execution_time  # Roughly 1 to 1.5s
 def train_lgbn_model(df, show_result=False):
     df_filtered = filter_3s_after_change(df.copy())
 
@@ -43,7 +41,8 @@ def train_lgbn_model(df, show_result=False):
     #     scoring_method=scoring_method, max_indegree=5, epsilon=1,
     # )
     # model = LinearGaussianBayesianNetwork(ebunch=dag)
-    model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')])
+    model = LinearGaussianBayesianNetwork(
+        [('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')])
     # XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df_filtered)
 
@@ -103,6 +102,18 @@ def log_agent_experience(state: Full_State, prefix):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["index", "rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
+            writer.writerow(
+                ["index", "rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores",
+                 "free_cores"])
 
-        writer.writerow([prefix[0], prefix[1], datetime.now()] +  list(state))
+        writer.writerow([prefix[0], prefix[1], datetime.now()] + list(state))
+
+
+def get_random_parameter_assignments(parameters):
+    random_ass = {}
+
+    for param in parameters:
+        value = random.randint(param['min'], param['max'])
+        random_ass[param['name']] = value
+
+    return random_ass

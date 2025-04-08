@@ -10,6 +10,7 @@ from agent.ES_Registry import ES_Registry
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
 
+
 # core_state = {}
 # access_state = threading.Lock()
 
@@ -49,11 +50,11 @@ class ScalingAgent(Thread):
 
             # TODO: This will need a better wrapper most likely
             for s_local in self.services_local:
-                host_address = self.docker_client.get_container_ip(s_local)
-                self.es_registry.ES_random_execution(host_address, 'elastic-workbench-video-processing',
-                                                     'vertical_scaling')
+                host_address = self.docker_client.get_container_ip(s_local)  # TODO: Fix only for windows
+                self.es_registry.ES_random_execution("localhost", 'elastic-workbench-video-processing',
+                                                     'resource_scaling')
                 # print(self.es_registry.es_api['strategies'])
-                print(s_local)
+                # print(s_local, host_address)
 
             # state_pw = self.get_state_PW()
             # logger.debug(f"Current state before change is {state_pw}")
@@ -68,7 +69,7 @@ class ScalingAgent(Thread):
             # if not self._idle:
             #     self.act_on_env(action_pw, state_pw)
 
-            time.sleep(25)
+            time.sleep(30)
 
     # def stop(self):
     #     self._running = False
@@ -156,5 +157,4 @@ class ScalingAgent(Thread):
 if __name__ == '__main__':
     ps = "http://172.19.0.1:9090"
     ScalingAgent(services_local=["elastic-workbench-video-processing-1"], prom_server=ps).start()
-    # ScalingAgent(container=DockerInfo("multiscaler-video-processing-b-1", "172.18.0.5", "Bob"), prom_server=ps,
-    #              thresholds=(1400, 25)).start()
+
