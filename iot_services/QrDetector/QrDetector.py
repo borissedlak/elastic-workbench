@@ -18,7 +18,7 @@ logger = logging.getLogger("multiscale")
 start_http_server(8000)
 fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
 pixel = Gauge('pixel', 'Current configured pixel', ['service_id', 'metric_id'])
-energy = Gauge('energy', 'Current processing energy', ['service_id', 'metric_id'])
+# energy = Gauge('energy', 'Current processing energy', ['service_id', 'metric_id'])
 cores = Gauge('cores', 'Current configured cores', ['service_id', 'metric_id'])
 
 

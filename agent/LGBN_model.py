@@ -5,7 +5,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
 
-from agent.agent_utils import filter_3s_after_change
+import agent_utils
 from utils import print_execution_time
 
 
@@ -19,7 +19,7 @@ def collect_all_metric_files():
 
 
 def preprocess_data(df):
-    df_filtered = filter_3s_after_change(df.copy())
+    df_filtered = agent_utils.filter_3s_after_change(df.copy())
     df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
 
     # Convert and expand service config dict
@@ -52,8 +52,7 @@ def train_lgbn_model(df, show_result=False):
     #     scoring_method=scoring_method, max_indegree=5, epsilon=1,
     # )
     # model = LinearGaussianBayesianNetwork(ebunch=dag)
-    model = LinearGaussianBayesianNetwork(
-        [('pixel', 'fps'), ('cores', 'fps'), ])
+    model = LinearGaussianBayesianNetwork([('pixel', 'fps'), ('cores', 'fps')])
     # XMLBIFWriter(model).write_xmlbif("../model.xml")
     model.fit(df)
 
