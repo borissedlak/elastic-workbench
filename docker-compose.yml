@@ -6,15 +6,15 @@ services:
       dockerfile: ./iot_services/QrDetector/Dockerfile
     networks:
       docker_network:
-#        ipv4_address: 172.20.0.5
+    #        ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-      - CONTAINER_REF=elastic-workbench-video-processing-1
+      - CONTAINER_REF=elastic-workbench-video-processing-1 # TODO: This I should be able to get from inside the container?
     volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+      #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
     ports:
       - "8080:8080" # Only needed on Windows
@@ -23,17 +23,17 @@ services:
       - grafana
       - prometheus
 
-#  video-processing-1:
-#    image: elastic-workbench-video-processing:latest
-#    environment:
-#      - FLASK_ENV=development
-#      - PYTHONUNBUFFERED=0 # Always flushes out
-#      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-#      - CONTAINER_REF=elastic-workbench-video-processing-b-1
-#    volumes:
-##      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
-#      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+  #  video-processing-1:
+  #    image: elastic-workbench-video-processing:latest
+  #    environment:
+  #      - FLASK_ENV=development
+  #      - PYTHONUNBUFFERED=0 # Always flushes out
+  #      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+  #      - CONTAINER_REF=elastic-workbench-video-processing-b-1
+  #    volumes:
+  ##      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+  #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+  #      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
     image: prom/prometheus
@@ -44,8 +44,8 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-#      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
+      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+    #      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

@@ -31,7 +31,7 @@ class ScalingAgent(Thread):
             # TODO: This will need a better wrapper most likely
             for s_local in self.services_local:
                 host_address = self.docker_client.get_container_ip(s_local)  # TODO: Fix only for windows
-                self.es_registry.ES_random_execution("localhost", 'elastic-workbench-video-processing',
+                self.es_registry.ES_random_execution(host_address, 'elastic-workbench-video-processing',
                                                      'resource_scaling')
 
             time.sleep(30)

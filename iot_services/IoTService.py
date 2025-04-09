@@ -20,6 +20,10 @@ class IoTService:
         self.service_conf = {}
         self.cores_reserved = 2
 
+        self.simulate_arrival_interval = True
+        self.processing_timeframe = 1000  # ms
+        self.batch_size = 200
+
         self.docker_client = DockerClient()
         self.flag_next_metrics = True  # Start with flag
 
@@ -58,5 +62,6 @@ class IoTService:
         self.flag_next_metrics = True
         logger.info(f"{self.service_type} set to {c_cores} cores")
 
-    def change_request_arrival(self, arrival_number):
-        pass
+    def change_request_arrival(self, rps_arriving):
+        self.batch_size = rps_arriving
+        logger.info(f"{self.service_type} changed RPS to {rps_arriving}")

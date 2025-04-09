@@ -40,6 +40,7 @@ class ServiceWrapper:
         self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
+        self.app.add_url_rule('/change_rps', 'change_rps', self.change_arriving_requests, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
 
     # @utils.print_execution_time
@@ -55,7 +56,8 @@ class ServiceWrapper:
 
 
     def change_arriving_requests(self):
-        self.service.change_request_arrival()
+        rps = int(request.args.get('rps'))
+        self.service.change_request_arrival(rps)
         return ""
 
     ######################################

@@ -27,10 +27,6 @@ class QrDetector(IoTService):
         self.service_conf = {'pixel': 800}
         self.store_to_csv = store_to_csv
         self.service_type = "elastic-workbench-video-processing"
-
-        self.simulate_arrival_interval = True
-        self.available_timeframe = 1000  # ms
-        self.batch_size = 200
         self.video_stream = VideoReader()
 
     def process_one_iteration(self, config_params, frame) -> None:
@@ -84,12 +80,12 @@ class QrDetector(IoTService):
 
     def has_processing_timeout(self, start_time):
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-        return time_elapsed >= self.available_timeframe
+        return time_elapsed >= self.processing_timeframe
 
     def simulate_interval(self, start_time):
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-        if time_elapsed < self.available_timeframe:
-            time.sleep((self.available_timeframe - time_elapsed) / 1000)
+        if time_elapsed < self.processing_timeframe:
+            time.sleep((self.processing_timeframe - time_elapsed) / 1000)
 
 
 if __name__ == '__main__':
