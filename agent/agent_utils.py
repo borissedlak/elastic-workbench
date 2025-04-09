@@ -34,7 +34,7 @@ def filter_3s_after_change(df: pd.DataFrame):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
     # Identify timestamps where the flag is True
-    flagged_times = df.loc[df['change_flag'], 'timestamp']
+    flagged_times = df.loc[df['cooldown'], 'timestamp']
 
     # Add a 3-second range for each flagged timestamp
     mask = pd.Series(False, index=df.index)

@@ -5,6 +5,7 @@
       "elasticity_strategies": [
         {
           "ES_name": "resource_scaling",
+          "cooldown": 1000,
           "endpoints": [
             {
               "target": "/resource_scaling",
@@ -12,7 +13,7 @@
                 {
                   "name": "cpu_cores",
                   "min": 1,
-                  "max": 8
+                  "max": 6
                 }
               ]
             }
@@ -20,6 +21,7 @@
         },
         {
           "ES_name": "quality_scaling",
+          "cooldown": 1000,
           "endpoints": [
             {
               "target": "/quality_scaling",

@@ -8,6 +8,7 @@ from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
+from agent.ES_Registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.QrDetector.VideoReader import VideoReader
 
@@ -27,7 +28,7 @@ class QrDetector(IoTService):
         super().__init__()
         self.service_conf = {'pixel': 800}
         self.store_to_csv = store_to_csv
-        self.service_type = "elastic-workbench-video-processing"
+        self.service_type = ServiceType.QR
         self.video_stream = VideoReader()
 
     def process_one_iteration(self, config_params, frame) -> None:
@@ -66,9 +67,10 @@ class QrDetector(IoTService):
             cores.labels(service_id=self.docker_container_ref, metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
-                metric_buffer.append((datetime.datetime.now(), self.service_type, processed_item_counter,
-                                      self.service_conf, self.cores_reserved, self.flag_next_metrics))
-                self.flag_next_metrics = False
+                ES_cooldown = self.es_registry.get_ES_cooldown(self.service_type, self.flag_next_metrics) if self.flag_next_metrics else 0
+                metric_buffer.append((datetime.datetime.now(), self.service_type.value, processed_item_counter,
+                                      self.service_conf, self.cores_reserved, ES_cooldown))
+                self.flag_next_metrics = None
                 utils.write_metrics_to_csv(metric_buffer)
                 metric_buffer.clear()
 
@@ -76,7 +78,7 @@ class QrDetector(IoTService):
                 self.simulate_interval(start_time)
 
         self._terminated = True
-        logger.info(f"{self.service_type} stopped")
+        logger.info(f"{self.service_type.value} stopped")
 
 
 if __name__ == '__main__':

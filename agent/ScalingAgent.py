@@ -41,14 +41,14 @@ class ScalingAgent(Thread):
 
     # TODO: This makes the assumption that only the desired container is running at the ip
     def execute_random_ES(self, host, service_type: ServiceType):
-        rand_ES_name = self.es_registry.get_random_ES_for_service(service_type)
+        rand_ES = self.es_registry.get_random_ES_for_service(service_type)
 
-        if not self.es_registry.is_ES_supported(service_type, rand_ES_name):
+        if not self.es_registry.is_ES_supported(service_type, rand_ES):
             return
 
-        ES_endpoints = self.es_registry.get_ES_information(service_type, rand_ES_name)
+        ES_endpoints = self.es_registry.get_ES_information(service_type, rand_ES)['endpoints']
         for endpoint in ES_endpoints:
             random_params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
             self.http_client.call_ES_endpoint(host, endpoint['target'], random_params)
 
-            logger.info(f"Calling random ES <{service_type},{rand_ES_name}> with {random_params}")
+            logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")

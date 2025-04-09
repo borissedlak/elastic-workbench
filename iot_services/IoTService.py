@@ -5,6 +5,7 @@ import time
 
 import utils
 from DockerClient import DockerClient
+from agent.ES_Registry import EsType, ES_Registry
 
 logger = logging.getLogger("multiscale")
 
@@ -20,13 +21,14 @@ class IoTService:
         self._running = False
         self.service_conf = {}
         self.cores_reserved = 2
+        self.es_registry = ES_Registry()
 
         self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms
         self.batch_size = 200
 
         self.docker_client = DockerClient()
-        self.flag_next_metrics = True  # Start with flag
+        self.flag_next_metrics = EsType.STARTUP  # Start with flag
 
     def process_one_iteration(self, params, frame) -> None:
         pass
@@ -47,7 +49,7 @@ class IoTService:
 
     def change_config(self, config):
         self.service_conf = config
-        self.flag_next_metrics = True
+        self.flag_next_metrics = EsType.QUALITY_S # TODO: Actually this is not 100% accurate here
         logger.info(f"{self.service_type} changed to {config}")
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
@@ -60,7 +62,7 @@ class IoTService:
 
         self.cores_reserved = c_cores
         self.start_process()
-        self.flag_next_metrics = True
+        self.flag_next_metrics = EsType.RESOURCE_S
         logger.info(f"{self.service_type} set to {c_cores} cores")
 
     def change_request_arrival(self, rps_arriving):
