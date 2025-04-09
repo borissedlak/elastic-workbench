@@ -54,7 +54,6 @@ class ServiceWrapper:
         self.service.terminate()
         return ""
 
-
     def change_arriving_requests(self):
         rps = int(request.args.get('rps'))
         self.service.change_request_arrival(rps)
@@ -73,7 +72,7 @@ class ServiceWrapper:
     def quality_scaling(self):
         quality = int(request.args.get('quality'))
         s_conf = self.service.service_conf
-        s_conf.pixel=quality
+        s_conf['pixel'] = quality
         self.service.change_config(s_conf)
         return ""
 

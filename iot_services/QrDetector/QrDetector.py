@@ -14,6 +14,7 @@ from iot_services.QrDetector.VideoReader import VideoReader
 logger = logging.getLogger("multiscale")
 
 # TODO: Maybe I can somehow abstract the SLOs also for all service types
+#  One step for this could be to call it simply throughput instead of fps
 start_http_server(8000)
 fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
 pixel = Gauge('pixel', 'Current configured pixel', ['service_id', 'metric_id'])
@@ -68,7 +69,6 @@ class QrDetector(IoTService):
                 metric_buffer.append((datetime.datetime.now(), self.service_type, processed_item_counter,
                                       self.service_conf, self.cores_reserved, self.flag_next_metrics))
                 self.flag_next_metrics = False
-                # if len(metric_buffer) >= 15: # TODO: Might need to fill buffer further
                 utils.write_metrics_to_csv(metric_buffer)
                 metric_buffer.clear()
 
@@ -77,15 +77,6 @@ class QrDetector(IoTService):
 
         self._terminated = True
         logger.info(f"{self.service_type} stopped")
-
-    def has_processing_timeout(self, start_time):
-        time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-        return time_elapsed >= self.processing_timeframe
-
-    def simulate_interval(self, start_time):
-        time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-        if time_elapsed < self.processing_timeframe:
-            time.sleep((self.processing_timeframe - time_elapsed) / 1000)
 
 
 if __name__ == '__main__':

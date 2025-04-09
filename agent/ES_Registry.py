@@ -1,8 +1,8 @@
 import json
 import logging
+import random
 
 from HttpClient import HttpClient
-from agent import agent_utils
 
 logger = logging.getLogger("multiscale")
 
@@ -17,42 +17,42 @@ class ES_Registry:
             self.es_api = json.load(f)
 
     def is_ES_supported(self, service_type, es_name):
-        strategies = self.es_api.get("strategies", [])
-        for strategy in strategies:
-            if (
-                    strategy.get("service_type") == service_type and
-                    strategy.get("ES_name") == es_name
-            ):
-                if es_name in self.ES_activated.get(service_type, []):
-                    return True
-                else:
-                    logger.info(f"Strategy <{service_type},{es_name}> is registered, but not activated")
-                    return False
+        services = self.es_api['services']
+        # service_ES = services.get(service_type, [])
+        for service in services:
+            if service['name'] == service_type:
+                for es in service['elasticity_strategies']:
+                    if (
+                            # es.get("service_type") == service_type and
+                            es.get("ES_name") == es_name
+                    ):
+                        if es_name in self.ES_activated.get(service_type, []):
+                            return True
+                        else:
+                            logger.info(f"Strategy <{service_type},{es_name}> is registered, but not activated")
+                            return False
 
         logger.info("No corresponding strategy registered")
         return False
 
     def get_ES_information(self, service_type, es_name):
-        for strategy in self.es_api.get("strategies", []):
-            if strategy["service_type"] == service_type and strategy["ES_name"] == es_name:
-                return strategy.get("endpoints", [])
+        for service in self.es_api["services"]:
+            if service["name"] == service_type:
+                for es in service["elasticity_strategies"]:
+                    if es["ES_name"] == es_name:
+                        return es["endpoints"]
         return []
 
-    def ES_random_execution(self, host, service_type, es_name):
-        if not self.is_ES_supported(service_type, es_name):
-            raise RuntimeError(f"Requesting unknown strategy <{service_type},{es_name}>")
+    def get_random_ES_for_service(self, service_type):
+        if service_type in self.ES_activated and bool(self.ES_activated[service_type]):
+            return random.choice(self.ES_activated[service_type])
 
-        ES_endpoint = self.get_ES_information(service_type, es_name)
-        for endpoint in ES_endpoint:
-            random_params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
-            # print(random_params)
-            self.http_client.call_ES_endpoint(host, endpoint['target'], random_params)
-
-            logger.info(f"Calling random ES <{service_type},{es_name}> with {random_params}")
-
+        raise RuntimeError(f"Requesting strategy for unknown service {service_type}")
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     es_reg = ES_Registry()
-    print(es_reg.get_ES_information('elastic-workbench-video-processing', 'vertical_scaling'))
+    print(es_reg.is_ES_supported('elastic-workbench-video-processing', 'resource_scaling'))
+    print(es_reg.get_ES_information('elastic-workbench-video-processing', 'resource_scaling'))
+    print(es_reg.get_random_ES_for_service('elastic-workbench-video-processing'))

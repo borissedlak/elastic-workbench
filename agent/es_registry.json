@@ -1,16 +1,35 @@
 {
-  "strategies": [
+  "services": [
     {
-      "service_type": "elastic-workbench-video-processing",
-      "ES_name": "resource_scaling",
-      "endpoints": [
+      "name": "elastic-workbench-video-processing",
+      "elasticity_strategies": [
         {
-          "target": "/resource_scaling",
-          "parameters": [
+          "ES_name": "resource_scaling",
+          "endpoints": [
             {
-              "name": "cpu_cores",
-              "min": 1,
-              "max": 8
+              "target": "/resource_scaling",
+              "parameters": [
+                {
+                  "name": "cpu_cores",
+                  "min": 1,
+                  "max": 8
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ES_name": "quality_scaling",
+          "endpoints": [
+            {
+              "target": "/quality_scaling",
+              "parameters": [
+                {
+                  "name": "quality",
+                  "min": 360,
+                  "max": 1080
+                }
+              ]
             }
           ]
         }
