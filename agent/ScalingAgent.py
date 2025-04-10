@@ -27,8 +27,8 @@ class ScalingAgent(Thread):
         self.es_registry = ES_Registry()
 
     def resolve_service_state(self, service_id: ServiceID):
-        metric_values = self.prom_client.get_metrics("|".join(["fps"]), service_id, period="10s")
-        parameter_ass = self.prom_client.get_metrics("|".join(["pixel", "cores"]), service_id)  # TODO: "quality"?
+        metric_values = self.prom_client.get_metrics("|".join(["avg_proc_latency", "throughput"]), service_id, period="10s")
+        parameter_ass = self.prom_client.get_metrics("|".join(["pixel", "cores"]), service_id)
         return metric_values | parameter_ass
 
     def run(self):

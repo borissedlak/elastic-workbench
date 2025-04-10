@@ -2,8 +2,10 @@ import concurrent.futures
 import datetime
 import logging
 import time
+from typing import Any
 
 import cv2
+import numpy as np
 from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
@@ -17,7 +19,9 @@ logger = logging.getLogger("multiscale")
 # TODO: Maybe I can somehow abstract the SLOs also for all service types
 #  One step for this could be to call it simply throughput instead of fps
 start_http_server(8000)
-fps = Gauge('fps', 'Current processing FPS', ['service_type', 'container_id', 'metric_id'])
+throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
+avg_proc_latency = Gauge('avg_proc_latency', 'Processing latency / item',
+                         ['service_type', 'container_id', 'metric_id'])
 pixel = Gauge('pixel', 'Current configured pixel', ['service_type', 'container_id', 'metric_id'])
 # energy = Gauge('energy', 'Current processing energy', ['service_id', 'container_id', 'metric_id'])
 cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
@@ -31,7 +35,8 @@ class QrDetector(IoTService):
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader()
 
-    def process_one_iteration(self, config_params, frame) -> None:
+    def process_one_iteration(self, config_params, frame) -> (Any, int):
+        start = datetime.datetime.now()
 
         target_height = int(config_params['pixel'])
         original_width, original_height = frame.shape[1], frame.shape[0]
@@ -42,6 +47,8 @@ class QrDetector(IoTService):
 
         # Resulting image and total processing time --> unused
         combined_img = utils.highlight_qr_codes(frame, decoded_objects)
+        duration = (datetime.datetime.now() - start).total_seconds() * 1000
+        return combined_img, duration
 
     def process_loop(self):
         metric_buffer = []
@@ -54,16 +61,21 @@ class QrDetector(IoTService):
                                for frame in buffer}
 
                 processed_item_counter = 0
+                processed_item_durations = []
                 for future in concurrent.futures.as_completed(future_dict):
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
                     else:
+                        processed_item_durations.append(future.result()[1])
                         processed_item_counter += 1
 
+            # avg_proc_latency_num = utils.calculate_avg_latency_ms(start_time, processed_item_counter)
             # This is only executed once after the batch is processed
-            fps.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                       metric_id="fps").set(processed_item_counter)
+            throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                              metric_id="throughput").set(processed_item_counter)
+            avg_proc_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                    metric_id="avg_proc_latency").set(float(np.mean(processed_item_durations)))
             pixel.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                          metric_id="pixel").set(self.service_conf['pixel'])
             cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
@@ -72,7 +84,7 @@ class QrDetector(IoTService):
             if self.store_to_csv:
                 ES_cooldown = self.es_registry.get_ES_cooldown(self.service_type, self.flag_next_metrics) \
                     if self.flag_next_metrics else 0
-                metric_buffer.append((datetime.datetime.now(), self.service_type.value, processed_item_counter,
+                metric_buffer.append((datetime.datetime.now(), self.service_type.value, processed_item_durations,
                                       self.service_conf, self.cores_reserved, ES_cooldown))
                 self.flag_next_metrics = None
                 utils.write_metrics_to_csv(metric_buffer)
@@ -87,6 +99,7 @@ class QrDetector(IoTService):
 
 if __name__ == '__main__':
     qd = QrDetector(store_to_csv=False)
+    qd.client_arrivals = {'C1': 40}
     qd.start_process()
 
     while True:

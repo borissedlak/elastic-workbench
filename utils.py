@@ -1,4 +1,5 @@
 import csv
+import datetime
 import logging
 import os
 import time
@@ -125,3 +126,10 @@ def calculate_cpu_percentage(stats):
     cpu_percent: float = (cpu_delta / system_delta) * number_of_cores * 100
 
     return int(cpu_percent)
+
+def calculate_avg_latency_ms(start_time: datetime.datetime, num_items_processed):
+    if num_items_processed == 0:
+        return 0
+
+    elapsed_time_ms = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
+    return elapsed_time_ms / num_items_processed

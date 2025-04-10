@@ -15,8 +15,8 @@ services:
       - CONTAINER_REF=elastic-workbench-video-processing-1
       - DEFAULT_CLIENT=C_1:50
     volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
     ports:
       - "8080:8080" # Only needed on Windows
@@ -46,8 +46,8 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-#      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
+      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+#      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api
