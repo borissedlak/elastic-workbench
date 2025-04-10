@@ -34,10 +34,14 @@ class ScalingAgent(Thread):
     def run(self):
 
         while self._running:
-
             for service_m in self.services_monitored:
                 service_m: ServiceID = service_m
                 current_state = self.resolve_service_state(service_m)
+
+                if current_state =={}:
+                    logger.warning(f"Cannot find state for service {service_m}")
+                    continue
+
                 print(f"Current state for {service_m}: {current_state}")
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
