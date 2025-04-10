@@ -17,10 +17,10 @@ logger = logging.getLogger("multiscale")
 # TODO: Maybe I can somehow abstract the SLOs also for all service types
 #  One step for this could be to call it simply throughput instead of fps
 start_http_server(8000)
-fps = Gauge('fps', 'Current processing FPS', ['service_id', 'metric_id'])
-pixel = Gauge('pixel', 'Current configured pixel', ['service_id', 'metric_id'])
-# energy = Gauge('energy', 'Current processing energy', ['service_id', 'metric_id'])
-cores = Gauge('cores', 'Current configured cores', ['service_id', 'metric_id'])
+fps = Gauge('fps', 'Current processing FPS', ['service_type', 'container_id', 'metric_id'])
+pixel = Gauge('pixel', 'Current configured pixel', ['service_type', 'container_id', 'metric_id'])
+# energy = Gauge('energy', 'Current processing energy', ['service_id', 'container_id', 'metric_id'])
+cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
 
 
 class QrDetector(IoTService):
@@ -62,9 +62,12 @@ class QrDetector(IoTService):
                         processed_item_counter += 1
 
             # This is only executed once after the batch is processed
-            fps.labels(service_id=self.docker_container_ref, metric_id="fps").set(processed_item_counter)
-            pixel.labels(service_id=self.docker_container_ref, metric_id="pixel").set(self.service_conf['pixel'])
-            cores.labels(service_id=self.docker_container_ref, metric_id="cores").set(self.cores_reserved)
+            fps.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                       metric_id="fps").set(processed_item_counter)
+            pixel.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                         metric_id="pixel").set(self.service_conf['pixel'])
+            cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                         metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
                 ES_cooldown = self.es_registry.get_ES_cooldown(self.service_type, self.flag_next_metrics) \

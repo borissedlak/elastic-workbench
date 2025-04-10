@@ -1,4 +1,5 @@
 import logging
+import platform
 import time
 from threading import Thread
 
@@ -26,7 +27,7 @@ class ScalingAgent(Thread):
         self.es_registry = ES_Registry()
 
     def resolve_service_state(self, service_id: ServiceID):
-        pass
+        return self.prom_client.get_metrics("|".join(["fps"]), service_id, period="10s")
 
     def run(self):
 
@@ -34,8 +35,10 @@ class ScalingAgent(Thread):
 
             for service_m in self.services_monitored:
                 service_m: ServiceID = service_m
-                # host_address = self.docker_client.get_container_ip(s_local)
-                self.execute_random_ES(service_m.host, service_m.service_type)
+                current_state = self.resolve_service_state(service_m)
+                print(f"Current state for {service_m}: {current_state}")
+                host_fix = "localhost" if platform.system() == "Windows" else service_m.host
+                self.execute_random_ES(host_fix, service_m.service_type)
 
             time.sleep(30)
 
