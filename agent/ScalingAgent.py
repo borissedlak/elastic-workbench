@@ -27,7 +27,9 @@ class ScalingAgent(Thread):
         self.es_registry = ES_Registry()
 
     def resolve_service_state(self, service_id: ServiceID):
-        return self.prom_client.get_metrics("|".join(["fps"]), service_id, period="10s")
+        metric_values = self.prom_client.get_metrics("|".join(["fps"]), service_id, period="10s")
+        parameter_ass = self.prom_client.get_metrics("|".join(["pixel", "cores"]), service_id)  # TODO: "quality"?
+        return metric_values | parameter_ass
 
     def run(self):
 
@@ -37,6 +39,7 @@ class ScalingAgent(Thread):
                 service_m: ServiceID = service_m
                 current_state = self.resolve_service_state(service_m)
                 print(f"Current state for {service_m}: {current_state}")
+
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
                 self.execute_random_ES(host_fix, service_m.service_type)
 
