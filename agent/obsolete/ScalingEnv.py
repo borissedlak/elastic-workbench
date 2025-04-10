@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from agent import agent_utils
-from slo_config import MB
+from agent.slo_config import MB
 
 
 class ScalingEnv(gymnasium.Env):
