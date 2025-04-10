@@ -114,7 +114,7 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "service_type", "fps", "s_config", "cores", "cooldown"])
+            writer.writerow(["timestamp", "service_type", "avg_proc_latency", "s_config", "cores", "cooldown"])
 
         writer.writerows(lines)
 
@@ -127,9 +127,9 @@ def calculate_cpu_percentage(stats):
 
     return int(cpu_percent)
 
-def calculate_avg_latency_ms(start_time: datetime.datetime, num_items_processed):
-    if num_items_processed == 0:
-        return 0
-
-    elapsed_time_ms = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-    return elapsed_time_ms / num_items_processed
+# def calculate_avg_latency_ms(start_time: datetime.datetime, num_items_processed):
+#     if num_items_processed == 0:
+#         return 0
+#
+#     elapsed_time_ms = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
+#     return elapsed_time_ms / num_items_processed

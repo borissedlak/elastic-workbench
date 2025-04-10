@@ -63,19 +63,20 @@ class QrDetector(IoTService):
                 processed_item_counter = 0
                 processed_item_durations = []
                 for future in concurrent.futures.as_completed(future_dict):
+                    processed_item_durations.append(future.result()[1])
+                    processed_item_counter += 1
+
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
-                    else:
-                        processed_item_durations.append(future.result()[1])
-                        processed_item_counter += 1
 
-            # avg_proc_latency_num = utils.calculate_avg_latency_ms(start_time, processed_item_counter)
+
             # This is only executed once after the batch is processed
             throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                               metric_id="throughput").set(processed_item_counter)
+            avg_proc_latency_num = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
             avg_proc_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                    metric_id="avg_proc_latency").set(float(np.mean(processed_item_durations)))
+                                    metric_id="avg_proc_latency").set(avg_proc_latency_num)
             pixel.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                          metric_id="pixel").set(self.service_conf['pixel'])
             cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
@@ -84,7 +85,7 @@ class QrDetector(IoTService):
             if self.store_to_csv:
                 ES_cooldown = self.es_registry.get_ES_cooldown(self.service_type, self.flag_next_metrics) \
                     if self.flag_next_metrics else 0
-                metric_buffer.append((datetime.datetime.now(), self.service_type.value, processed_item_durations,
+                metric_buffer.append((datetime.datetime.now(), self.service_type.value, avg_proc_latency_num,
                                       self.service_conf, self.cores_reserved, ES_cooldown))
                 self.flag_next_metrics = None
                 utils.write_metrics_to_csv(metric_buffer)
@@ -99,7 +100,7 @@ class QrDetector(IoTService):
 
 if __name__ == '__main__':
     qd = QrDetector(store_to_csv=False)
-    qd.client_arrivals = {'C1': 40}
+    qd.client_arrivals = {'C1': 20}
     qd.start_process()
 
     while True:
