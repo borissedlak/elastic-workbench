@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 DEFAULT_CORES = utils.get_env_param("DEFAULT_CORES", 2)
+DEFAULT_CLIENT: str = utils.get_env_param("DEFAULT_CLIENT", None)
 
 
 def init_service(s_type):
@@ -33,6 +34,8 @@ class ServiceWrapper:
         if start_processing:
             self.start_processing()
             self.scale_cores(DEFAULT_CORES)
+            if DEFAULT_CLIENT:
+                self.service.change_request_arrival(DEFAULT_CLIENT.split(":")[0], int(DEFAULT_CLIENT.split(":")[1]))
 
         self.app = Flask(__name__)
         self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['POST'])
@@ -40,7 +43,7 @@ class ServiceWrapper:
         self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
-        self.app.add_url_rule('/change_rps', 'change_rps', self.change_arriving_requests, methods=['PUT'])
+        self.app.add_url_rule('/change_rps', 'change_rps', self.alter_client_connection, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
 
     # @utils.print_execution_time
@@ -54,9 +57,11 @@ class ServiceWrapper:
         self.service.terminate()
         return ""
 
-    def change_arriving_requests(self):
+    def alter_client_connection(self):
+        client_id = str(request.args.get('client_id'))
         rps = int(request.args.get('rps'))
-        self.service.change_request_arrival(rps)
+
+        self.service.change_request_arrival(client_id, rps)
         return ""
 
     ######################################

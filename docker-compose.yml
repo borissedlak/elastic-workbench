@@ -12,6 +12,7 @@ services:
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-video-processing-1 # TODO: This I should be able to get from inside the container?
+      - DEFAULT_CLIENT=C_1:100
     volumes:
 #      - /home/boris/development/elastic-workbench/share:/src/share # Linux
       - /c/users/boris/development/elastic-workbench/share:/src/share # Windows

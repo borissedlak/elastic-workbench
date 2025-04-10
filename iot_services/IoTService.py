@@ -2,6 +2,7 @@ import datetime
 import logging
 import threading
 import time
+from typing import Dict
 
 import utils
 from DockerClient import DockerClient
@@ -11,6 +12,10 @@ logger = logging.getLogger("multiscale")
 
 # DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+
+
+def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
+    return sum(i for i in client_arrivals.values())
 
 
 class IoTService:
@@ -25,7 +30,7 @@ class IoTService:
 
         self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms
-        self.batch_size = 200
+        self.client_arrivals: Dict[str, int] = {}
 
         self.docker_client = DockerClient()
         self.flag_next_metrics = EsType.STARTUP  # Start with flag
@@ -49,7 +54,7 @@ class IoTService:
 
     def change_config(self, config):
         self.service_conf = config
-        self.flag_next_metrics = EsType.QUALITY_S # TODO: Actually this is not 100% accurate here
+        self.flag_next_metrics = EsType.QUALITY_S  # TODO: Actually this is not 100% accurate here
         logger.info(f"{self.service_type} changed to {config}")
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
@@ -65,9 +70,15 @@ class IoTService:
         self.flag_next_metrics = EsType.RESOURCE_S
         logger.info(f"{self.service_type} set to {c_cores} cores")
 
-    def change_request_arrival(self, rps_arriving):
-        self.batch_size = rps_arriving
-        logger.info(f"{self.service_type} changed RPS to {rps_arriving}")
+    def change_request_arrival(self, client_id: str, client_rps: int):
+        if client_rps <= 0:
+            self.client_arrivals[client_id] = 0
+            del self.client_arrivals[client_id]
+            logger.info(f"Removed client {client_id} from service {self.service_type}")
+        else:
+            self.client_arrivals[client_id] = client_rps
+            logger.info(f"Client {client_id} changed RPS to {client_rps}")
+        logger.info(f"Total RPS is now {to_absolut_rps(self.client_arrivals)}")
 
     def has_processing_timeout(self, start_time):
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
