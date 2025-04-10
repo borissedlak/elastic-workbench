@@ -36,6 +36,12 @@ services:
   ##      - /home/boris/development/elastic-workbench/share:/src/share # Linux
   #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
   #      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus

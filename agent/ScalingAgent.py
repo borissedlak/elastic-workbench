@@ -6,6 +6,7 @@ from threading import Thread
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
+from RedisClient import RedisClient
 from agent import agent_utils
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType
 
@@ -25,6 +26,8 @@ class ScalingAgent(Thread):
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
         self.es_registry = ES_Registry()
+        self.reddis_client = RedisClient()
+        # self.reddis_client.reset_default_slos()
 
     def resolve_service_state(self, service_id: ServiceID):
         metric_values = self.prom_client.get_metrics("|".join(["avg_proc_latency", "throughput"]), service_id, period="10s")

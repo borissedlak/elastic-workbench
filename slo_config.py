@@ -2,6 +2,8 @@ from typing import NamedTuple
 
 import numpy as np
 
+
+# TODO: Store here default SLOs
 PW_MAX_CORES = 10
 MB = {'variables': ['pixel', 'fps', 'cores'],
       'parameter': ['pixel', 'cores'],
@@ -13,18 +15,18 @@ MB = {'variables': ['pixel', 'fps', 'cores'],
                (1, False, 0.0)]}
 
 
-class Full_State(NamedTuple):
-    pixel: int
-    pixel_thresh: int
-    fps: float
-    fps_thresh: int
-    energy: int
-    cores: int
-    free_cores: int
-
-    def for_tensor(self):
-        return [self.pixel / self.pixel_thresh, self.fps / self.fps_thresh, self.cores,
-                self.pixel > 100, self.pixel < 2000, self.free_cores > 0]
+# class Full_State(NamedTuple):
+#     pixel: int
+#     pixel_thresh: int
+#     fps: float
+#     fps_thresh: int
+#     energy: int
+#     cores: int
+#     free_cores: int
+#
+#     def for_tensor(self):
+#         return [self.pixel / self.pixel_thresh, self.fps / self.fps_thresh, self.cores,
+#                 self.pixel > 100, self.pixel < 2000, self.free_cores > 0]
 
 
 def calculate_slo_reward(state, slos=MB['slos']):

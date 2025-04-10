@@ -12,7 +12,6 @@ class GlobalAgent(ScalingAgent):
         super().__init__(prom_server, services_monitored)
 
 
-# TODO: This should not crash down only because the service is not available
 if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
