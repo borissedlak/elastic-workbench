@@ -34,7 +34,7 @@ class ScalingAgent(Thread):
 
             for service_m in self.services_monitored:
                 service_m: ServiceID = service_m
-                # host_address = self.docker_client.get_container_ip(s_local)  # TODO: Fix only for windows
+                # host_address = self.docker_client.get_container_ip(s_local)
                 self.execute_random_ES(service_m.host, service_m.service_type)
 
             time.sleep(30)

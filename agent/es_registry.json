@@ -13,7 +13,7 @@
                 {
                   "name": "cpu_cores",
                   "min": 1,
-                  "max": 6
+                  "max": 8
                 }
               ]
             }
