@@ -28,13 +28,13 @@ class SLO_Registry:
             if state_var in SLOs:
                 slo = SLOs[state_var]
 
-                if slo["larger"] != "True":
-                    slo_f = 1 - (value / float(slo["thresh"]))
-                else:
+                if slo["larger"] == "True":
                     slo_f = (value / float(slo["thresh"]))
+                else:
+                    slo_f = 1 - ((value - float(slo["thresh"])) / float(slo["thresh"])) # SLO-F is 0 after 2 * t
 
                 slo_f = float(np.clip(slo_f, 0.0, 1.10)) * float(slo["weight"])
-                fuzzy_slof.append(slo_f)
+                fuzzy_slof.append((state_var, slo_f))
 
         return fuzzy_slof
 
@@ -43,4 +43,4 @@ if __name__ == '__main__':
     slo_registry = SLO_Registry()
     slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
 
-    print(slo_registry.calculate_slo_reward({"pixel": 700}, slos))
+    print(slo_registry.calculate_slo_reward({"avg_p_latency": 10}, slos))

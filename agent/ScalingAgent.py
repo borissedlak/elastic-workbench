@@ -29,6 +29,7 @@ class ScalingAgent(Thread):
         self.reddis_client = RedisClient()
         self.slo_registry = SLO_Registry()
 
+    # TODO: Calculate completion rate and put here
     def resolve_service_state(self, service_id: ServiceID):
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
         parameter_ass = self.prom_client.get_metrics(["pixel", "cores"], service_id)
@@ -37,31 +38,35 @@ class ScalingAgent(Thread):
     def run(self):
 
         while self._running:
-            for service_m in self.services_monitored:
+            for service_m in self.services_monitored:  # For all monitored services
                 service_m: ServiceID = service_m
-                current_state = self.resolve_service_state(service_m)
+                service_state = self.resolve_service_state(service_m)
 
-                if current_state == {}:
+                if service_state == {}:
                     logger.warning(f"Cannot find state for service {service_m}")
                     continue
 
-                logger.info(f"Current state for {service_m}: {current_state}")
-                # TODO: Maybe I can create a function from that?
-                assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
-                for client_id, client_rps in assigned_clients.items():
-
-                    client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
-                    if client_SLOs == {}:
-                        logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
-                        continue
-
-                    client_SLO_F = self.slo_registry.calculate_slo_reward(current_state, client_SLOs)
-                    print(client_SLO_F)
+                logger.info(f"Current state for {service_m}: {service_state}")
+                self.get_clients_SLO_F(service_m, service_state)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
                 self.execute_random_ES(host_fix, service_m.service_type)
 
             time.sleep(30)
+
+    def get_clients_SLO_F(self, service_m: ServiceID, service_state):
+        assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
+        for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
+
+            # TODO: Calculate overall streaming latency and place into state
+            #  Ideally I do this in a function that can also be reused for the expected SLO_F
+            client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
+            if client_SLOs == {}:
+                logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
+                continue
+
+            client_SLO_F = self.slo_registry.calculate_slo_reward(service_state, client_SLOs)
+            print(client_SLO_F)
 
     # TODO: This makes the assumption that only the desired container is running at the ip
     def execute_random_ES(self, host, service_type: ServiceType):
