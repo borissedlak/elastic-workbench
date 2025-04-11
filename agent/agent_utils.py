@@ -43,18 +43,6 @@ def filter_rows_during_cooldown(df: pd.DataFrame):
     return filtered_df
 
 
-# def get_free_cores(core_dict, max_cores):
-#     if len(core_dict) == 0:
-#         return max_cores
-#
-#     free_cores = max_cores - np.sum([item[1] for item in core_dict.items()])
-#     return free_cores
-#
-#
-# def was_qn_ever_trained(qn):
-#     return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
-
-
 def log_agent_experience(state: Full_State, prefix):
     # Define the directory and file name
     directory = "./"

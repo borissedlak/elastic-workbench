@@ -46,7 +46,17 @@ class ScalingAgent(Thread):
                     continue
 
                 logger.info(f"Current state for {service_m}: {current_state}")
-                # TODO: Now, with this state, I must evaluate the SLOs
+                # TODO: Maybe I can create a function from that?
+                assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
+                for client_id, client_rps in assigned_clients.items():
+
+                    client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
+                    if client_SLOs == {}:
+                        logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
+                        continue
+
+                    client_SLO_F = self.slo_registry.calculate_slo_reward(current_state, client_SLOs)
+                    print(client_SLO_F)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
                 self.execute_random_ES(host_fix, service_m.service_type)

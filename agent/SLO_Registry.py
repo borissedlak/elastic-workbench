@@ -16,7 +16,7 @@ class SLO_Registry:
     def get_SLOs_for_client(self, client_id, service_type: ServiceType):
         result = {}
         for entry in self.slo_lib["clientSLOs"]:
-            if entry["client_id"] == client_id and entry["service_type"] == service_type:
+            if entry["client_id"] == client_id and entry["service_type"] == service_type.value:
                 for slo in entry["SLOs"]:
                     result = result | {slo["var"]: slo}
         return result
@@ -41,6 +41,6 @@ class SLO_Registry:
 
 if __name__ == '__main__':
     slo_registry = SLO_Registry()
-    slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR.value)
+    slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
 
     print(slo_registry.calculate_slo_reward({"pixel": 700}, slos))

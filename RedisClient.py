@@ -13,6 +13,10 @@ class RedisClient:
         key = create_ass_key(service_id)
         self.redis_conn.hset(key, mapping=client_ass)
 
+    def get_assignments_for_service(self, service_id: ServiceID) -> Dict[str, int]:
+        key = create_ass_key(service_id)
+        return self.redis_conn.hgetall(key)
+
     def store_cooldown(self, service_id: ServiceID, target_timestamp):  # TODO: THis is the only real int
         key = create_cool_key(service_id)
         self.redis_conn.set(key, target_timestamp)
@@ -29,4 +33,5 @@ def create_cool_key(service_id: ServiceID):
 if __name__ == '__main__':
     redis = RedisClient()
     redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1"),
-                           {'C_1': 50})
+                           {'C_X': 50})
+    print(redis.get_assignments_for_service(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
