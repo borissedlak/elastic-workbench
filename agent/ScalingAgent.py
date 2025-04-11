@@ -1,5 +1,6 @@
 import logging
 import platform
+import random
 import time
 from threading import Thread
 from typing import Dict
@@ -18,10 +19,11 @@ logger.setLevel(logging.DEBUG)
 
 
 class ScalingAgent(Thread):
-    def __init__(self, prom_server, services_monitored: [ServiceID]):
+    def __init__(self, prom_server, services_monitored: [ServiceID], evaluation_cycle):
         super().__init__()
         self._running = True
         self._idle = False
+        self.evaluation_cycle = evaluation_cycle
 
         self.services_monitored = services_monitored
         self.prom_client = PrometheusClient(prom_server)
@@ -51,13 +53,14 @@ class ScalingAgent(Thread):
                     logger.warning(f"Cannot find state for service {service_m}")
                     continue
 
-                logger.info(f"Current state for {service_m}: {service_state}")
+                logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
                 self.get_clients_SLO_F(service_m, service_state, assigned_clients)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
-                self.execute_random_ES(host_fix, service_m.service_type)
+                if random.randrange(5) == 3:
+                    self.execute_random_ES(host_fix, service_m.service_type)
 
-            time.sleep(30)
+            time.sleep(self.evaluation_cycle)
 
     def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
         for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients

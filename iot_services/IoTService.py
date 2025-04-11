@@ -54,6 +54,8 @@ class IoTService:
 
     def change_config(self, config):
         self.service_conf = config
+        # TODO: Here do (1) resolve the respective cooldown, and (2) store in Redis
+
         self.flag_next_metrics = EsType.QUALITY_S  # TODO: Actually this is not 100% accurate here
         logger.info(f"{self.service_type} changed to {config}")
 
