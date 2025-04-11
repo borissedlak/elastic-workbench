@@ -13,8 +13,9 @@ from agent import agent_utils
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType
 from agent.SLO_Registry import SLO_Registry
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 class ScalingAgent(Thread):
@@ -60,6 +61,8 @@ class ScalingAgent(Thread):
                 if self.reddis_client.is_under_cooldown(service_m):
                     warning_msg = f"Service <{service_m.host, service_m.container_id}> under cooldown, cannot call ES"
                     logger.warning(warning_msg)
+                    continue
+
                 self.execute_random_ES(host_fix, service_m.service_type)
 
             time.sleep(self.evaluation_cycle)
@@ -90,3 +93,9 @@ class ScalingAgent(Thread):
             self.http_client.call_ES_endpoint(host, endpoint['target'], random_params)
 
             logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")
+
+
+if __name__ == '__main__':
+    ps = "http://localhost:9090"
+    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
+    ScalingAgent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=3).start()
