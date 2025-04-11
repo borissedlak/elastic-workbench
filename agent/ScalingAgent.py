@@ -1,6 +1,5 @@
 import logging
 import platform
-import random
 import time
 from threading import Thread
 from typing import Dict
@@ -57,8 +56,11 @@ class ScalingAgent(Thread):
                 self.get_clients_SLO_F(service_m, service_state, assigned_clients)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
-                if random.randrange(5) == 3:
-                    self.execute_random_ES(host_fix, service_m.service_type)
+
+                if self.reddis_client.is_under_cooldown(service_m):
+                    warning_msg = f"Service <{service_m.host, service_m.container_id}> under cooldown, cannot call ES"
+                    logger.warning(warning_msg)
+                self.execute_random_ES(host_fix, service_m.service_type)
 
             time.sleep(self.evaluation_cycle)
 

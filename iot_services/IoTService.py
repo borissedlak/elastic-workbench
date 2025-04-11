@@ -53,13 +53,14 @@ class IoTService:
         pass
 
     def change_config(self, config):
-        self.service_conf = config
         self.set_flag_and_cooldown(EsType.QUALITY_S)
+        self.service_conf = config
         logger.info(f"{self.service_type} changed to {config}")
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
     # according to that. I think this is best to keep the abstract structure of the services
     def vertical_scaling(self, c_cores):
+        self.set_flag_and_cooldown(EsType.RESOURCE_S)
         self.terminate()
         # Wait until it is really terminated and then start new
         while not self._terminated:
@@ -67,7 +68,6 @@ class IoTService:
 
         self.cores_reserved = c_cores
         self.start_process()
-        self.set_flag_and_cooldown(EsType.RESOURCE_S)
         logger.info(f"{self.service_type} set to {c_cores} cores")
 
     def change_request_arrival(self, client_id: str, client_rps: int):
@@ -94,6 +94,7 @@ class IoTService:
     def get_service_id(self):
         return ServiceID(self.container_ip, self.service_type, self.docker_container_ref)
 
+    # TODO: Maybe I also need to place this on the SA side
     def set_flag_and_cooldown(self, es_type: EsType):
         self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(self.service_type, es_type)
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)

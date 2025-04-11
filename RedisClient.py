@@ -31,6 +31,14 @@ class RedisClient:
         freeze_until = datetime.datetime.fromisoformat(item['unfreeze'])
         return {"ES": item['ES'], "unfreeze": freeze_until}
 
+    def is_under_cooldown(self, service_id: ServiceID):
+        key = create_cool_key(service_id)
+        if self.redis_conn.exists(key):
+            cooldown = self.get_cooldown(service_id)
+            return datetime.datetime.now() < cooldown["unfreeze"]
+        else:
+            return False
+
 
 def create_ass_key(service_id: ServiceID):
     return f"a:{service_id.host}:{service_id.service_type.value}:{service_id.container_id}"
@@ -43,10 +51,16 @@ def create_cool_key(service_id: ServiceID):
 if __name__ == '__main__':
     redis = RedisClient()
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
+    nonsense = ServiceID("172.20", ServiceType.QR, "elastic--video-processing-1")
     # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1"),
     #                        {'C_X': 50})
     # print(redis.get_assignments_for_service(
     #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
     print(datetime.datetime.now())
     redis.store_cooldown(qr_local, EsType.QUALITY_S, 6000)
-    print(redis.get_cooldown(qr_local))
+    print(redis.is_under_cooldown(qr_local))
+    print(redis.is_under_cooldown(nonsense))
+
+    redis.store_cooldown(qr_local, EsType.QUALITY_S, 0)
+    print(redis.is_under_cooldown(qr_local))
+    print(redis.is_under_cooldown(nonsense))

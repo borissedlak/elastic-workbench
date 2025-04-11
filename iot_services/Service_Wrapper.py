@@ -84,15 +84,14 @@ class ServiceWrapper:
     # @app.route("/vertical_scaling", methods=['PUT'])
     def resource_scaling(self):
         cpu_cores = int(request.args.get('cpu_cores'))
-        return self.scale_cores(cpu_cores)
+        self.scale_cores(cpu_cores)
+        return ""
 
     def scale_cores(self, cores):
         # 1) Change the number of threads of the application
         self.service.vertical_scaling(cores)
         # 2) Change the number of cores available for docker
         self.docker_client.update_cpu(CONTAINER_REF, cores)
-
-        return ""
 
 
 if __name__ == '__main__':

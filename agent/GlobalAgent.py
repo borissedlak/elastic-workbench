@@ -7,7 +7,8 @@ from agent.ScalingAgent import ScalingAgent
 # logger.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
-EVALUATION_CYCLE = 3 # Might be less frequent for GSA
+EVALUATION_CYCLE = 3  # Might be less frequent for GSA
+
 
 class GlobalAgent(ScalingAgent):
     def __init__(self, prom_server, services_monitored):
