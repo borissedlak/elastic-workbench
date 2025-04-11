@@ -84,7 +84,7 @@ class QrDetector(IoTService):
             if self.store_to_csv:
                 metric_buffer.append((datetime.datetime.now(), self.service_type.value, avg_p_latency_num,
                                       self.service_conf, self.cores_reserved, self.flag_metric_cooldown))
-                self.flag_next_metrics = 0
+                self.flag_metric_cooldown = 0
                 utils.write_metrics_to_csv(metric_buffer)
                 metric_buffer.clear()
 

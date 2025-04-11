@@ -94,7 +94,8 @@ class IoTService:
     def get_service_id(self):
         return ServiceID(self.container_ip, self.service_type, self.docker_container_ref)
 
-    # TODO: Maybe I also need to place this on the SA side
     def set_flag_and_cooldown(self, es_type: EsType):
         self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(self.service_type, es_type)
+
+        # TODO: Maybe I also need to place this on the SA side
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)

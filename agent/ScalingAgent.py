@@ -45,6 +45,7 @@ class ScalingAgent(Thread):
 
         while self._running:
             for service_m in self.services_monitored:  # For all monitored services
+                logger.warning("\n")
                 service_m: ServiceID = service_m
                 assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
                 service_state = self.resolve_service_state(service_m, assigned_clients)
@@ -77,6 +78,7 @@ class ScalingAgent(Thread):
                 logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
                 continue
 
+            # TODO: Continue with this SLO-F
             client_SLO_F = self.slo_registry.calculate_slo_reward(service_state, client_SLOs)
             print(client_SLO_F)
 
@@ -98,4 +100,4 @@ class ScalingAgent(Thread):
 if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
-    ScalingAgent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=3).start()
+    ScalingAgent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=10).start()
