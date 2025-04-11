@@ -45,7 +45,8 @@ class ScalingAgent(Thread):
                     logger.warning(f"Cannot find state for service {service_m}")
                     continue
 
-                print(f"Current state for {service_m}: {current_state}")
+                logger.info(f"Current state for {service_m}: {current_state}")
+                # TODO: Now, with this state, I must evaluate the SLOs
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
                 self.execute_random_ES(host_fix, service_m.service_type)

@@ -6,12 +6,14 @@ from typing import Dict
 
 import utils
 from DockerClient import DockerClient
-from agent.ES_Registry import EsType, ES_Registry
+from RedisClient import RedisClient
+from agent.ES_Registry import EsType, ES_Registry, ServiceID
 
 logger = logging.getLogger("multiscale")
 
 # DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
@@ -21,7 +23,7 @@ def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
 class IoTService:
     def __init__(self):
         self.docker_container_ref = CONTAINER_REF
-        self.service_type = "Empty"
+        self.service_type = None
         self._terminated = True
         self._running = False
         self.service_conf = {}
@@ -32,6 +34,7 @@ class IoTService:
         self.processing_timeframe = 1000  # ms
         self.client_arrivals: Dict[str, int] = {}
 
+        self.redis_client = RedisClient(host=REDIS_INSTANCE)
         self.docker_client = DockerClient()
         self.flag_next_metrics = EsType.STARTUP  # Start with flag
 
@@ -78,6 +81,10 @@ class IoTService:
         else:
             self.client_arrivals[client_id] = client_rps
             logger.info(f"Client {client_id} changed RPS to {client_rps}")
+
+        container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
+        service_id = ServiceID(container_ip, self.service_type, self.docker_container_ref)
+        self.redis_client.store_assignment(service_id, self.client_arrivals)
         logger.info(f"Total RPS is now {to_absolut_rps(self.client_arrivals)}")
 
     def has_processing_timeout(self, start_time):

@@ -13,7 +13,8 @@ services:
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-video-processing-1
-      - DEFAULT_CLIENT=C_1:50
+      - REDIS_INSTANCE=172.20.0.4
+      - DEFAULT_CLIENT=C_1:70
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux
 #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
@@ -21,7 +22,7 @@ services:
     ports:
       - "8080:8080" # Only needed on Windows
     depends_on:
-      - cadvisor
+      - redis
       - grafana
       - prometheus
 
@@ -36,12 +37,6 @@ services:
   ##      - /home/boris/development/elastic-workbench/share:/src/share # Linux
   #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
   #      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus
@@ -73,21 +68,31 @@ services:
       - prometheus
 
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor
-    container_name: cadvisor
+#  cadvisor:
+#    image: gcr.io/cadvisor/cadvisor
+#    container_name: cadvisor
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.20.0.4
+#    volumes:
+#      - /:/rootfs:ro
+#      - /var/run:/var/run:ro
+#      - /sys:/sys:ro
+#      - /var/lib/docker/:/var/lib/docker:ro
+#    ports:
+#      - "8090:8080"
+#    restart: always
+#    privileged: true
+
+  redis:
+    image: redis:latest
+    container_name: redis
     networks:
       docker_network:
         ipv4_address: 172.20.0.4
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
     ports:
-      - "8090:8080"
-    restart: always
-    privileged: true
+      - "6379:6379"
+    restart: unless-stopped
 
 # I think this network does not show effects
 networks:

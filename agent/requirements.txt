@@ -1,4 +1,0 @@
-seaborn~=0.13.2
-pgmpy~=0.1.26
-matplotlib~=3.9.2
-redis~=5.2.1

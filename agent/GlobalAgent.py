@@ -3,9 +3,9 @@ import logging
 from agent.ES_Registry import ServiceType, ServiceID
 from agent.ScalingAgent import ScalingAgent
 
-logger = logging.getLogger("multiscale")
-logger.setLevel(logging.INFO)
-
+# logger = logging.getLogger("multiscale")
+# logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 class GlobalAgent(ScalingAgent):
     def __init__(self, prom_server, services_monitored):

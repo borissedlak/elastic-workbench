@@ -7,3 +7,7 @@ opencv-python~=4.10.0.82
 prometheus-client~=0.16.0 # Provide to Server
 docker~=7.1.0
 prometheus-api-client~=0.5.5 # Query from Server
+seaborn~=0.13.2
+pgmpy~=0.1.26
+matplotlib~=3.9.2
+redis~=5.2.1

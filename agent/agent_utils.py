@@ -20,14 +20,13 @@ def print_execution_time(func):
         end_time = time.time()
         execution_time_ms = (end_time - start_time) * 1000.0
         logger.info(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
-        # print(f"{func.__name__} took {execution_time_ms:.0f} ms to execute")
         return result
 
     return wrapper
 
 
 # @utils.print_execution_time # Recently almost 500ms
-def filter_3s_after_change(df: pd.DataFrame):
+def filter_rows_during_cooldown(df: pd.DataFrame):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
     # Identify timestamps where the flag is True
@@ -44,16 +43,16 @@ def filter_3s_after_change(df: pd.DataFrame):
     return filtered_df
 
 
-def get_free_cores(core_dict, max_cores):
-    if len(core_dict) == 0:
-        return max_cores
-
-    free_cores = max_cores - np.sum([item[1] for item in core_dict.items()])
-    return free_cores
-
-
-def was_qn_ever_trained(qn):
-    return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
+# def get_free_cores(core_dict, max_cores):
+#     if len(core_dict) == 0:
+#         return max_cores
+#
+#     free_cores = max_cores - np.sum([item[1] for item in core_dict.items()])
+#     return free_cores
+#
+#
+# def was_qn_ever_trained(qn):
+#     return qn.last_time_trained != datetime(1970, 1, 1, 0, 0, 0)
 
 
 def log_agent_experience(state: Full_State, prefix):
