@@ -11,11 +11,13 @@ class RedisClient:
 
     def store_assignment(self, service_id: ServiceID, client_ass: Dict[str, int]):
         key = create_ass_key(service_id)
+        # print("storing this assignment", client_ass)
         self.redis_conn.hset(key, mapping=client_ass)
 
     def get_assignments_for_service(self, service_id: ServiceID) -> Dict[str, int]:
         key = create_ass_key(service_id)
-        return self.redis_conn.hgetall(key)
+        dict_with_str = self.redis_conn.hgetall(key)
+        return {service_id: int(rps) for service_id, rps in dict_with_str.items()}
 
     def store_cooldown(self, service_id: ServiceID, target_timestamp):  # TODO: THis is the only real int
         key = create_cool_key(service_id)

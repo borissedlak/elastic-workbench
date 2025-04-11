@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import time
+from typing import Dict
 
 import cv2
 import numpy as np
@@ -118,6 +119,8 @@ def write_metrics_to_csv(lines):
 
         writer.writerows(lines)
 
+def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
+    return sum(i for i in client_arrivals.values())
 
 # def calculate_cpu_percentage(stats):
 #     cpu_delta: int = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']

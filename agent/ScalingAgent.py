@@ -2,7 +2,9 @@ import logging
 import platform
 import time
 from threading import Thread
+from typing import Dict
 
+import utils
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
@@ -29,33 +31,35 @@ class ScalingAgent(Thread):
         self.reddis_client = RedisClient()
         self.slo_registry = SLO_Registry()
 
-    # TODO: Calculate completion rate and put here
-    def resolve_service_state(self, service_id: ServiceID):
+    def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
         parameter_ass = self.prom_client.get_metrics(["pixel", "cores"], service_id)
-        return metric_values | parameter_ass
+
+        target_throughput = utils.to_absolut_rps(assigned_clients)
+        completion_rate = metric_values['throughput'] / target_throughput * 100
+        return metric_values | parameter_ass | {"completion_rate": completion_rate}
 
     def run(self):
 
         while self._running:
             for service_m in self.services_monitored:  # For all monitored services
                 service_m: ServiceID = service_m
-                service_state = self.resolve_service_state(service_m)
+                assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
+                service_state = self.resolve_service_state(service_m, assigned_clients)
 
                 if service_state == {}:
                     logger.warning(f"Cannot find state for service {service_m}")
                     continue
 
                 logger.info(f"Current state for {service_m}: {service_state}")
-                self.get_clients_SLO_F(service_m, service_state)
+                self.get_clients_SLO_F(service_m, service_state, assigned_clients)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
                 self.execute_random_ES(host_fix, service_m.service_type)
 
             time.sleep(30)
 
-    def get_clients_SLO_F(self, service_m: ServiceID, service_state):
-        assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
+    def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
         for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
 
             # TODO: Calculate overall streaming latency and place into state

@@ -15,6 +15,12 @@
           "larger": "False",
           "thresh": "70",
           "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": "True",
+          "thresh": "100",
+          "weight": 1.0
         }
       ]
     }

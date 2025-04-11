@@ -11,7 +11,7 @@ from pyzbar.pyzbar import decode
 
 import utils
 from agent.ES_Registry import ServiceType
-from iot_services.IoTService import IoTService, to_absolut_rps
+from iot_services.IoTService import IoTService
 from iot_services.QrDetector.VideoReader import VideoReader
 
 logger = logging.getLogger("multiscale")
@@ -56,7 +56,7 @@ class QrDetector(IoTService):
         while self._running:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.cores_reserved) as executor:
                 start_time = datetime.datetime.now()
-                buffer = self.video_stream.get_batch(to_absolut_rps(self.client_arrivals))
+                buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
                                for frame in buffer}
 

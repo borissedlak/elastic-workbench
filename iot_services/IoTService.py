@@ -16,9 +16,6 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
-def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
-    return sum(i for i in client_arrivals.values())
-
 
 class IoTService:
     def __init__(self):
@@ -85,7 +82,7 @@ class IoTService:
         container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
         service_id = ServiceID(container_ip, self.service_type, self.docker_container_ref)
         self.redis_client.store_assignment(service_id, self.client_arrivals)
-        logger.info(f"Total RPS is now {to_absolut_rps(self.client_arrivals)}")
+        logger.info(f"Total RPS is now {utils.to_absolut_rps(self.client_arrivals)}")
 
     def has_processing_timeout(self, start_time):
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
