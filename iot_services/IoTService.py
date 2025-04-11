@@ -16,7 +16,6 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
-
 class IoTService:
     def __init__(self):
         self.docker_container_ref = CONTAINER_REF
@@ -33,7 +32,8 @@ class IoTService:
 
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
         self.docker_client = DockerClient()
-        self.flag_next_metrics = EsType.STARTUP  # Start with flag
+        self.container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
+        self.flag_metric_cooldown = EsType.STARTUP  # Start with flag
 
     def process_one_iteration(self, params, frame) -> None:
         pass
@@ -54,9 +54,7 @@ class IoTService:
 
     def change_config(self, config):
         self.service_conf = config
-        # TODO: Here do (1) resolve the respective cooldown, and (2) store in Redis
-
-        self.flag_next_metrics = EsType.QUALITY_S  # TODO: Actually this is not 100% accurate here
+        self.set_flag_and_cooldown(EsType.QUALITY_S)
         logger.info(f"{self.service_type} changed to {config}")
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
@@ -69,7 +67,7 @@ class IoTService:
 
         self.cores_reserved = c_cores
         self.start_process()
-        self.flag_next_metrics = EsType.RESOURCE_S
+        self.set_flag_and_cooldown(EsType.RESOURCE_S)
         logger.info(f"{self.service_type} set to {c_cores} cores")
 
     def change_request_arrival(self, client_id: str, client_rps: int):
@@ -81,9 +79,7 @@ class IoTService:
             self.client_arrivals[client_id] = client_rps
             logger.info(f"Client {client_id} changed RPS to {client_rps}")
 
-        container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
-        service_id = ServiceID(container_ip, self.service_type, self.docker_container_ref)
-        self.redis_client.store_assignment(service_id, self.client_arrivals)
+        self.redis_client.store_assignment(self.get_service_id(), self.client_arrivals)
         logger.info(f"Total RPS is now {utils.to_absolut_rps(self.client_arrivals)}")
 
     def has_processing_timeout(self, start_time):
@@ -94,3 +90,10 @@ class IoTService:
         time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
         if time_elapsed < self.processing_timeframe:
             time.sleep((self.processing_timeframe - time_elapsed) / 1000)
+
+    def get_service_id(self):
+        return ServiceID(self.container_ip, self.service_type, self.docker_container_ref)
+
+    def set_flag_and_cooldown(self, es_type: EsType):
+        self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(self.service_type, es_type)
+        self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)

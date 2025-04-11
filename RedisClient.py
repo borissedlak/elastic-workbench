@@ -1,8 +1,9 @@
+import datetime
 from typing import Dict
 
 import redis
 
-from agent.ES_Registry import ServiceID, ServiceType
+from agent.ES_Registry import ServiceID, ServiceType, EsType
 
 
 class RedisClient:
@@ -19,9 +20,16 @@ class RedisClient:
         dict_with_str = self.redis_conn.hgetall(key)
         return {service_id: int(rps) for service_id, rps in dict_with_str.items()}
 
-    def store_cooldown(self, service_id: ServiceID, target_timestamp):  # TODO: THis is the only real int
+    def store_cooldown(self, service_id: ServiceID, es_type: EsType, cooldown_ms):
         key = create_cool_key(service_id)
-        self.redis_conn.set(key, target_timestamp)
+        freeze_until = (datetime.datetime.now() + datetime.timedelta(milliseconds=cooldown_ms)).isoformat()
+        self.redis_conn.hset(key, mapping={"ES": es_type.value, "unfreeze": freeze_until})
+
+    def get_cooldown(self, service_id: ServiceID):
+        key = create_cool_key(service_id)
+        item = self.redis_conn.hgetall(key)
+        freeze_until = datetime.datetime.fromisoformat(item['unfreeze'])
+        return {"ES": item['ES'], "unfreeze": freeze_until}
 
 
 def create_ass_key(service_id: ServiceID):
@@ -29,11 +37,16 @@ def create_ass_key(service_id: ServiceID):
 
 
 def create_cool_key(service_id: ServiceID):
-    return f"f:{service_id.host}:{service_id.container_id}"
+    return f"f:{service_id.host}:{service_id.service_type.value}:{service_id.container_id}"
 
 
 if __name__ == '__main__':
     redis = RedisClient()
-    redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1"),
-                           {'C_X': 50})
-    print(redis.get_assignments_for_service(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
+    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
+    # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1"),
+    #                        {'C_X': 50})
+    # print(redis.get_assignments_for_service(
+    #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
+    print(datetime.datetime.now())
+    redis.store_cooldown(qr_local, EsType.QUALITY_S, 6000)
+    print(redis.get_cooldown(qr_local))

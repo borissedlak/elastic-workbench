@@ -21,7 +21,7 @@ logger = logging.getLogger("multiscale")
 start_http_server(8000)
 throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
 avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item',
-                         ['service_type', 'container_id', 'metric_id'])
+                      ['service_type', 'container_id', 'metric_id'])
 pixel = Gauge('pixel', 'Current configured pixel', ['service_type', 'container_id', 'metric_id'])
 # energy = Gauge('energy', 'Current processing energy', ['service_id', 'container_id', 'metric_id'])
 cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
@@ -70,24 +70,21 @@ class QrDetector(IoTService):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
 
-
             # This is only executed once after the batch is processed
             throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                               metric_id="throughput").set(processed_item_counter)
             avg_p_latency_num = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
             avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                    metric_id="avg_p_latency").set(avg_p_latency_num)
+                                 metric_id="avg_p_latency").set(avg_p_latency_num)
             pixel.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                          metric_id="pixel").set(self.service_conf['pixel'])
             cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                          metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
-                ES_cooldown = self.es_registry.get_ES_cooldown(self.service_type, self.flag_next_metrics) \
-                    if self.flag_next_metrics else 0
                 metric_buffer.append((datetime.datetime.now(), self.service_type.value, avg_p_latency_num,
-                                      self.service_conf, self.cores_reserved, ES_cooldown))
-                self.flag_next_metrics = None
+                                      self.service_conf, self.cores_reserved, self.flag_metric_cooldown))
+                self.flag_next_metrics = 0
                 utils.write_metrics_to_csv(metric_buffer)
                 metric_buffer.clear()
 
