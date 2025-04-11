@@ -9,7 +9,7 @@ from HttpClient import HttpClient
 from agent.obsolete.DQN import DQN, STATE_DIM
 from agent.obsolete.Global_Service_Optimizer import Global_Service_Optimizer
 from agent.ScalingAgent_v2 import ScalingAgent, reset_core_states_2
-from agent.slo_config import Full_State, calculate_slo_reward
+from agent.obsolete.slo_config import Full_State, calculate_slo_reward
 
 plt.rcParams.update({'font.size': 12})
 

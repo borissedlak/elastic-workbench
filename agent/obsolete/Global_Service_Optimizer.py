@@ -6,7 +6,7 @@ import pandas as pd
 from HttpClient import HttpClient
 from agent import agent_utils
 from agent.ScalingAgent_v2 import ScalingAgent
-from agent.slo_config import Full_State, calculate_slo_reward
+from agent.obsolete.slo_config import Full_State, calculate_slo_reward
 
 http_client = HttpClient()
 

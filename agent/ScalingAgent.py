@@ -9,6 +9,7 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent import agent_utils
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType
+from agent.SLO_Registry import SLO_Registry
 
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
@@ -17,7 +18,6 @@ logger.setLevel(logging.DEBUG)
 class ScalingAgent(Thread):
     def __init__(self, prom_server, services_monitored: [ServiceID]):
         super().__init__()
-
         self._running = True
         self._idle = False
 
@@ -27,11 +27,11 @@ class ScalingAgent(Thread):
         self.http_client = HttpClient()
         self.es_registry = ES_Registry()
         self.reddis_client = RedisClient()
-        # self.reddis_client.reset_default_slos()
+        self.slo_registry = SLO_Registry()
 
     def resolve_service_state(self, service_id: ServiceID):
-        metric_values = self.prom_client.get_metrics("|".join(["avg_proc_latency", "throughput"]), service_id, period="10s")
-        parameter_ass = self.prom_client.get_metrics("|".join(["pixel", "cores"]), service_id)
+        metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
+        parameter_ass = self.prom_client.get_metrics(["pixel", "cores"], service_id)
         return metric_values | parameter_ass
 
     def run(self):
@@ -41,7 +41,7 @@ class ScalingAgent(Thread):
                 service_m: ServiceID = service_m
                 current_state = self.resolve_service_state(service_m)
 
-                if current_state =={}:
+                if current_state == {}:
                     logger.warning(f"Cannot find state for service {service_m}")
                     continue
 

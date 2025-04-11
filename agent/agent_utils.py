@@ -8,7 +8,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from agent.slo_config import Full_State
+from agent.obsolete.slo_config import Full_State
 
 logger = logging.getLogger('multiscale')
 
@@ -38,7 +38,7 @@ def filter_3s_after_change(df: pd.DataFrame):
 
     for index, row in flagged_rows.iterrows():
         mask |= ((df['timestamp'] >= row['timestamp']) &
-                 (df['timestamp'] <= row['timestamp'] + pd.Timedelta(seconds=row['cooldown'] / 1000))) # FUll sec
+                 (df['timestamp'] <= row['timestamp'] + pd.Timedelta(seconds=row['cooldown'] / 1000)))  # FUll sec
 
     filtered_df = df[~mask]
     return filtered_df

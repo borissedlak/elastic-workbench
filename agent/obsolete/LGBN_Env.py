@@ -7,7 +7,7 @@ import pandas as pd
 from pgmpy.models import LinearGaussianBayesianNetwork
 
 from agent import agent_utils
-from agent.slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
+from agent.obsolete.slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
 
 logger = logging.getLogger("multiscale")
 

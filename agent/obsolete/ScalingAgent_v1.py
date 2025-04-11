@@ -11,7 +11,7 @@ from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import INTERVAL, PrometheusClient
 from ScalingEnv import ScalingEnv, calculate_slo_reward
-from agent.slo_config import MB
+from agent.obsolete.slo_config import MB
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 

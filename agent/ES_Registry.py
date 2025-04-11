@@ -33,7 +33,7 @@ class ES_Registry:
         self.http_client = HttpClient()
         self.ES_activated = self._ES_activate_default
         ROOT = os.path.dirname(__file__)
-        with open(ROOT + '/es_registry.json', 'r') as f:
+        with open(ROOT + '/conf/es_registry.json', 'r') as f:
             self.es_api = json.load(f)
 
     def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:

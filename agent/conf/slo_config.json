@@ -1,0 +1,16 @@
+{
+  "clientSLOs": [
+    {
+      "client_id": "C_1",
+      "service_type": "elastic-workbench-video-processing",
+      "SLOs": [
+        {
+          "var": "pixel",
+          "larger": "True",
+          "thresh": "800",
+          "weight": 1.0
+        }
+      ]
+    }
+  ]
+}

@@ -21,7 +21,7 @@ def collect_all_metric_files():
 # TODO: Filter -1 processing_latencies
 def preprocess_data(df):
     df_filtered = agent_utils.filter_3s_after_change(df.copy())
-    df_filtered = df_filtered[df_filtered['avg_proc_latency'] != -1] # Filter out rows where we had no processing
+    df_filtered = df_filtered[df_filtered['avg_p_latency'] != -1] # Filter out rows where we had no processing
     df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
 
     # Convert and expand service config dict

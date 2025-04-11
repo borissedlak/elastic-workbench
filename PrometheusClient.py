@@ -10,14 +10,15 @@ class PrometheusClient:
 
     # TODO: Not AVG still not working
     # @utils.print_execution_time  # only around 3ms
-    def get_metrics(self, metric_name, service_id: ServiceID = None, period=None, avg=True):
+    def get_metrics(self, metric_names: [str], service_id: ServiceID = None, period=None, avg=True):
         avg_str = "avg_over_time" if avg else ""
         start = f"{avg_str}(" if period is not None else ""
         end = f"[{period}])" if period is not None else ""
 
         instance_filter = f',instance="{service_id.host}:8000",container_id="{service_id.container_id}"' if service_id else ""
 
-        metric_data = self.client.custom_query(query=f'{start}{{__name__=~"{metric_name}"{instance_filter}}}{end}')
+        metric_str = "|".join(metric_names)
+        metric_data = self.client.custom_query(query=f'{start}{{__name__=~"{metric_str}"{instance_filter}}}{end}')
         transformed = utils.convert_prom_multi(metric_data, decimal=True, avg=avg)
         return transformed
 

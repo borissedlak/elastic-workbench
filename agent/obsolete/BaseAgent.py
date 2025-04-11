@@ -6,7 +6,7 @@ import utils
 from DockerClient import DockerInfo
 from agent.ScalingAgent_v2 import ScalingAgent
 from agent.agent_utils import log_agent_experience
-from agent.slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
+from agent.obsolete.slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 # MAX_CORES = utils.get_env_param('MAX_CORES', 10)
