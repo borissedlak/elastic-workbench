@@ -79,8 +79,10 @@ class ScalingAgent(Thread):
                 continue
 
             # TODO: Continue with this SLO-F
-            client_SLO_F = self.slo_registry.calculate_slo_reward(service_state, client_SLOs)
-            print(client_SLO_F)
+            client_SLO_F_emp = self.slo_registry.calculate_slo_reward(service_state, client_SLOs)
+            print(client_SLO_F_emp)
+
+
 
     # TODO: This makes the assumption that only the desired container is running at the ip
     def execute_random_ES(self, host, service_type: ServiceType):
