@@ -14,6 +14,21 @@ from agent.SLO_Registry import SLO_Registry
 from utils import print_execution_time
 
 
+def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
+    full_state = partial_state.copy()
+
+    if "throughput" not in partial_state.keys():
+        throughput_expected = (1000 / partial_state['avg_p_latency']) * partial_state['cores']
+        full_state = full_state | {"throughput": throughput_expected}
+
+    if "completion_rate" not in partial_state.keys():
+        target_throughput = utils.to_absolut_rps(assigned_clients)
+        completion_r_expected = full_state['throughput'] / target_throughput * 100
+        full_state = full_state | {"completion_rate": completion_r_expected}
+
+    return full_state
+
+
 class LGBN:
     def __init__(self):
         self.model: LinearGaussianBayesianNetwork = self.init_model()
@@ -46,19 +61,10 @@ class LGBN:
         df_cleared = preprocess_data(df_combined)
         return train_lgbn_model(df_cleared)
 
-    def calculate_missing_vars(self, partial_state, assigned_clients: Dict[str, int]):
-        full_state = partial_state.copy()
-
-        if "throughput" not in partial_state.keys():
-            throughput_expected = (1000 / partial_state['avg_p_latency']) * partial_state['cores']
-            full_state = full_state | {"throughput": throughput_expected}
-
-        if "completion_rate" not in partial_state.keys():
-            target_throughput = utils.to_absolut_rps(assigned_clients)
-            completion_r_expected = full_state['throughput'] / target_throughput * 100
-            full_state = full_state | {"completion_rate": completion_r_expected}
-
-        return full_state
+    def get_expected_state(self, partial_state, assigned_clients):
+        partial_state_extended = self.predict_lgbn_vars(partial_state)
+        full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
+        return full_state_expected
 
 
 def preprocess_data(df):
@@ -114,11 +120,10 @@ def train_lgbn_model(df, show_result=False):
 
 if __name__ == "__main__":
     lgbn = LGBN()
-    partial_state_extended = lgbn.predict_lgbn_vars({'pixel': 700, 'cores': 2})
-    full_state_expected = lgbn.calculate_missing_vars(partial_state_extended, {"C_1": 100})
-    print("Full State", full_state_expected)
+    state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
+    print("Full State", state_expected)
     slo_registry = SLO_Registry()
 
     client_SLOs = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
-    client_SLO_F_emp = slo_registry.calculate_slo_reward(full_state_expected, client_SLOs)
+    client_SLO_F_emp = slo_registry.calculate_slo_reward(state_expected, client_SLOs)
     print(client_SLO_F_emp)

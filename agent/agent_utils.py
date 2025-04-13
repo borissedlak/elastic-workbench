@@ -5,7 +5,6 @@ import random
 import time
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 
 from agent.obsolete.slo_config import Full_State
@@ -72,3 +71,11 @@ def get_random_parameter_assignments(parameters):
 
     return random_ass
 
+
+def to_partial(full_state):
+    partial_state = full_state.copy()
+    del partial_state["avg_p_latency"]
+    del partial_state["throughput"]
+    del partial_state["completion_rate"]
+
+    return partial_state
