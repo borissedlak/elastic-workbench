@@ -12,7 +12,6 @@ class RedisClient:
 
     def store_assignment(self, service_id: ServiceID, client_ass: Dict[str, int]):
         key = create_ass_key(service_id)
-        # print("storing this assignment", client_ass)
         self.redis_conn.hset(key, mapping=client_ass)
 
     def get_assignments_for_service(self, service_id: ServiceID) -> Dict[str, int]:

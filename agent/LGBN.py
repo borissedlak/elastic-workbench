@@ -14,6 +14,50 @@ from agent.SLO_Registry import SLO_Registry
 from utils import print_execution_time
 
 
+class LGBN:
+    def __init__(self, show_figures=False):
+        self.show_figures = show_figures
+        self.model: LinearGaussianBayesianNetwork = self.init_model()
+        self.service_type: ServiceType = None  # TODO: Must set this correctly and use in file collection
+
+    def init_model(self):
+        df_combined = self.collect_all_metric_files()
+        df_cleared = preprocess_data(df_combined)
+        return train_lgbn_model(df_cleared, show_result=self.show_figures)
+
+    # TODO: This should also fetch files from remote hosts
+    # TODO: Also, if I implement multiple service types, this must be considered here
+    def collect_all_metric_files(self):
+        metrics_local = get_local_metric_file()
+        metrics_contents = [metrics_local]
+        combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
+        return combined_df
+
+    @utils.print_execution_time
+    def predict_lgbn_vars(self, partial_state, sanitize = True):
+        wrapped_in_list = {k: [v] for k, v in partial_state.items()}
+        var, mean, vari = self.model.predict(pd.DataFrame(wrapped_in_list))
+
+        samples = {}
+        for index, v in enumerate(var):
+            mu, sigma = mean[0][index], np.sqrt(vari[index][index])
+            sample_val = np.random.normal(mu, sigma, 1)[0]
+            samples = samples | {v: int(sample_val)}  # TODO: Might need a different data type at some point
+
+        # TODO: Move somewhere else
+        if sanitize:
+            for var, min, max in [("avg_p_latency", 1, 999999)]:
+                if var in samples.keys():
+                    samples[var] = np.clip(samples[var], min, max)
+
+        return partial_state | samples
+
+    def get_expected_state(self, partial_state, assigned_clients):
+        partial_state_extended = self.predict_lgbn_vars(partial_state)
+        full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
+        return full_state_expected
+
+
 def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
     full_state = partial_state.copy()
 
@@ -27,44 +71,6 @@ def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
-
-
-class LGBN:
-    def __init__(self):
-        self.model: LinearGaussianBayesianNetwork = self.init_model()
-        self.service_type: ServiceType = None  # TODO: Must set this correctly and use in file collection
-
-    # TODO: This should also fetch files from remote hosts
-    # TODO: Also, if I implement multiple service types, this must be considered here
-    def collect_all_metric_files(self):
-        metrics_local = get_local_metric_file()
-        metrics_contents = [metrics_local]
-        combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
-        return combined_df
-
-    @utils.print_execution_time
-    # TODO: The variance is actually important for the uncertainty
-    def predict_lgbn_vars(self, partial_state):
-        wrapped_in_list = {k: [v] for k, v in partial_state.items()}
-        var, mean, vari = self.model.predict(pd.DataFrame(wrapped_in_list))
-
-        samples = {}
-        for index, v in enumerate(var):
-            mu, sigma = mean[0][index], np.sqrt(vari[index][index])
-            sample_val = np.random.normal(mu, sigma, 1)[0]
-            samples = samples | {v: int(sample_val)}  # TODO: Might need a different data type at some point
-
-        return samples | partial_state
-
-    def init_model(self):
-        df_combined = self.collect_all_metric_files()
-        df_cleared = preprocess_data(df_combined)
-        return train_lgbn_model(df_cleared)
-
-    def get_expected_state(self, partial_state, assigned_clients):
-        partial_state_extended = self.predict_lgbn_vars(partial_state)
-        full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
-        return full_state_expected
 
 
 def preprocess_data(df):
@@ -119,11 +125,11 @@ def train_lgbn_model(df, show_result=False):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN()
+    lgbn = LGBN(show_figures=True)
     state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     print("Full State", state_expected)
     slo_registry = SLO_Registry()
 
     client_SLOs = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
-    client_SLO_F_emp = slo_registry.calculate_slo_reward(state_expected, client_SLOs)
+    client_SLO_F_emp = slo_registry.calculate_slo_fulfillment(state_expected, client_SLOs)
     print(client_SLO_F_emp)

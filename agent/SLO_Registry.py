@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 import numpy as np
 
@@ -21,7 +21,9 @@ class SLO_Registry:
                     result = result | {slo["var"]: slo}
         return result
 
-    def calculate_slo_reward(self, state: Dict[str, Any], SLOs):
+    # TODO: Calculate overall streaming latency and place into state
+    #  Ideally I do this in a function that can also be reused for the expected SLO_F
+    def calculate_slo_fulfillment(self, state: Dict[str, Any], SLOs):
         fuzzy_slof = []
 
         for state_var, value in state.items():
@@ -39,8 +41,12 @@ class SLO_Registry:
         return fuzzy_slof
 
 
+def to_avg_SLO_F(slof: List[Tuple[str, float]]) -> float:
+    return sum(value for _, value in slof) / float(len(slof))
+
+
 if __name__ == '__main__':
     slo_registry = SLO_Registry()
     slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
 
-    print(slo_registry.calculate_slo_reward({"avg_p_latency": 10}, slos))
+    print(slo_registry.calculate_slo_fulfillment({"avg_p_latency": 10}, slos))

@@ -18,6 +18,7 @@ class EsType(Enum):
     STARTUP = 'resource_scaling'  # Do the same as when scaling resources
     RESOURCE_S = 'resource_scaling'
     QUALITY_S = 'quality_scaling'
+    OFFLOADING = 'offloading'
 
 
 class ServiceID(NamedTuple):
@@ -38,7 +39,6 @@ class ES_Registry:
 
     def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:
         services = self.es_api['services']
-        # service_ES = services.get(service_type, [])
         for service in services:
             if service['name'] == service_type.value:
                 for es in service['elasticity_strategies']:
@@ -55,6 +55,13 @@ class ES_Registry:
 
         logger.info("No corresponding strategy registered")
         return False
+
+    def get_active_ES_for_s(self, service_type: ServiceType):
+        if service_type.name in self.ES_activated.keys():
+            return self.ES_activated[service_type.value]
+        else:
+            logger.warning(f"Querying active ES for unknown service type {service_type.name}")
+            return []
 
     def get_ES_information(self, service_type: ServiceType, es_type: EsType):
         for service in self.es_api["services"]:

@@ -42,11 +42,11 @@ class ScalingAgent(Thread):
         completion_rate = metric_values['throughput'] / target_throughput * 100
         return metric_values | parameter_ass | {"completion_rate": completion_rate}
 
+    # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
-
         while self._running:
             for service_m in self.services_monitored:  # For all monitored services
-                logger.warning("\n")
+
                 service_m: ServiceID = service_m
                 assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
                 service_state = self.resolve_service_state(service_m, assigned_clients)
@@ -57,6 +57,13 @@ class ScalingAgent(Thread):
 
                 logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
                 self.get_clients_SLO_F(service_m, service_state, assigned_clients)
+
+                # TODO: According to this discrepancy, I must adjust the model, or is this done automatically?
+                # service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
+                # client_SLO_F_exp = self.slo_registry.calculate_slo_fulfillment(service_state_exp, client_SLOs)
+                # print("Expected SLO-F", client_SLO_F_exp)
+
+                self.get_optimal_local_ES(service_m.service_type)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
 
@@ -70,22 +77,20 @@ class ScalingAgent(Thread):
             time.sleep(self.evaluation_cycle)
 
     def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
+
+        all_client_SLO_F = []
         for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
 
-            # TODO: Calculate overall streaming latency and place into state
-            #  Ideally I do this in a function that can also be reused for the expected SLO_F
             client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
             if client_SLOs == {}:
                 logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
                 continue
 
-            # TODO: Continue with this SLO-F
-            client_SLO_F_emp = self.slo_registry.calculate_slo_reward(service_state, client_SLOs)
+            client_SLO_F_emp = self.slo_registry.calculate_slo_fulfillment(service_state, client_SLOs)
             print("Actual SLO-F", client_SLO_F_emp)
+            all_client_SLO_F.append((client_id, client_SLO_F_emp))
 
-            service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
-            client_SLO_F_exp = self.slo_registry.calculate_slo_reward(service_state_exp, client_SLOs)
-            print("Expected SLO-F", client_SLO_F_exp)
+        return all_client_SLO_F
 
     # TODO: This makes the assumption that only the desired container is running at the ip
     def execute_random_ES(self, host, service_type: ServiceType):
@@ -101,8 +106,12 @@ class ScalingAgent(Thread):
 
             logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")
 
+    def get_optimal_local_ES(self, service_type: ServiceType):
+        active_ES = self.es_registry.get_active_ES_for_s(service_type)
+
+
 
 if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
-    ScalingAgent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=10).start()
+    ScalingAgent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=15).start()
