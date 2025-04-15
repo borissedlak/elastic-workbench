@@ -66,12 +66,12 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps, verify=Fa
     x0 = [random.randint(mini, maxi) for mini, maxi in bounds]  # Initial guess
 
     # result = minimize(objective, x0, method='L-BFGS-B', bounds=bounds)
-    result_2 = minimize(composite_obj, x0, method='L-BFGS-B', bounds=bounds,
+    result = minimize(composite_obj, x0, method='L-BFGS-B', bounds=bounds,
                         args=(parameter_bounds, linear_relations, clients_SLOs, total_rps))
 
     # for r in [result, result_2]:
-    quality = round(result_2.x[0])
-    cores = round(result_2.x[1])
+    quality = round(result.x[0])
+    cores = round(result.x[1])
 
     if verify:
         variables = {"quality": quality, "cores": cores}
@@ -105,7 +105,7 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps, verify=Fa
 
         slo_f = overall_slo_f / len(clients_SLOs)
 
-        print("Status:", result_2.message)
+        print("Status:", result.message)
         print("Optimal SLO F:", slo_f)
         # print("Pixel-based SLO:", slo_pixel)
         # print("Latency-based SLO:", slo_latency)
@@ -115,7 +115,12 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps, verify=Fa
         # print("Optimal latency:", p_latency)
         # print("Estimated throughput:", throughput)
 
-    return quality, cores
+    es_param_ass = {}
+    for index, param in enumerate(parameter_bounds):
+        # es_param_ass.append((param["es_type"], param["name"], result.x[index]))
+        es_param_ass[param["name"]] = int(result.x[index])
+
+    return es_param_ass
 
 
 if __name__ == '__main__':

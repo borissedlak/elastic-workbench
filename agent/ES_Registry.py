@@ -71,7 +71,7 @@ class ES_Registry:
         for es in active_ES:
             endpoints = self.get_ES_information(service_type, es)["endpoints"]
             params = [params for params in [e["parameters"] for e in endpoints]]
-            param_list.append(params[0][0])
+            param_list.append(params[0][0] | {"es_type": es})
         return param_list
 
     def get_ES_information(self, service_type: ServiceType, es_type: EsType):
