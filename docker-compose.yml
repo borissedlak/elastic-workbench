@@ -14,8 +14,8 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-video-processing-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENT=C_1:70 # TODO: If I dont work ok Windows anymore, mount timezone volume
-      - TZ=Europe/Vienna
+      - DEFAULT_CLIENTS=C_1:40,C_2:30
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
 #      - /home/boris/development/elastic-workbench/share:/src/share # Linux
       - /c/users/boris/development/elastic-workbench/share:/src/share # Windows

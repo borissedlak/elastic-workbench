@@ -30,7 +30,7 @@ cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_i
 class QrDetector(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'pixel': 800}
+        self.service_conf = {'quality': 800}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader()
@@ -38,7 +38,7 @@ class QrDetector(IoTService):
     def process_one_iteration(self, config_params, frame) -> (Any, int):
         start = datetime.datetime.now()
 
-        target_height = int(config_params['pixel'])
+        target_height = int(config_params['quality'])
         original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height
         frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
@@ -77,7 +77,7 @@ class QrDetector(IoTService):
             avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="avg_p_latency").set(avg_p_latency_num)
             pixel.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                         metric_id="pixel").set(self.service_conf['pixel'])
+                         metric_id="pixel").set(self.service_conf['quality'])
             cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                          metric_id="cores").set(self.cores_reserved)
 

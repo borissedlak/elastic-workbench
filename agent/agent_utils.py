@@ -42,24 +42,24 @@ def filter_rows_during_cooldown(df: pd.DataFrame):
     return filtered_df
 
 
-def log_agent_experience(state: Full_State, prefix):
-    # Define the directory and file name
-    directory = "./"
-    file_name = "slo_f.csv"
-    file_path = os.path.join(directory, file_name)
-
-    file_exists = os.path.isfile(file_path)
-
-    # Open the file in append mode
-    with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
-
-        if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(
-                ["index", "rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores",
-                 "free_cores"])
-
-        writer.writerow([prefix[0], prefix[1], datetime.now()] + list(state))
+# def log_agent_experience(state: Full_State, prefix):
+#     # Define the directory and file name
+#     directory = "./"
+#     file_name = "slo_f.csv"
+#     file_path = os.path.join(directory, file_name)
+#
+#     file_exists = os.path.isfile(file_path)
+#
+#     # Open the file in append mode
+#     with open(file_path, mode='a', newline='') as file:
+#         writer = csv.writer(file)
+#
+#         if not file_exists or os.path.getsize(file_path) == 0:
+#             writer.writerow(
+#                 ["index", "rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores",
+#                  "free_cores"])
+#
+#         writer.writerow([prefix[0], prefix[1], datetime.now()] + list(state))
 
 
 def get_random_parameter_assignments(parameters):

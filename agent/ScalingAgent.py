@@ -63,7 +63,7 @@ class ScalingAgent(Thread):
                 # client_SLO_F_exp = self.slo_registry.calculate_slo_fulfillment(service_state_exp, client_SLOs)
                 # print("Expected SLO-F", client_SLO_F_exp)
 
-                self.get_optimal_local_ES(service_m.service_type)
+                self.get_optimal_local_ES(service_m.service_type, assigned_clients)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
 
@@ -106,9 +106,10 @@ class ScalingAgent(Thread):
 
             logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")
 
-    def get_optimal_local_ES(self, service_type: ServiceType):
+    def get_optimal_local_ES(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_type)
         linear_relations = self.lgbn.get_linear_relations()
+        all_client_slos = self.slo_registry.get_all_client_SLOs(service_type, assigned_clients)
         pass
 
 

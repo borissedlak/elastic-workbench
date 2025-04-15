@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 DEFAULT_CORES = utils.get_env_param("DEFAULT_CORES", 2)
-DEFAULT_CLIENT: str = utils.get_env_param("DEFAULT_CLIENT", None)
+DEFAULT_CLIENTS: str = utils.get_env_param("DEFAULT_CLIENTS", None)
 
 
 def init_service(s_type):
@@ -34,8 +34,10 @@ class ServiceWrapper:
         if start_processing:
             self.start_processing()
             self.scale_cores(DEFAULT_CORES)
-            if DEFAULT_CLIENT:
-                self.service.change_request_arrival(DEFAULT_CLIENT.split(":")[0], int(DEFAULT_CLIENT.split(":")[1]))
+            if DEFAULT_CLIENTS:
+                clients = DEFAULT_CLIENTS.split(",")
+                for client in clients:
+                    self.service.change_request_arrival(client.split(":")[0], int(client.split(":")[1]))
 
         self.app = Flask(__name__)
         self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['POST'])
@@ -77,7 +79,7 @@ class ServiceWrapper:
     def quality_scaling(self):
         quality = int(request.args.get('quality'))
         s_conf = self.service.service_conf
-        s_conf['pixel'] = quality
+        s_conf['quality'] = quality
         self.service.change_config(s_conf)
         return ""
 

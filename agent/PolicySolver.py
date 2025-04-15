@@ -1,5 +1,3 @@
-import ast
-
 import numpy as np
 from scipy.optimize import minimize
 
@@ -8,6 +6,7 @@ from scipy.optimize import minimize
 def soft_clip(x, max):
     return x * np.exp(-1.5 * x) + max * (1 - np.exp(-1.5 * x))
 
+
 linear_relation = "0.049 * quality - 6.624"
 
 
@@ -15,10 +14,18 @@ def objective(x):
     quality, cores = x
     p_latency = eval(linear_relation, {}, {"quality": quality, "cores": cores})
     throughput = (1000 / p_latency) * cores
-    slo_pixel = soft_clip(quality / 500, 1.0)
-    slo_latency = soft_clip(1 - (p_latency - 70) / 70, 1.0)
-    slo_completion = soft_clip(throughput / 50, 1.0)
-    slo_f = (slo_pixel + slo_latency + slo_completion) / 3
+
+    client_slos = [(800, 70), (1000, 20)]
+    overall_slo_f = 0
+
+    for pixel_t, latency_t in client_slos:
+        slo_pixel = soft_clip(quality / pixel_t, 1.0)
+        slo_latency = soft_clip(1 - (p_latency - latency_t) / latency_t, 1.0)
+        slo_completion = soft_clip(throughput / 50, 1.0)
+        client_slo_f = (slo_pixel + slo_latency + slo_completion) / 3
+        overall_slo_f += client_slo_f
+
+    slo_f = overall_slo_f / len(client_slos)
     return -slo_f  # because we want to maximize
 
 

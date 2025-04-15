@@ -121,7 +121,7 @@ def train_lgbn_model(df, show_result=False):
     #     scoring_method=scoring_method, max_indegree=5, epsilon=1,
     # )
     # model = LinearGaussianBayesianNetwork(ebunch=dag)
-    model = LinearGaussianBayesianNetwork([('pixel', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
+    model = LinearGaussianBayesianNetwork([('quality', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
     # BIFWriter(model).write_bif("./model.xml") # Does not work for LGBNs ....
     model.fit(df)
 
@@ -129,7 +129,7 @@ def train_lgbn_model(df, show_result=False):
         print(cpd)
 
     if show_result:
-        for states in [["pixel", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
+        for states in [["quality", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
             X_samples = model.simulate(1500, 35)
             X_df = pd.DataFrame(X_samples, columns=states)
 
