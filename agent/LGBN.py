@@ -80,7 +80,7 @@ def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
 
     if "completion_rate" not in partial_state.keys():
         target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_r_expected = full_state['throughput'] / target_throughput * 100
+        completion_r_expected = full_state['throughput'] / target_throughput
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state

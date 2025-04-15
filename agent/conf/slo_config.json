@@ -43,7 +43,7 @@
         {
           "var": "completion_rate",
           "larger": "True",
-          "thresh": "100",
+          "thresh": "1.0",
           "weight": 1.0
         }
       ]

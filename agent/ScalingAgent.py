@@ -39,7 +39,7 @@ class ScalingAgent(Thread):
         parameter_ass = self.prom_client.get_metrics(["pixel", "cores"], service_id)
 
         target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_rate = metric_values['throughput'] / target_throughput * 100
+        completion_rate = metric_values['throughput'] / target_throughput
         return metric_values | parameter_ass | {"completion_rate": completion_rate}
 
     # WRITE: Add a high-level algorithm of this to the paper
