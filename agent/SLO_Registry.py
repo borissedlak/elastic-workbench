@@ -13,7 +13,7 @@ class SLO_Registry:
         with open(ROOT + '/conf/slo_config.json', 'r') as f:
             self.slo_lib = json.load(f)
 
-    def get_all_client_SLOs(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
+    def get_all_SLOs_for_assigned_clients(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
         all_client_slos = []
 
         for client_id, client_rps in assigned_clients.items():

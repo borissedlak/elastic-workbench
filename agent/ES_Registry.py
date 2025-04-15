@@ -29,7 +29,8 @@ class ServiceID(NamedTuple):
 
 
 class ES_Registry:
-    _ES_activate_default = {'elastic-workbench-video-processing': ['resource_scaling', 'quality_scaling']}
+    # TODO: This is super buggy because the order is important for the variables in the Policy Solver!!
+    _ES_activate_default = {'elastic-workbench-video-processing': ['quality_scaling', 'resource_scaling']}
 
     def __init__(self):
         self.http_client = HttpClient()

@@ -4,22 +4,6 @@
       "name": "elastic-workbench-video-processing",
       "elasticity_strategies": [
         {
-          "ES_name": "resource_scaling",
-          "cooldown": 1500,
-          "endpoints": [
-            {
-              "target": "/resource_scaling",
-              "parameters": [
-                {
-                  "name": "cores",
-                  "min": 1,
-                  "max": 8
-                }
-              ]
-            }
-          ]
-        },
-        {
           "ES_name": "quality_scaling",
           "cooldown": 1500,
           "endpoints": [
@@ -30,6 +14,22 @@
                   "name": "quality",
                   "min": 360,
                   "max": 1080
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ES_name": "resource_scaling",
+          "cooldown": 1500,
+          "endpoints": [
+            {
+              "target": "/resource_scaling",
+              "parameters": [
+                {
+                  "name": "cores",
+                  "min": 1,
+                  "max": 8
                 }
               ]
             }

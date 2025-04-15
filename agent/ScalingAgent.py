@@ -9,7 +9,7 @@ from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent import agent_utils
+from agent import agent_utils, PolicySolver
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType
 from agent.LGBN import LGBN
 from agent.SLO_Registry import SLO_Registry
@@ -56,7 +56,7 @@ class ScalingAgent(Thread):
                     continue
 
                 logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
-                self.get_clients_SLO_F(service_m, service_state, assigned_clients)
+                all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
 
                 # TODO: According to this discrepancy, I must adjust the model, or is this done automatically?
                 # service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
@@ -87,9 +87,9 @@ class ScalingAgent(Thread):
                 continue
 
             client_SLO_F_emp = self.slo_registry.calculate_slo_fulfillment(service_state, client_SLOs)
-            print("Actual SLO-F", client_SLO_F_emp)
             all_client_SLO_F.append((client_id, client_SLO_F_emp))
 
+        print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
     # TODO: This makes the assumption that only the desired container is running at the ip
@@ -109,9 +109,10 @@ class ScalingAgent(Thread):
     def get_optimal_local_ES(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_type)
         linear_relations = self.lgbn.get_linear_relations()
-        all_client_slos = self.slo_registry.get_all_client_SLOs(service_type, assigned_clients)
-        pass
+        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_type, assigned_clients)
+        total_rps = utils.to_absolut_rps(assigned_clients)
 
+        PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
 
 if __name__ == '__main__':
