@@ -36,6 +36,10 @@ class DockerClient:
         c_stats = self.get_container_stats(container_ref)
         return c_stats.attrs['NetworkSettings']['Networks']['elastic-workbench_docker_network']['IPAddress']
 
+    def get_container_cores(self, container_ref):
+        c_stats = self.get_container_stats(container_ref)
+        return int(c_stats.attrs['HostConfig'].get('CpuQuota', 0) / 100000)
+
 
 class DockerInfo(NamedTuple):
     container_id: str
@@ -46,5 +50,6 @@ class DockerInfo(NamedTuple):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     client = DockerClient()
-    ip = client.get_container_ip("elastic-workbench-video-processing-1")
-    print(ip)
+    # ip = client.get_container_ip("elastic-workbench-video-processing-1")
+    # print(ip)
+    print(client.get_container_cores("elastic-workbench-video-processing-1"))

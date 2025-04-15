@@ -46,6 +46,9 @@ class ScalingAgent(Thread):
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
         while self._running:
+
+            # TODO: Get free_cores on device and set constraint as (current + free_cores)
+
             for service_m in self.services_monitored:  # For all monitored services
 
                 service_m: ServiceID = service_m
@@ -95,7 +98,6 @@ class ScalingAgent(Thread):
         print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
-
     def execute_random_ES(self, host, service_type: ServiceType):
         rand_ES = self.es_registry.get_random_ES_for_service(service_type)
 
@@ -128,6 +130,9 @@ class ScalingAgent(Thread):
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         return PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
+
+    def get_maximum_cores(self):
+        pass
 
 
 if __name__ == '__main__':
