@@ -27,7 +27,7 @@ def composite_obj(x, parameter_bounds, linear_relations, all_SLOs, total_rps):
         for _, item in client_SLOs.items():
             var, larger, thresh, weight = tuple(item.values())
             value = (variables | arguments)[var]
-            if larger == "True":
+            if larger:
                 single_slo = (value / float(thresh))
             else:
                 single_slo = 1 - ((value - float(thresh)) / float(thresh))
@@ -92,7 +92,7 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps, verify=Fa
             for _, item in client_SLOs.items():
                 var, larger, thresh, weight = tuple(item.values())
                 value = (variables | arguments)[var]
-                if larger == "True":
+                if larger:
                     single_slo = (value / float(thresh))
                 else:
                     single_slo = 1 - ((value - float(thresh)) / float(thresh))

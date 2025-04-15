@@ -40,12 +40,12 @@ class SLO_Registry:
             if state_var in SLOs:
                 var, larger, thresh, weight = tuple(SLOs[state_var].values())
 
-                if larger == "True":
+                if larger:
                     slo_f = (value / float(thresh))
                 else:
                     slo_f = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
 
-                slo_f = float(np.clip(slo_f, 0.0, 1.0)) * float(weight)  # Could allow cap=1.1
+                slo_f = float(np.clip(slo_f, 0.0, 1.0)) * float(weight)
                 fuzzy_slof.append((state_var, slo_f))
 
         return fuzzy_slof
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     slo_registry = SLO_Registry()
     slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
 
-    print(slo_registry.calculate_slo_fulfillment({"avg_p_latency": 10}, slos))
+    print(slo_registry.calculate_slo_fulfillment({"quality": 10}, slos))
