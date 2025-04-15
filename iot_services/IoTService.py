@@ -53,14 +53,14 @@ class IoTService:
         pass
 
     def change_config(self, config):
-        self.set_flag_and_cooldown(EsType.QUALITY_S)
+        self.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         self.service_conf = config
         logger.info(f"{self.service_type} changed to {config}")
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
     # according to that. I think this is best to keep the abstract structure of the services
     def vertical_scaling(self, c_cores):
-        self.set_flag_and_cooldown(EsType.RESOURCE_S)
+        self.set_flag_and_cooldown(EsType.RESOURCE_SCALE)
         self.terminate()
         # Wait until it is really terminated and then start new
         while not self._terminated:

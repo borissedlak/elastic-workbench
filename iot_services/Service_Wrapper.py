@@ -83,7 +83,7 @@ class ServiceWrapper:
 
     # @app.route("/vertical_scaling", methods=['PUT'])
     def resource_scaling(self):
-        cpu_cores = int(request.args.get('cpu_cores'))
+        cpu_cores = int(request.args.get('cores'))
         self.scale_cores(cpu_cores)
         return ""
 

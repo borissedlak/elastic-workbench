@@ -11,7 +11,7 @@
               "target": "/resource_scaling",
               "parameters": [
                 {
-                  "name": "cpu_cores",
+                  "name": "cores",
                   "min": 1,
                   "max": 8
                 }

@@ -107,7 +107,9 @@ class ScalingAgent(Thread):
             logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")
 
     def get_optimal_local_ES(self, service_type: ServiceType):
-        active_ES = self.es_registry.get_active_ES_for_s(service_type)
+        ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_type)
+        linear_relations = self.lgbn.get_linear_relations()
+        pass
 
 
 

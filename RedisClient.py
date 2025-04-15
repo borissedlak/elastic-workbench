@@ -56,7 +56,7 @@ if __name__ == '__main__':
     # print(redis.get_assignments_for_service(
     #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
     print(datetime.datetime.now())
-    redis.store_cooldown(qr_local, EsType.QUALITY_S, 10000)
+    redis.store_cooldown(qr_local, EsType.QUALITY_SCALE, 10000)
     print(redis.is_under_cooldown(qr_local))
     print(redis.is_under_cooldown(nonsense))
 

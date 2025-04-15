@@ -28,14 +28,14 @@ class SLO_Registry:
 
         for state_var, value in state.items():
             if state_var in SLOs:
-                slo = SLOs[state_var]
+                var, larger, thresh, weight = tuple(SLOs[state_var].values())
 
-                if slo["larger"] == "True":
-                    slo_f = (value / float(slo["thresh"]))
+                if larger == "True":
+                    slo_f = (value / float(thresh))
                 else:
-                    slo_f = 1 - ((value - float(slo["thresh"])) / float(slo["thresh"]))  # SLO-F is 0 after 2 * t
+                    slo_f = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
 
-                slo_f = float(np.clip(slo_f, 0.0, 1.0)) * float(slo["weight"])  # Could allow cap=1.1
+                slo_f = float(np.clip(slo_f, 0.0, 1.0)) * float(weight)  # Could allow cap=1.1
                 fuzzy_slof.append((state_var, slo_f))
 
         return fuzzy_slof

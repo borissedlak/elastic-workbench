@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 from pgmpy.models import LinearGaussianBayesianNetwork
-from scipy.stats import stats
+from scipy import stats
 
 import agent_utils
 import utils
@@ -20,6 +20,7 @@ class LGBN:
         self.show_figures = show_figures
         self.model: LinearGaussianBayesianNetwork = self.init_model()
         self.service_type: ServiceType = None  # TODO: Must set this correctly and use in file collection
+
 
     def init_model(self):
         df_combined = self.collect_all_metric_files()
@@ -57,6 +58,17 @@ class LGBN:
         partial_state_extended = self.predict_lgbn_vars(partial_state)
         full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
         return full_state_expected
+
+    def get_linear_relations(self):
+        linear_relations = {}
+        for cpd in self.model.get_cpds():
+            if cpd.evidence == []: # Only get those with dependencies
+                continue
+
+            # TODO: This I will need to fix when I get more variables
+            linear_relations[cpd.variable] = [(cpd.variables[1], cpd.beta[1], cpd.beta[0])]
+        return linear_relations
+
 
 
 def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
@@ -128,11 +140,12 @@ def train_lgbn_model(df, show_result=False):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=True)
-    state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
-    print("Full State", state_expected)
-    slo_registry = SLO_Registry()
-
-    client_SLOs = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
-    client_SLO_F_emp = slo_registry.calculate_slo_fulfillment(state_expected, client_SLOs)
-    print(client_SLO_F_emp)
+    lgbn = LGBN(show_figures=False)
+    print(lgbn.get_linear_relations())
+    # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
+    # print("Full State", state_expected)
+    # slo_registry = SLO_Registry()
+    #
+    # client_SLOs = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
+    # client_SLO_F_emp = slo_registry.calculate_slo_fulfillment(state_expected, client_SLOs)
+    # print(client_SLO_F_emp)
