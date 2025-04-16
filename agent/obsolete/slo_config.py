@@ -3,7 +3,6 @@ from typing import NamedTuple
 import numpy as np
 
 
-# TODO: DELETE THIS FILE!!!!!!!!!!!!
 PW_MAX_CORES = 10
 MB = {'variables': ['pixel', 'fps', 'cores'],
       'parameter': ['pixel', 'cores'],

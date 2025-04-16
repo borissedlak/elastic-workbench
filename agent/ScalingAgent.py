@@ -1,6 +1,5 @@
 import logging
 import platform
-import random
 import time
 from threading import Thread
 from typing import Dict
@@ -17,6 +16,8 @@ from agent.SLO_Registry import SLO_Registry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
+
+PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 5))
 
 
 class ScalingAgent(Thread):
@@ -47,8 +48,7 @@ class ScalingAgent(Thread):
     def run(self):
         while self._running:
 
-            # TODO: Get free_cores on device and set constraint as (current + free_cores)
-
+            cores_ass = self.get_assigned_cores(self.services_monitored)
             for service_m in self.services_monitored:  # For all monitored services
 
                 service_m: ServiceID = service_m
@@ -74,7 +74,7 @@ class ScalingAgent(Thread):
                     continue
 
                 if True:  # random.randint(1, 2) == 1:
-                    all_elastic_params = self.get_optimal_local_ES(service_m.service_type, assigned_clients)
+                    all_elastic_params = self.get_optimal_local_ES(service_m, assigned_clients, cores_ass)
                     for es_type in self.es_registry.get_active_ES_for_s(service_m.service_type):
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params)
                 else:
@@ -123,16 +123,25 @@ class ScalingAgent(Thread):
             self.http_client.call_ES_endpoint(host, endpoint['target'], all_params)
             logger.info(f"Calling ES <{service_type},{es_type}> with {all_params}")
 
-    def get_optimal_local_ES(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
-        ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_type)
+    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int], cores_ass):
+
+        free_cores = PHYSICAL_CORES - sum(cores_ass.values())
+        max_available_c = free_cores + cores_ass[service.container_id]
+        ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service.service_type, max_available_c)
+
         linear_relations = self.lgbn.get_linear_relations()
-        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_type, assigned_clients)
+        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         return PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
-    def get_maximum_cores(self):
-        pass
+    def get_assigned_cores(self, service_list: [ServiceID]):
+        cores_per_service = {}
+
+        for service_id in service_list:
+            s_cores = self.docker_client.get_container_cores(service_id.container_id)
+            cores_per_service[service_id.container_id] = s_cores
+        return cores_per_service
 
 
 if __name__ == '__main__':

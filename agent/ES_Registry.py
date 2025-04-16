@@ -65,13 +65,17 @@ class ES_Registry:
             logger.warning(f"Querying active ES for unknown service type {service_type.value}")
             return []
 
-    def get_parameter_bounds_for_active_ES(self, service_type: ServiceType):
+    def get_parameter_bounds_for_active_ES(self, service_type: ServiceType, max_cores=None):
         active_ES = self.get_active_ES_for_s(service_type)
         param_list = []
         for es in active_ES:
             endpoints = self.get_ES_information(service_type, es)["endpoints"]
-            params = [params for params in [e["parameters"] for e in endpoints]]
-            param_list.append(params[0][0] | {"es_type": es})
+            params = [params for params in [e["parameters"] for e in endpoints]][0][0]
+
+            if max_cores is not None and es == EsType.RESOURCE_SCALE:
+                params["max"] = max_cores
+
+            param_list.append(params | {"es_type": es})
         return param_list
 
     def get_ES_information(self, service_type: ServiceType, es_type: EsType):
