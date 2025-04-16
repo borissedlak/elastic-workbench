@@ -6,7 +6,6 @@ from typing import Any
 
 import cv2
 import numpy as np
-from prometheus_client import start_http_server, Gauge
 from pyzbar.pyzbar import decode
 
 import utils
@@ -17,14 +16,6 @@ from iot_services.QrDetector.VideoReader import VideoReader
 logger = logging.getLogger("multiscale")
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
-
-start_http_server(8000)
-throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
-avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item',
-                      ['service_type', 'container_id', 'metric_id'])
-quality = Gauge('quality', 'Current configured quality', ['service_type', 'container_id', 'metric_id'])
-# energy = Gauge('energy', 'Current processing energy', ['service_id', 'container_id', 'metric_id'])
-cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
 
 
 class CvAnalyzer(IoTService):
@@ -71,15 +62,15 @@ class CvAnalyzer(IoTService):
                         break
 
             # This is only executed once after the batch is processed
-            throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                              metric_id="throughput").set(processed_item_counter)
+            self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                        metric_id="throughput").set(processed_item_counter)
             avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
-            avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                 metric_id="avg_p_latency").set(avg_p_latency_v)
-            quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                           metric_id="quality").set(self.service_conf['quality'])
-            cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                         metric_id="cores").set(self.cores_reserved)
+            self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                           metric_id="avg_p_latency").set(avg_p_latency_v)
+            self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                     metric_id="quality").set(self.service_conf['quality'])
+            self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                   metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
                 metric_buffer.append((datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,

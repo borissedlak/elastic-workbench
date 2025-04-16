@@ -6,6 +6,7 @@ from flask import Flask, request
 import utils
 from DockerClient import DockerClient
 from IoTService import IoTService
+from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
 from iot_services.QrDetector.QrDetector import QrDetector
 
 app = Flask(__name__)
