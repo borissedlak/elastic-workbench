@@ -26,5 +26,5 @@ class PrometheusClient:
 if __name__ == "__main__":
     client = PrometheusClient("http://localhost:9090")
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    print("Metric assignments:", client.get_metrics("|".join(["fps"]), period="10s", service_id=qr_local))
+    print("Metric assignments:", client.get_metrics(["cores", "throughput"], period="10s", service_id=qr_local))
     # print("Parameter assignments:", client.get_metrics("|".join(MB['parameter']), instance="172.18.0.4"))

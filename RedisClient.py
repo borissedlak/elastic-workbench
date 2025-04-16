@@ -12,6 +12,7 @@ class RedisClient:
 
     def store_assignment(self, service_id: ServiceID, client_ass: Dict[str, int]):
         key = create_ass_key(service_id)
+        self.redis_conn.delete(key) # Need to delete, otherwise the old elements stay there
         self.redis_conn.hset(key, mapping=client_ass)
 
     def get_assignments_for_service(self, service_id: ServiceID) -> Dict[str, int]:
@@ -49,16 +50,17 @@ def create_cool_key(service_id: ServiceID):
 
 if __name__ == '__main__':
     redis = RedisClient()
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    nonsense = ServiceID("172.20", ServiceType.QR, "elastic--qr-detector-1")
+    qr_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    # nonsense = ServiceID("172.20", ServiceType.QR, "elastic--qr-detector-1")
+    print(redis.get_assignments_for_service(qr_local))
     # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1"),
     #                        {'C_X': 50})
     # print(redis.get_assignments_for_service(
     #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")))
-    print(datetime.datetime.now())
-    redis.store_cooldown(qr_local, EsType.QUALITY_SCALE, 10000)
-    print(redis.is_under_cooldown(qr_local))
-    print(redis.is_under_cooldown(nonsense))
+    # print(datetime.datetime.now())
+    # redis.store_cooldown(qr_local, EsType.QUALITY_SCALE, 10000)
+    # print(redis.is_under_cooldown(qr_local))
+    # print(redis.is_under_cooldown(nonsense))
 
     # redis.store_cooldown(qr_local, EsType.QUALITY_S, 0)
     # print(redis.is_under_cooldown(qr_local))

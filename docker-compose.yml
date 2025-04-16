@@ -41,7 +41,7 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_1:5,C_2:5
+      - DEFAULT_CLIENTS=C_3:60
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux
@@ -54,24 +54,24 @@ services:
       - grafana
       - prometheus
 
-  qr-detector-2:
-    image: elastic-workbench-qr-detector:latest
-    container_name: elastic-workbench-qr-detector-2
-    networks:
-      docker_network:
-        ipv4_address: 172.20.0.6
-    environment:
-      - FLASK_ENV=development
-      - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-      - CONTAINER_REF=elastic-workbench-qr-detector-2
-      - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_3:60
-      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
-    volumes:
-      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
-      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+#  qr-detector-2:
+#    image: elastic-workbench-qr-detector:latest
+#    container_name: elastic-workbench-qr-detector-2
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.20.0.6
+#    environment:
+#      - FLASK_ENV=development
+#      - PYTHONUNBUFFERED=0 # Always flushes out
+#      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+#      - CONTAINER_REF=elastic-workbench-qr-detector-2
+#      - REDIS_INSTANCE=172.20.0.4
+#      - DEFAULT_CLIENTS=C_3:60
+#      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+#    volumes:
+#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+##      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+#      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
     image: prom/prometheus

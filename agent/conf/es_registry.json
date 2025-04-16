@@ -36,6 +36,43 @@
           ]
         }
       ]
+    },
+    {
+      "name": "elastic-workbench-cv-analyzer",
+      "elasticity_strategies": [
+        {
+          "ES_name": "quality_scaling",
+          "cooldown": 1500,
+          "endpoints": [
+            {
+              "target": "/quality_scaling",
+              "parameters": [
+                {
+                  "name": "quality",
+                  "min": 360,
+                  "max": 1080
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ES_name": "resource_scaling",
+          "cooldown": 1500,
+          "endpoints": [
+            {
+              "target": "/resource_scaling",
+              "parameters": [
+                {
+                  "name": "cores",
+                  "min": 1,
+                  "max": 8
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -23,7 +23,7 @@ class CvAnalyzer(IoTService):
         super().__init__()
         self.service_conf = {'quality': 800}
         self.store_to_csv = store_to_csv
-        self.service_type = ServiceType.QR
+        self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):

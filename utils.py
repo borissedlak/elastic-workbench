@@ -85,9 +85,9 @@ class Cyclical_Array:
         return np.mean(self.data, dtype=np.float64)
 
 
-def convert_prom_multi(raw_result, item_name="metric_id", decimal=False, avg=False):
+def convert_prom_multi(raw_result, decimal=False, avg=False):
     return {
-        item['metric'][item_name]: (float if decimal else int)(item['value' if avg else 'values'][1])
+        item['metric']["metric_id"]: (float if decimal else int)(item['value' if avg else 'values'][1])
         for item in raw_result
     }
 

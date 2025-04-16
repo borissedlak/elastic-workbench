@@ -37,13 +37,12 @@ class IoTService:
         self.container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
         self.flag_metric_cooldown = EsType.STARTUP  # Start with flag
 
-        start_http_server(8000)
+        start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
         self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item',
                                         ['service_type', 'container_id', 'metric_id'])
         self.prom_quality = Gauge('quality', 'Current configured quality',
                                   ['service_type', 'container_id', 'metric_id'])
-        # energy = Gauge('energy', 'Current processing energy', ['service_id', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
 
     def process_one_iteration(self, params, frame) -> None:
@@ -83,7 +82,7 @@ class IoTService:
 
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:
-            self.client_arrivals[client_id] = 0
+            self.client_arrivals[client_id] = 0 # Should be able to delete this??
             del self.client_arrivals[client_id]
             logger.info(f"Removed client {client_id} from service {self.service_type}")
         else:

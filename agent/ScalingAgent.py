@@ -1,5 +1,6 @@
 import logging
 import platform
+import random
 import time
 from threading import Thread
 from typing import Dict
@@ -27,7 +28,7 @@ class ScalingAgent(Thread):
         self._idle = False
         self.evaluation_cycle = evaluation_cycle
 
-        self.services_monitored = services_monitored
+        self.services_monitored: [ServiceID] = services_monitored
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
@@ -41,14 +42,17 @@ class ScalingAgent(Thread):
         parameter_ass = self.prom_client.get_metrics(["quality", "cores"], service_id)
 
         target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_rate = metric_values['throughput'] / target_throughput
+        completion_rate = metric_values['throughput'] / target_throughput if target_throughput > 0 else 1.0
         return metric_values | parameter_ass | {"completion_rate": completion_rate}
 
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
         while self._running:
 
-            for service_m in self.services_monitored:  # For all monitored services
+            shuffled_services = self.services_monitored.copy()
+            random.shuffle(shuffled_services)  # Shuffling the clients avoids that one can always pick cores first
+
+            for service_m in shuffled_services:  # For all monitored services
 
                 service_m: ServiceID = service_m
                 assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
@@ -73,9 +77,9 @@ class ScalingAgent(Thread):
                     continue
 
                 if True:  # random.randint(1, 2) == 1:
-                    all_elastic_params = self.get_optimal_local_ES(service_m, assigned_clients)
+                    all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
                     for es_type in self.es_registry.get_active_ES_for_s(service_m.service_type):
-                        self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params)
+                        self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
                 else:
                     self.execute_random_ES(host_fix, service_m.service_type)
 
@@ -129,10 +133,20 @@ class ScalingAgent(Thread):
         max_available_c = free_cores + cores_ass[service.container_id]
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service.service_type, max_available_c)
 
+        if not ES_parameter_bounds:
+            logger.warning("Cannot get optimal ES parameters because no ES configured")
+            return {}
+        if not assigned_clients:
+            if EsType.RESOURCE_SCALE in [item['es_type'] for item in ES_parameter_bounds]:
+                return {'cores': 0}  # Free all cores, just in case. If this ES is active
+            else:
+                return {}
+
         linear_relations = self.lgbn.get_linear_relations()
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
+        # TODO: (1) why is the SLO list empty? (2) if the SLO list is empty, return {}
         return PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
     def get_assigned_cores(self, service_list: [ServiceID]):
@@ -147,5 +161,5 @@ class ScalingAgent(Thread):
 if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local_1 = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    qr_local_2 = ServiceID("172.20.0.6", ServiceType.QR, "elastic-workbench-qr-detector-2")
+    qr_local_2 = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     ScalingAgent(services_monitored=[qr_local_1, qr_local_2], prom_server=ps, evaluation_cycle=15).start()
