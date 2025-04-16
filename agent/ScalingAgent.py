@@ -48,7 +48,6 @@ class ScalingAgent(Thread):
     def run(self):
         while self._running:
 
-            cores_ass = self.get_assigned_cores(self.services_monitored)
             for service_m in self.services_monitored:  # For all monitored services
 
                 service_m: ServiceID = service_m
@@ -74,7 +73,7 @@ class ScalingAgent(Thread):
                     continue
 
                 if True:  # random.randint(1, 2) == 1:
-                    all_elastic_params = self.get_optimal_local_ES(service_m, assigned_clients, cores_ass)
+                    all_elastic_params = self.get_optimal_local_ES(service_m, assigned_clients)
                     for es_type in self.es_registry.get_active_ES_for_s(service_m.service_type):
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params)
                 else:
@@ -123,8 +122,9 @@ class ScalingAgent(Thread):
             self.http_client.call_ES_endpoint(host, endpoint['target'], all_params)
             logger.info(f"Calling ES <{service_type},{es_type}> with {all_params}")
 
-    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int], cores_ass):
+    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
 
+        cores_ass = self.get_assigned_cores(self.services_monitored)
         free_cores = PHYSICAL_CORES - sum(cores_ass.values())
         max_available_c = free_cores + cores_ass[service.container_id]
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service.service_type, max_available_c)
