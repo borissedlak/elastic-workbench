@@ -17,5 +17,5 @@ class GlobalAgent(ScalingAgent):
 
 if __name__ == '__main__':
     ps = "http://localhost:9090"
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
+    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     GlobalAgent(services_monitored=[qr_local], prom_server=ps).start()

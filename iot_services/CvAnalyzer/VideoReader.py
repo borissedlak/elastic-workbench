@@ -1,0 +1,40 @@
+
+import os
+import cv2
+from threading import Thread
+
+import utils
+
+
+# TODO: Should move to one folder up, but I was incapable
+class VideoReader:
+    def __init__(self, buffer_size=200):
+
+        ROOT = os.path.dirname(__file__)
+        self.video_path = ROOT + "/data/QR_Video.mp4"
+        self.buffer_size = buffer_size
+        self.buffer = []
+
+        self.vcap = cv2.VideoCapture(self.video_path)
+        print(self.video_path)
+        if self.vcap.isOpened() is False:
+            print("[Exiting]: Error accessing webcam stream.")
+            exit(0)
+
+        # reading a single frame from vcap stream for initializing
+        self.grabbed, self.frame = self.vcap.read()
+        if self.grabbed is False:
+            print('[Exiting] No more frames to read')
+            exit(0)  # self.stopped is set to False when frames are being read from self.vcap stream
+
+        self.init_buffer()
+
+    def init_buffer(self):
+        self.buffer = []
+        for _ in range(self.buffer_size):
+            self.grabbed, self.frame = self.vcap.read()
+            self.buffer.append(self.frame)
+
+    # @utils.print_execution_time
+    def get_batch(self, batch_size):
+        return self.buffer[:batch_size]

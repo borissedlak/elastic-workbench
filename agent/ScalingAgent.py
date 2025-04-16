@@ -146,6 +146,6 @@ class ScalingAgent(Thread):
 
 if __name__ == '__main__':
     ps = "http://localhost:9090"
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
-    qr_local_2 = ServiceID("172.20.0.6", ServiceType.QR, "elastic-workbench-video-processing-2")
-    ScalingAgent(services_monitored=[qr_local, qr_local_2], prom_server=ps, evaluation_cycle=15).start()
+    qr_local_1 = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
+    qr_local_2 = ServiceID("172.20.0.6", ServiceType.QR, "elastic-workbench-qr-detector-2")
+    ScalingAgent(services_monitored=[qr_local_1, qr_local_2], prom_server=ps, evaluation_cycle=15).start()

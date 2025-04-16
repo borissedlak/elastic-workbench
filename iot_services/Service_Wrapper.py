@@ -16,12 +16,15 @@ logging.basicConfig(level=logging.INFO)
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 DEFAULT_CORES = utils.get_env_param("DEFAULT_CORES", 2)
-DEFAULT_CLIENTS: str = utils.get_env_param("DEFAULT_CLIENTS", None)
+DEFAULT_CLIENTS = utils.get_env_param("DEFAULT_CLIENTS", None)
+SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
 
 
 def init_service(s_type):
     if s_type == "QR":
         return QrDetector()
+    if s_type == "CV":
+        return CvAnalyzer()
     else:
         raise RuntimeError("Must pass type!")
 
@@ -97,4 +100,4 @@ class ServiceWrapper:
 
 
 if __name__ == '__main__':
-    s_wrapper = ServiceWrapper(s_type="QR", start_processing=True)
+    s_wrapper = ServiceWrapper(s_type=SERVICE_TYPE, start_processing=True)

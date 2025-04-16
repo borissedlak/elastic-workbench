@@ -1,7 +1,7 @@
 services:
 
-  video-processing:
-    container_name: elastic-workbench-video-processing-1
+  qr-detector:
+    container_name: elastic-workbench-qr-detector-1
     build:
       context: .
       dockerfile: ./iot_services/QrDetector/Dockerfile
@@ -12,13 +12,13 @@ services:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-      - CONTAINER_REF=elastic-workbench-video-processing-1
+      - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_1:40,C_2:30
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 #    ports:
 #      - "8080:8080" # Only needed on Windows
@@ -27,9 +27,36 @@ services:
       - grafana
       - prometheus
 
-  video-processing-2:
-    image: elastic-workbench-video-processing:latest
-    container_name: elastic-workbench-video-processing-2
+  cv-analyzer:
+    container_name: elastic-workbench-cv-analyzer-1
+    build:
+      context: .
+      dockerfile: ./iot_services/CvAnalyzer/Dockerfile
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.10
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=0 # Always flushes out
+      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+      - CONTAINER_REF=elastic-workbench-qr-detector-1
+      - REDIS_INSTANCE=172.20.0.4
+      - DEFAULT_CLIENTS=C_1:5,C_2:5
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+    volumes:
+      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+      #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+    #    ports:
+    #      - "8080:8080" # Only needed on Windows
+    depends_on:
+      - redis
+      - grafana
+      - prometheus
+
+  qr-detector-2:
+    image: elastic-workbench-qr-detector:latest
+    container_name: elastic-workbench-qr-detector-2
     networks:
       docker_network:
         ipv4_address: 172.20.0.6
@@ -37,13 +64,13 @@ services:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-      - CONTAINER_REF=elastic-workbench-video-processing-2
+      - CONTAINER_REF=elastic-workbench-qr-detector-2
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_3:60
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
@@ -55,8 +82,8 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-#      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
+      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+#      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

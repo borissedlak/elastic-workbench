@@ -49,12 +49,12 @@ def create_cool_key(service_id: ServiceID):
 
 if __name__ == '__main__':
     redis = RedisClient()
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")
-    nonsense = ServiceID("172.20", ServiceType.QR, "elastic--video-processing-1")
-    # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1"),
+    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
+    nonsense = ServiceID("172.20", ServiceType.QR, "elastic--qr-detector-1")
+    # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1"),
     #                        {'C_X': 50})
     # print(redis.get_assignments_for_service(
-    #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-video-processing-1")))
+    #     ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")))
     print(datetime.datetime.now())
     redis.store_cooldown(qr_local, EsType.QUALITY_SCALE, 10000)
     print(redis.is_under_cooldown(qr_local))

@@ -1,7 +1,7 @@
 {
   "services": [
     {
-      "name": "elastic-workbench-video-processing",
+      "name": "elastic-workbench-qr-detector",
       "elasticity_strategies": [
         {
           "ES_name": "quality_scaling",

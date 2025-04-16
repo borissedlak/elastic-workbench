@@ -11,7 +11,7 @@ logger = logging.getLogger("multiscale")
 
 
 class ServiceType(Enum):
-    QR = "elastic-workbench-video-processing"
+    QR = "elastic-workbench-qr-detector"
 
 
 class EsType(Enum):
@@ -30,7 +30,7 @@ class ServiceID(NamedTuple):
 
 class ES_Registry:
     # TODO: This is super buggy because the order is important for the variables in the Policy Solver!!
-    _ES_activate_default = {'elastic-workbench-video-processing': ['quality_scaling', 'resource_scaling']}
+    _ES_activate_default = {'elastic-workbench-qr-detector': ['quality_scaling', 'resource_scaling']}
 
     def __init__(self):
         self.http_client = HttpClient()

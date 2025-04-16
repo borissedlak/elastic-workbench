@@ -50,6 +50,6 @@ class DockerInfo(NamedTuple):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     client = DockerClient()
-    # ip = client.get_container_ip("elastic-workbench-video-processing-1")
+    # ip = client.get_container_ip("elastic-workbench-qr-detector-1")
     # print(ip)
-    print(client.get_container_cores("elastic-workbench-video-processing-1"))
+    print(client.get_container_cores("elastic-workbench-qr-detector-1"))
