@@ -67,7 +67,11 @@ class IoTService:
     def change_config(self, config):
         self.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         self.service_conf = config
+        self.reinitialize_models(self.service_conf['model_size'])
         logger.info(f"{self.service_type} changed to {config}")
+
+    def reinitialize_models(self, model_size: int):
+        pass
 
     # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
     # according to that. I think this is best to keep the abstract structure of the services

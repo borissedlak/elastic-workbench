@@ -8,6 +8,7 @@ WORKDIR /src
 COPY ./iot_services/QrDetector/requirements.txt /src/iot_services/QrDetector/
 RUN pip install -r ./iot_services/QrDetector/requirements.txt
 
+# TODO: Should not copy other service types, but I'm incapable :(
 COPY ./iot_services /src/iot_services
 COPY . /src/iot_services
 

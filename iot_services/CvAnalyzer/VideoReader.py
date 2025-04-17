@@ -8,12 +8,11 @@ class VideoReader:
     def __init__(self, buffer_size=200):
 
         ROOT = os.path.dirname(__file__)
-        self.video_path = ROOT + "/data/videoplayback.mp4"
+        self.video_path = ROOT + "/data/CV_Video.mp4"
         self.buffer_size = buffer_size
         self.buffer = []
 
         self.vcap = cv2.VideoCapture(self.video_path)
-        print(self.video_path)
         if self.vcap.isOpened() is False:
             print("[Exiting]: Error accessing webcam stream.")
             exit(0)

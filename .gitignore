@@ -1,7 +1,6 @@
 venv
-models/*.onnx
-share/networks/*
-share/metrics/*
-results/E1/partitions/*
+**/share/models/*
+**/share/metrics/*
 /iot_services/QrDetector/share/metrics/metrics.csv
 /iot_services/CvAnalyzer/share/metrics/metrics.csv
+**/models/*.onnx

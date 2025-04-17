@@ -1,6 +1,7 @@
 import concurrent.futures
 import datetime
 import logging
+import os
 import time
 from typing import Any
 
@@ -10,24 +11,29 @@ import numpy as np
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.YOLOv10 import YOLOv10
-from video_utils import draw_detections
+from video_utils import draw_detections, yolo_model_sizes
 from iot_services.IoTService import IoTService
 from iot_services.CvAnalyzer.VideoReader import VideoReader
 
 logger = logging.getLogger("multiscale")
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+ROOT = os.path.dirname(__file__)
 
 
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 1080}
+        self.service_conf = {'quality': 1080, 'model_size': 1}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
-        model_path = "./models/yolov10n.onnx"
+        self.detector = None
+        self.reinitialize_models(self.service_conf['model_size'])
+
+    def reinitialize_models(self, model_index):  # Assumes that service_conf changed in the background
+        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[model_index]}.onnx"
         self.detector = YOLOv10(model_path, conf_thres=0.3)
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
@@ -56,10 +62,10 @@ class CvAnalyzer(IoTService):
                     processed_item_durations.append(future.result()[1])
                     processed_item_counter += 1
 
-                    cv2.imshow("Detected Objects", future.result()[0])
-                    # Press key q to stop
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        self.terminate()
+                    # cv2.imshow("Detected Objects", future.result()[0])
+                    # # Press key q to stop
+                    # if cv2.waitKey(1) & 0xFF == ord('q'):
+                    #     self.terminate()
 
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
