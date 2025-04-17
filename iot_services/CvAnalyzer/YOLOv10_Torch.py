@@ -15,7 +15,7 @@ class YOLOv10:
         # Load the model with PyTorch
         self.model = torch.jit.load(path, map_location="cpu")
         self.model.eval()  # Set the model to evaluation mode
-        logger.info("Model loaded using PyTorch")
+        # logger.info("Model loaded using PyTorch")
 
         # Get model info
         self.get_input_details()
@@ -77,7 +77,7 @@ class YOLOv10:
         # class_ids = class_ids[mask]
         #
         # return class_ids, boxes, confidences
-        return []
+        return [], [], []
 
     def rescale_boxes(self, boxes):
         input_shape = np.array([self.input_width, self.input_height, self.input_width, self.input_height])

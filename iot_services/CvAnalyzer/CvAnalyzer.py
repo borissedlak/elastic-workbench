@@ -6,7 +6,6 @@ import threading
 import time
 from typing import Any
 
-import cv2
 import numpy as np
 
 import utils
@@ -14,7 +13,7 @@ from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.VideoReader import VideoReader
 from iot_services.CvAnalyzer.YOLOv10_Torch import YOLOv10
 from iot_services.IoTService import IoTService
-from video_utils import draw_detections, yolo_model_sizes
+from video_utils import yolo_model_sizes
 
 logger = logging.getLogger("multiscale")
 
@@ -34,9 +33,9 @@ class CvAnalyzer(IoTService):
         self.metric_buffer = []
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
-        logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
+        # logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
         # logger.info(f"Available providers:{onnxruntime.get_available_providers()}")
-        logger.info(f"Visible cores:{os.cpu_count()}")
+        # logger.info(f"Visible cores:{os.cpu_count()}")
         model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.torchscript"
         for i in range(0, self.cores_reserved):
             self.detectors[i] = YOLOv10(model_path, conf_threshold=0.3)
@@ -46,7 +45,7 @@ class CvAnalyzer(IoTService):
 
         detector_index = int(threading.current_thread().name.split("_")[1])
         class_ids, boxes, confidences = self.detectors[detector_index](frame)
-        combined_img = draw_detections(frame, boxes, confidences, class_ids)
+        # combined_img = draw_detections(frame, boxes, confidences, class_ids)
 
         # model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
         # detector = YOLOv10(model_path, conf_thres=0.3)
@@ -56,13 +55,13 @@ class CvAnalyzer(IoTService):
 
         # Resulting image and total processing time --> unused
         duration = (time.perf_counter() - start) * 1000
-        return combined_img, duration
+        return frame, duration
 
     def process_loop(self):
         self.reinitialize_models()  # Place here so that it reloads when cores are changed
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.cores_reserved) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:  # TODO: Revert self.cores_reserved
                 start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame

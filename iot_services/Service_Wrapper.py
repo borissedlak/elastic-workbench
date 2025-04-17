@@ -7,6 +7,8 @@ import utils
 from DockerClient import DockerClient
 from IoTService import IoTService
 from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
+from iot_services.QrDetector.QrDetector import QrDetector
+
 # from iot_services.QrDetector.QrDetector import QrDetector
 
 app = Flask(__name__)
@@ -22,8 +24,8 @@ SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
 
 
 def init_service(s_type):
-    # if s_type == "QR":
-    #     return QrDetector()
+    if s_type == "QR":
+        return QrDetector()
     if s_type == "CV":
         return CvAnalyzer()
     else:
@@ -37,7 +39,7 @@ class ServiceWrapper:
 
         if start_processing:
             self.start_processing()
-            self.scale_cores(DEFAULT_CORES)
+            # self.scale_cores(DEFAULT_CORES)
 
             if DEFAULT_CLIENTS:
                 clients = DEFAULT_CLIENTS.split(",")
