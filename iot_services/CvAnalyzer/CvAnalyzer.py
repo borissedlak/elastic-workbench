@@ -24,16 +24,16 @@ ROOT = os.path.dirname(__file__)
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 1080, 'model_size': 1}
+        self.service_conf = {'quality': 800, 'model_size': 1}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
         self.detector = None
-        self.reinitialize_models(self.service_conf['model_size'])
+        self.reinitialize_models()
 
-    def reinitialize_models(self, model_index):  # Assumes that service_conf changed in the background
-        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[model_index]}.onnx"
+    def reinitialize_models(self):  # Assumes that service_conf changed in the background
+        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
         self.detector = YOLOv10(model_path, conf_thres=0.3)
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):

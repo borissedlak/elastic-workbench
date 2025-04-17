@@ -41,14 +41,14 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_3:60
+      - DEFAULT_CLIENTS=C_3:10
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
 #      - /home/boris/development/elastic-workbench/share:/src/share # Linux
       - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
-    #    ports:
-    #      - "8080:8080" # Only needed on Windows
+    ports:
+      - "8080:8080" # Only needed on Windows
     depends_on:
       - redis
       - grafana

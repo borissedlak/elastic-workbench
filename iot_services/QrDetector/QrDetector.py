@@ -26,7 +26,7 @@ class QrDetector(IoTService):
         self.video_stream = VideoReader()
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
-        start = datetime.datetime.now()
+        start = time.time()
 
         target_height = int(config_params['quality'])
         original_width, original_height = frame.shape[1], frame.shape[0]
@@ -37,7 +37,7 @@ class QrDetector(IoTService):
 
         # Resulting image and total processing time --> unused
         combined_img = utils.highlight_qr_codes(frame, decoded_objects)
-        duration = (datetime.datetime.now() - start).total_seconds() * 1000
+        duration = (time.time() - start) * 1000
         return combined_img, duration
 
     def process_loop(self):

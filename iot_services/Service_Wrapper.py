@@ -48,6 +48,7 @@ class ServiceWrapper:
         self.app.add_url_rule('/stop_all', 'stop_all', self.terminate_processing, methods=['POST'])
         self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
+        self.app.add_url_rule('/model_scaling', 'model_scaling', self.model_scaling, methods=['PUT'])
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
         self.app.add_url_rule('/change_rps', 'change_rps', self.alter_client_connection, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
@@ -83,6 +84,14 @@ class ServiceWrapper:
         quality = int(request.args.get('quality'))
         s_conf = self.service.service_conf
         s_conf['quality'] = quality
+        self.service.change_config(s_conf)
+        return ""
+
+    # @app.route("/change_config", methods=['PUT'])
+    def model_scaling(self):
+        model_size = int(request.args.get('model_size'))
+        s_conf = self.service.service_conf
+        s_conf['model_size'] = model_size
         self.service.change_config(s_conf)
         return ""
 

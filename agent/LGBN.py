@@ -88,7 +88,7 @@ def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
 
 def preprocess_data(df):
     df_filtered = agent_utils.filter_rows_during_cooldown(df.copy())
-    df_filtered = df_filtered[df_filtered['avg_p_latency'] != -1]  # Filter out rows where we had no processing
+    df_filtered = df_filtered[df_filtered['avg_p_latency'] >= 0]  # Filter out rows where we had no processing
     z_scores = np.abs(stats.zscore(df_filtered['avg_p_latency']))
     df_filtered = df_filtered[z_scores < 2.0]  # 3 is a common threshold for extreme outliers
     df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index

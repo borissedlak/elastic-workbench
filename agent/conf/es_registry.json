@@ -71,6 +71,22 @@
               ]
             }
           ]
+        },
+        {
+          "ES_name": "model_scaling",
+          "cooldown": 1500,
+          "endpoints": [
+            {
+              "target": "/model_scaling",
+              "parameters": [
+                {
+                  "name": "model_size",
+                  "min": 1,
+                  "max": 5
+                }
+              ]
+            }
+          ]
         }
       ]
     }
