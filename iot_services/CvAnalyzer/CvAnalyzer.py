@@ -1,6 +1,7 @@
 import concurrent.futures
 import datetime
 import logging
+import sys
 import time
 from typing import Any
 
@@ -10,8 +11,10 @@ from pyzbar.pyzbar import decode
 
 import utils
 from agent.ES_Registry import ServiceType
+from iot_services.CvAnalyzer.YOLOv10 import YOLOv10
+from iot_services.CvAnalyzer.video_utils import draw_detections
 from iot_services.IoTService import IoTService
-from iot_services.QrDetector.VideoReader import VideoReader
+from iot_services.CvAnalyzer.VideoReader import VideoReader
 
 logger = logging.getLogger("multiscale")
 
@@ -26,19 +29,17 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
-    def process_one_iteration(self, config_params, frame) -> (Any, int):
-        start = datetime.datetime.now()
+        model_path = "./models/yolov10n.onnx"
+        self.detector = YOLOv10(model_path, conf_thres=0.3)
 
-        target_height = int(config_params['quality'])
-        original_width, original_height = frame.shape[1], frame.shape[0]
-        ratio = original_height / target_height
-        frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        decoded_objects = decode(gray)
+    def process_one_iteration(self, config_params, frame) -> (Any, int):
+        start = time.time()
+
+        class_ids, boxes, confidences = self.detector(frame)
+        combined_img = draw_detections(frame, boxes, confidences, class_ids)
 
         # Resulting image and total processing time --> unused
-        combined_img = utils.highlight_qr_codes(frame, decoded_objects)
-        duration = (datetime.datetime.now() - start).total_seconds() * 1000
+        duration = (time.time() - start) * 1000
         return combined_img, duration
 
     def process_loop(self):
@@ -56,6 +57,11 @@ class CvAnalyzer(IoTService):
                 for future in concurrent.futures.as_completed(future_dict):
                     processed_item_durations.append(future.result()[1])
                     processed_item_counter += 1
+
+                    cv2.imshow("Detected Objects", future.result()[0])
+                    # Press key q to stop
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        self.terminate()
 
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
@@ -88,8 +94,8 @@ class CvAnalyzer(IoTService):
 
 if __name__ == '__main__':
     qd = CvAnalyzer(store_to_csv=True)
-    qd.client_arrivals = {'C1': 20}
+    qd.client_arrivals = {'C1': 500}
     qd.start_process()
 
-    while True:
-        time.sleep(1000)
+    while qd.is_running():
+        time.sleep(0.1)

@@ -1,17 +1,14 @@
-
 import os
+
 import cv2
-from threading import Thread
-
-import utils
 
 
-# TODO: Should move to one folder up, but I was incapable
+# TODO: Should move to one folder up, but I was incapable with the folder structure /data
 class VideoReader:
     def __init__(self, buffer_size=200):
 
         ROOT = os.path.dirname(__file__)
-        self.video_path = ROOT + "/data/QR_Video.mp4"
+        self.video_path = ROOT + "/data/videoplayback.mp4"
         self.buffer_size = buffer_size
         self.buffer = []
 
@@ -37,4 +34,7 @@ class VideoReader:
 
     # @utils.print_execution_time
     def get_batch(self, batch_size):
-        return self.buffer[:batch_size]
+        full_repeats = batch_size // self.buffer_size
+        remainder = batch_size % self.buffer_size
+
+        return (self.buffer * full_repeats) + self.buffer[:remainder]

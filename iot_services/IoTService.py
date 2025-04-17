@@ -58,6 +58,9 @@ class IoTService:
     def terminate(self):
         self._running = False
 
+    def is_running(self):
+        return self._running
+
     def process_loop(self):
         pass
 

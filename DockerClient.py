@@ -8,6 +8,7 @@ import utils
 logger = logging.getLogger("multiscale")
 logging.getLogger("multiscale").setLevel(logging.INFO)
 
+# default_socket = "npipe:////./pipe/docker_engine" if platform.system() == "Windows" else "unix:///var/run/docker.sock"
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 

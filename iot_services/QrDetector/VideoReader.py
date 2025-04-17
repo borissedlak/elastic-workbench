@@ -1,9 +1,6 @@
-
 import os
-import cv2
-from threading import Thread
 
-import utils
+import cv2
 
 
 class VideoReader:
@@ -35,4 +32,7 @@ class VideoReader:
 
     # @utils.print_execution_time
     def get_batch(self, batch_size):
-        return self.buffer[:batch_size]
+        full_repeats = batch_size // self.buffer_size
+        remainder = batch_size % self.buffer_size
+
+        return (self.buffer * full_repeats) + self.buffer[:remainder]
