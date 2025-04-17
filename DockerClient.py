@@ -33,6 +33,9 @@ class DockerClient:
             logger.error("Could not connect to docker container", e)
 
     def get_container_ip(self, container_ref):
+        if container_ref is None or container_ref == 'Unknown':
+            return "Unknown"
+
         c_stats = self.get_container_stats(container_ref)
         return c_stats.attrs['NetworkSettings']['Networks']['elastic-workbench_docker_network']['IPAddress']
 

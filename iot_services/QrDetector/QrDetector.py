@@ -86,7 +86,7 @@ class QrDetector(IoTService):
 
 
 if __name__ == '__main__':
-    qd = QrDetector(store_to_csv=False)
+    qd = QrDetector(store_to_csv=True)
     qd.client_arrivals = {'C1': 20}
     qd.start_process()
 

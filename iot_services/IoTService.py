@@ -13,7 +13,6 @@ from agent.ES_Registry import EsType, ES_Registry, ServiceID
 
 logger = logging.getLogger("multiscale")
 
-# DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
@@ -106,6 +105,4 @@ class IoTService:
 
     def set_flag_and_cooldown(self, es_type: EsType):
         self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(self.service_type, es_type)
-
-        # TODO: Maybe I also need to place this on the SA side
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)
