@@ -1,9 +1,8 @@
-import time
 import cv2
 import numpy as np
 import onnxruntime
 
-from video_utils import draw_detections, check_model
+from video_utils import draw_detections
 
 
 class YOLOv10:

@@ -1,4 +1,5 @@
 venv
+models/*.onnx
 share/networks/*
 share/metrics/*
 results/E1/partitions/*

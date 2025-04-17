@@ -1,18 +1,16 @@
 import concurrent.futures
 import datetime
 import logging
-import sys
 import time
 from typing import Any
 
 import cv2
 import numpy as np
-from pyzbar.pyzbar import decode
 
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.YOLOv10 import YOLOv10
-from iot_services.CvAnalyzer.video_utils import draw_detections
+from video_utils import draw_detections
 from iot_services.IoTService import IoTService
 from iot_services.CvAnalyzer.VideoReader import VideoReader
 
@@ -24,7 +22,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 800}
+        self.service_conf = {'quality': 1080}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
@@ -94,7 +92,7 @@ class CvAnalyzer(IoTService):
 
 if __name__ == '__main__':
     qd = CvAnalyzer(store_to_csv=True)
-    qd.client_arrivals = {'C1': 500}
+    qd.client_arrivals = {'C1': 50}
     qd.start_process()
 
     while qd.is_running():
