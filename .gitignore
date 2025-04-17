@@ -2,3 +2,5 @@ venv
 share/networks/*
 share/metrics/*
 results/E1/partitions/*
+/iot_services/QrDetector/share/metrics/metrics.csv
+/iot_services/CvAnalyzer/share/metrics/metrics.csv

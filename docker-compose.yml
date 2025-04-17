@@ -11,7 +11,7 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in utils.to_absolut_rps(self.client_arrivals)Container
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_1:40,C_2:30

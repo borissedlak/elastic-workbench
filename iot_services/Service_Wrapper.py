@@ -78,7 +78,6 @@ class ServiceWrapper:
         self.service.change_config(service_d)
         return ""
 
-    # TODO: THis will be different according to the service
     # @app.route("/change_config", methods=['PUT'])
     def quality_scaling(self):
         quality = int(request.args.get('quality'))

@@ -13,7 +13,8 @@ class RedisClient:
     def store_assignment(self, service_id: ServiceID, client_ass: Dict[str, int]):
         key = create_ass_key(service_id)
         self.redis_conn.delete(key) # Need to delete, otherwise the old elements stay there
-        self.redis_conn.hset(key, mapping=client_ass)
+        if client_ass != {}:
+            self.redis_conn.hset(key, mapping=client_ass)
 
     def get_assignments_for_service(self, service_id: ServiceID) -> Dict[str, int]:
         key = create_ass_key(service_id)

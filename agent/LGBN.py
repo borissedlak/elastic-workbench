@@ -62,7 +62,7 @@ class LGBN:
     def get_linear_relations(self):
         linear_relations = {}
         for cpd in self.model.get_cpds():
-            if cpd.evidence == []: # Only get those with dependencies
+            if cpd.evidence == []: # Only get those relations with dependencies
                 continue
 
             # TODO: This I will need to fix when I get more variables

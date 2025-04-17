@@ -77,8 +77,8 @@ class ScalingAgent(Thread):
                     continue
 
                 if True:  # random.randint(1, 2) == 1:
-                    all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
-                    for es_type in self.es_registry.get_active_ES_for_s(service_m.service_type):
+                    target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
+                    for es_type in target_ES:
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
                 else:
                     self.execute_random_ES(host_fix, service_m.service_type)
@@ -135,19 +135,20 @@ class ScalingAgent(Thread):
 
         if not ES_parameter_bounds:
             logger.warning("Cannot get optimal ES parameters because no ES configured")
-            return {}
+            return [], {}
         if not assigned_clients:
             if EsType.RESOURCE_SCALE in [item['es_type'] for item in ES_parameter_bounds]:
-                return {'cores': 0}  # Free all cores, just in case. If this ES is active
+                logger.info("No clients connected, releasing all cores except one")
+                return [EsType.RESOURCE_SCALE], {'cores': 1}  # Free all cores, just in case. If this ES is active
             else:
-                return {}
+                return [], {}
 
         linear_relations = self.lgbn.get_linear_relations()
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
-        # TODO: (1) why is the SLO list empty? (2) if the SLO list is empty, return {}
-        return PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
+        all_ES = self.es_registry.get_active_ES_for_s(service.service_type)
+        return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
     def get_assigned_cores(self, service_list: [ServiceID]):
         cores_per_service = {}
