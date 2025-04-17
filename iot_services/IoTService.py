@@ -53,7 +53,7 @@ class IoTService:
 
         processing_thread = threading.Thread(target=self.process_loop, daemon=True)
         processing_thread.start()
-        logger.info(f"{self.service_type} started")
+        logger.info(f"{self.service_type} started with {self.service_conf}")
 
     def terminate(self):
         self._running = False

@@ -4,3 +4,5 @@ venv
 /iot_services/QrDetector/share/metrics/metrics.csv
 /iot_services/CvAnalyzer/share/metrics/metrics.csv
 **/models/*.onnx
+**/models/*.pt
+**/models/*.torchscript

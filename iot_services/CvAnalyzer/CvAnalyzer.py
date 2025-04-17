@@ -6,12 +6,13 @@ import threading
 import time
 from typing import Any
 
+import cv2
 import numpy as np
 
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.VideoReader import VideoReader
-from iot_services.CvAnalyzer.YOLOv10 import YOLOv10
+from iot_services.CvAnalyzer.YOLOv10_Torch import YOLOv10
 from iot_services.IoTService import IoTService
 from video_utils import draw_detections, yolo_model_sizes
 
@@ -33,12 +34,15 @@ class CvAnalyzer(IoTService):
         self.metric_buffer = []
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
-        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
+        logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
+        # logger.info(f"Available providers:{onnxruntime.get_available_providers()}")
+        logger.info(f"Visible cores:{os.cpu_count()}")
+        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.torchscript"
         for i in range(0, self.cores_reserved):
-            self.detectors[i] = YOLOv10(model_path, conf_thres=0.3)
+            self.detectors[i] = YOLOv10(model_path, conf_threshold=0.3)
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
-        start = time.time()
+        start = time.perf_counter()
 
         detector_index = int(threading.current_thread().name.split("_")[1])
         class_ids, boxes, confidences = self.detectors[detector_index](frame)
@@ -48,9 +52,10 @@ class CvAnalyzer(IoTService):
         # detector = YOLOv10(model_path, conf_thres=0.3)
         # detector(frame)
         # combined_img = None
+        # time.sleep(0.8)
 
         # Resulting image and total processing time --> unused
-        duration = (time.time() - start) * 1000
+        duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
 
     def process_loop(self):

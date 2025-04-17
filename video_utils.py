@@ -5,6 +5,8 @@ import numpy as np
 import requests
 import tqdm
 
+import utils
+
 class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
                'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
@@ -46,7 +48,7 @@ def check_model(model_path: str):
     url = f"https://github.com/THU-MIG/yolov10/releases/download/v1.1/{model_name}.onnx"
     download_model(url, model_path)
 
-
+@utils.print_execution_time
 def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3):
     det_img = image.copy()
 
