@@ -26,7 +26,7 @@ class QrDetector(IoTService):
         self.video_stream = VideoReader()
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
-        start = time.time()
+        start = time.perf_counter()
 
         target_height = int(config_params['quality'])
         original_width, original_height = frame.shape[1], frame.shape[0]
@@ -37,7 +37,7 @@ class QrDetector(IoTService):
 
         # Resulting image and total processing time --> unused
         combined_img = utils.highlight_qr_codes(frame, decoded_objects)
-        duration = (time.time() - start) * 1000
+        duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
 
     def process_loop(self):
@@ -45,7 +45,7 @@ class QrDetector(IoTService):
 
         while self._running:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.cores_reserved) as executor:
-                start_time = datetime.datetime.now()
+                start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
                                for frame in buffer}
@@ -87,7 +87,7 @@ class QrDetector(IoTService):
 
 if __name__ == '__main__':
     qd = QrDetector(store_to_csv=True)
-    qd.client_arrivals = {'C1': 20}
+    qd.client_arrivals = {'C1': 40, 'C2': 30}
     qd.start_process()
 
     while True:

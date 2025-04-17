@@ -99,11 +99,11 @@ class IoTService:
         logger.info(f"Total RPS is now {utils.to_absolut_rps(self.client_arrivals)}")
 
     def has_processing_timeout(self, start_time):
-        time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
+        time_elapsed = int((time.perf_counter() - start_time) * 1000)
         return time_elapsed >= self.processing_timeframe
 
     def simulate_interval(self, start_time):
-        time_elapsed = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
+        time_elapsed = int((time.perf_counter() - start_time) * 1000)
         if time_elapsed < self.processing_timeframe:
             time.sleep((self.processing_timeframe - time_elapsed) / 1000)
 
