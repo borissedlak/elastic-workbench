@@ -19,6 +19,7 @@ class EsType(Enum):
     STARTUP = 'startup'
     RESOURCE_SCALE = 'resource_scaling'
     QUALITY_SCALE = 'quality_scaling'
+    MODEL_SCALE = 'model_scaling'
     RESOURCE_SWAP = 'resource_swapping'
     OFFLOADING = 'offloading'
 
@@ -32,7 +33,7 @@ class ServiceID(NamedTuple):
 class ES_Registry:
     # TODO: This is super buggy because the order is important for the variables in the Policy Solver!!
     _ES_activate_default = {'elastic-workbench-qr-detector': ['quality_scaling', 'resource_scaling'],
-                            'elastic-workbench-cv-analyzer': ['quality_scaling', 'resource_scaling']}
+                            'elastic-workbench-cv-analyzer': ['quality_scaling', 'resource_scaling', 'model_scaling']}
 
     def __init__(self):
         self.http_client = HttpClient()
@@ -105,5 +106,8 @@ if __name__ == "__main__":
     es_reg = ES_Registry()
     # print(es_reg.is_ES_supported(ServiceType.QR, 'resource_scaling'))
     # print(es_reg.get_ES_information(ServiceType.QR, 'resource_scaling'))
-    # print(es_reg.get_random_ES_for_service(ServiceType.QR))
-    print(es_reg.get_parameter_bounds_for_active_ES(ServiceType.QR))
+    print(es_reg.get_random_ES_for_service(ServiceType.CV))
+    print(es_reg.get_random_ES_for_service(ServiceType.CV))
+    print(es_reg.get_random_ES_for_service(ServiceType.CV))
+    print(es_reg.get_random_ES_for_service(ServiceType.CV))
+    # print(es_reg.get_parameter_bounds_for_active_ES(ServiceType.QR))

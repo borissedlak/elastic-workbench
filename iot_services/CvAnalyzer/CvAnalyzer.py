@@ -61,7 +61,7 @@ class CvAnalyzer(IoTService):
         self.reinitialize_models()  # Place here so that it reloads when cores are changed
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:  # TODO: Revert self.cores_reserved
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame

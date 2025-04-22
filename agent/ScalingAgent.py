@@ -64,7 +64,7 @@ class ScalingAgent(Thread):
 
                 logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
                 all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
-                continue
+                # continue
 
                 # TODO: According to this discrepancy, I must adjust the model, or is this done automatically?
                 # service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
@@ -77,7 +77,7 @@ class ScalingAgent(Thread):
                     logger.warning(warning_msg)
                     continue
 
-                if True:  # random.randint(1, 2) == 1:
+                if False:  # random.randint(1, 2) == 1:
                     target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
                     for es_type in target_ES:
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
@@ -105,17 +105,10 @@ class ScalingAgent(Thread):
     def execute_random_ES(self, host, service_type: ServiceType):
         rand_ES = self.es_registry.get_random_ES_for_service(service_type)
 
-        if not self.es_registry.is_ES_supported(service_type, rand_ES):
-            logger.warning(f"Trying to call unsupported ES for {service_type}, {rand_ES}")
-            return
+        self.execute_ES(host, service_type, rand_ES, None, True)
 
-        ES_endpoints = self.es_registry.get_ES_information(service_type, rand_ES)['endpoints']
-        for endpoint in ES_endpoints:
-            random_params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
-            self.http_client.call_ES_endpoint(host, endpoint['target'], random_params)
-            logger.info(f"Calling random ES <{service_type},{rand_ES}> with {random_params}")
-
-    def execute_ES(self, host, service_type: ServiceType, es_type: EsType, all_params):
+    def execute_ES(self, host, service_type: ServiceType, es_type: EsType, all_params, random_ass=False):
+        params = all_params
 
         if not self.es_registry.is_ES_supported(service_type, es_type):
             logger.warning(f"Trying to call unsupported ES for {service_type}, {es_type}")
@@ -123,9 +116,11 @@ class ScalingAgent(Thread):
 
         ES_endpoints = self.es_registry.get_ES_information(service_type, es_type)['endpoints']
         for endpoint in ES_endpoints:
-            # specific_params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
-            self.http_client.call_ES_endpoint(host, endpoint['target'], all_params)
-            logger.info(f"Calling ES <{service_type},{es_type}> with {all_params}")
+            if random_ass:
+                params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
+
+            self.http_client.call_ES_endpoint(host, endpoint['target'], params)
+            logger.info(f"Calling {"random " if random_ass else ""}ES <{service_type},{es_type}> with {params}")
 
     def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
 
@@ -162,6 +157,6 @@ class ScalingAgent(Thread):
 
 if __name__ == '__main__':
     ps = "http://localhost:9090"
-    qr_local_1 = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    # qr_local_2 = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[qr_local_1], prom_server=ps, evaluation_cycle=15).start()
+    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
+    cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    ScalingAgent(services_monitored=[qr_local, cv_local], prom_server=ps, evaluation_cycle=15).start()

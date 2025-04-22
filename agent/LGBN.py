@@ -11,18 +11,16 @@ from scipy import stats
 import agent_utils
 import utils
 from agent.ES_Registry import ServiceType
-from agent.SLO_Registry import SLO_Registry
 from utils import print_execution_time
 
 
 class LGBN:
     def __init__(self, show_figures=False):
         self.show_figures = show_figures
-        self.model: LinearGaussianBayesianNetwork = self.init_model()
+        self.models: Dict[str, LinearGaussianBayesianNetwork] = self.init_models()
         self.service_type: ServiceType = None  # TODO: Must set this correctly and use in file collection
 
-
-    def init_model(self):
+    def init_models(self):
         df_combined = self.collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
         return train_lgbn_model(df_cleared, show_result=self.show_figures)
@@ -36,9 +34,9 @@ class LGBN:
         return combined_df
 
     @utils.print_execution_time
-    def predict_lgbn_vars(self, partial_state, sanitize = True):
+    def predict_lgbn_vars(self, partial_state, sanitize=True):
         wrapped_in_list = {k: [v] for k, v in partial_state.items()}
-        var, mean, vari = self.model.predict(pd.DataFrame(wrapped_in_list))
+        var, mean, vari = self.models.predict(pd.DataFrame(wrapped_in_list))
 
         samples = {}
         for index, v in enumerate(var):
@@ -59,16 +57,15 @@ class LGBN:
         full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
         return full_state_expected
 
-    def get_linear_relations(self):
+    def get_linear_relations(self, service_type: ServiceType):
         linear_relations = {}
-        for cpd in self.model.get_cpds():
-            if cpd.evidence == []: # Only get those relations with dependencies
+        for cpd in self.models[service_type.value].get_cpds():
+            if cpd.evidence == []:  # Only get those relations with dependencies
                 continue
 
             # TODO: This I will need to fix when I get more variables
             linear_relations[cpd.variable] = [(cpd.variables[1], cpd.beta[1], cpd.beta[0])]
         return linear_relations
-
 
 
 def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
@@ -100,6 +97,8 @@ def preprocess_data(df):
     combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
     del combined_df_expanded['timestamp']
 
+    print(f"Training data contains service types {df_filtered['service_type'].unique()}")
+
     return combined_df_expanded
 
 
@@ -113,35 +112,40 @@ def get_local_metric_file(path="../share/metrics/metrics.csv"):
 
 @print_execution_time  # Roughly 1 to 1.5s
 def train_lgbn_model(df, show_result=False):
-    # If I don't pass the DAG I have to train it myself, which takes time.
-    # scoring_method = AIC(data=df)  # BDeuScore | AICScore
-    # estimator = HillClimbSearch(data=df)
-    #
-    # dag: DAG = estimator.estimate(
-    #     scoring_method=scoring_method, max_indegree=5, epsilon=1,
-    # )
-    # model = LinearGaussianBayesianNetwork(ebunch=dag)
-    model = LinearGaussianBayesianNetwork([('quality', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
-    # BIFWriter(model).write_bif("./model.xml") # Does not work for LGBNs ....
-    model.fit(df)
+    service_models = {}
 
-    for cpd in model.get_cpds():
-        print(cpd)
+    for service_type in df['service_type'].unique():
+        model = get_lgbn_for_service_type(ServiceType(service_type))
+        df_service = df[df['service_type'] == service_type]
+        model.fit(df_service)
 
-    if show_result:
-        for states in [["quality", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
-            X_samples = model.simulate(1500, 35)
-            X_df = pd.DataFrame(X_samples, columns=states)
+        for cpd in model.get_cpds():
+            print(cpd)
 
-            sns.jointplot(x=X_df[states[0]], y=X_df[states[1]], kind="kde", height=10, space=0, cmap="viridis")
-            plt.show()
+        if show_result:
+            for states in [["quality", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
+                X_samples = model.simulate(1500, 35)
+                X_df = pd.DataFrame(X_samples, columns=states)
 
-    return model
+                sns.jointplot(x=X_df[states[0]], y=X_df[states[1]], kind="kde", height=10, space=0, cmap="viridis")
+                plt.show()
+        service_models[service_type] = model
+
+    return service_models
+
+
+def get_lgbn_for_service_type(service_type: ServiceType):
+    if service_type == ServiceType.QR:
+        return LinearGaussianBayesianNetwork([('quality', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
+    elif service_type == ServiceType.CV:
+        return LinearGaussianBayesianNetwork([('quality', 'avg_p_latency'), ('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')])
+    else:
+        raise RuntimeError(f"Service type {service_type} not supported")
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=False)
-    print(lgbn.get_linear_relations())
+    lgbn = LGBN(show_figures=True)
+    print(lgbn.get_linear_relations(ServiceType.QR))
     # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     # print("Full State", state_expected)
     # slo_registry = SLO_Registry()
