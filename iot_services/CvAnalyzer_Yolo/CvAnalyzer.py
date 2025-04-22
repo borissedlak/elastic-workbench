@@ -11,7 +11,9 @@ import numpy as np
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.VideoReader import VideoReader
+from iot_services.CvAnalyzer.YOLOv10_Torch import YOLOv10
 from iot_services.IoTService import IoTService
+from video_utils import yolo_model_sizes
 
 logger = logging.getLogger("multiscale")
 
@@ -27,40 +29,19 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
-        # self.detectors = {}
+        self.detectors = {}
         self.metric_buffer = []
-        self.model =
 
-    # def reinitialize_models(self):  # Assumes that service_conf changed in the background
-    #     # logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
-    #     # logger.info(f"Available providers:{onnxruntime.get_available_providers()}")
-    #     # logger.info(f"Visible cores:{os.cpu_count()}")
-    #     model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.torchscript"
-    #     for i in range(0, self.cores_reserved):
-    #         self.detectors[i] = YOLOv10(model_path, conf_threshold=0.3)
+    def reinitialize_models(self):  # Assumes that service_conf changed in the background
+        # logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
+        # logger.info(f"Available providers:{onnxruntime.get_available_providers()}")
+        # logger.info(f"Visible cores:{os.cpu_count()}")
+        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.torchscript"
+        for i in range(0, self.cores_reserved):
+            self.detectors[i] = YOLOv10(model_path, conf_threshold=0.3)
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
         start = time.perf_counter()
-
-        # image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # image = cv2.resize(image, (320, 240))
-        # image_mean = np.array([127, 127, 127])
-        # image = (image - image_mean) / 128
-        # image = np.transpose(image, [2, 0, 1])
-        # image = np.expand_dims(image, axis=0)
-        # image = image.astype(np.float32)
-
-        _image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        _image = cv2.resize(_image, (320, 240))
-        image_mean = np.array([127, 127, 127])
-        _image = (_image - image_mean) / 128
-        _image = np.transpose(_image, [2, 0, 1])
-        _image = np.expand_dims(_image, axis=0)
-        _image = _image.astype(np.float32)
-
-        input_name = self.face_detector.get_inputs()[0].name
-        confidences, boxes = self.face_detector.run(None, {input_name: _image})
-        boxes, labels, probs = predict(frame.shape[1], frame.shape[0], confidences, boxes, options['prob'])
 
         detector_index = int(threading.current_thread().name.split("_")[1])
         class_ids, boxes, confidences = self.detectors[detector_index](frame)
@@ -77,7 +58,7 @@ class CvAnalyzer(IoTService):
         return frame, duration
 
     def process_loop(self):
-        # self.reinitialize_models()  # Place here so that it reloads when cores are changed
+        self.reinitialize_models()  # Place here so that it reloads when cores are changed
 
         while self._running:
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
