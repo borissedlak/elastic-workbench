@@ -64,6 +64,7 @@ class ScalingAgent(Thread):
 
                 logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
                 all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
+                continue
 
                 # TODO: According to this discrepancy, I must adjust the model, or is this done automatically?
                 # service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
@@ -162,5 +163,5 @@ class ScalingAgent(Thread):
 if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local_1 = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    qr_local_2 = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[qr_local_1, qr_local_2], prom_server=ps, evaluation_cycle=15).start()
+    # qr_local_2 = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    ScalingAgent(services_monitored=[qr_local_1], prom_server=ps, evaluation_cycle=15).start()

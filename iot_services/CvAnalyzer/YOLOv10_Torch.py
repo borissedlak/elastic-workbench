@@ -12,10 +12,8 @@ logger = logging.getLogger("multiscale")
 class YOLOv10:
     def __init__(self, path: str, conf_threshold: float = 0.2):
         self.conf_threshold = conf_threshold
-        # Load the model with PyTorch
         self.model = torch.jit.load(path, map_location="cpu")
         self.model.eval()  # Set the model to evaluation mode
-        # logger.info("Model loaded using PyTorch")
 
         # Get model info
         self.get_input_details()
@@ -31,14 +29,6 @@ class YOLOv10:
         outputs = self.inference(input_tensor)
 
         return self.process_output(outputs[0])
-
-    # def preprocess(frame):
-    #     img = cv2.resize(frame, input_size)
-    #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    #     img = img / 255.0
-    #     img = img.transpose(2, 0, 1)  # HWC -> CHW
-    #     img = torch.from_numpy(img).float().unsqueeze(0)  # Add batch dimension
-    #     return img
 
     def prepare_input(self, image: np.ndarray) -> torch.Tensor:
         self.img_height, self.img_width = image.shape[:2]

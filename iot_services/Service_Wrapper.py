@@ -39,7 +39,7 @@ class ServiceWrapper:
 
         if start_processing:
             self.start_processing()
-            # self.scale_cores(DEFAULT_CORES)
+            self.scale_cores(DEFAULT_CORES)
 
             if DEFAULT_CLIENTS:
                 clients = DEFAULT_CLIENTS.split(",")
