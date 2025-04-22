@@ -115,7 +115,7 @@ def train_lgbn_model(df, show_result=False):
     service_models = {}
 
     for service_type in df['service_type'].unique():
-        model = get_lgbn_for_service_type(ServiceType(service_type))
+        model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type)))
         df_service = df[df['service_type'] == service_type]
         model.fit(df_service)
 
@@ -123,7 +123,7 @@ def train_lgbn_model(df, show_result=False):
             print(cpd)
 
         if show_result:
-            for states in [["cores", "avg_p_latency"], ["model_size", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
+            for states in [[t[0], t[1]] for t in get_edges_for_service_type(ServiceType(service_type))]:
                 X_samples = model.simulate(1500, 35)
                 X_df = pd.DataFrame(X_samples, columns=states)
 
@@ -134,11 +134,11 @@ def train_lgbn_model(df, show_result=False):
     return service_models
 
 
-def get_lgbn_for_service_type(service_type: ServiceType):
+def get_edges_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return LinearGaussianBayesianNetwork([('quality', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
+        return [('quality', 'avg_p_latency')]
     elif service_type == ServiceType.CV:
-        return LinearGaussianBayesianNetwork([('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')])
+        return [('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 

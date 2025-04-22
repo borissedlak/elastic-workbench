@@ -40,7 +40,7 @@ class ScalingAgent(Thread):
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
-        parameter_ass = self.prom_client.get_metrics(["quality", "cores"], service_id)
+        parameter_ass = self.prom_client.get_metrics(["quality", "cores", "model_size"], service_id)
 
         target_throughput = utils.to_absolut_rps(assigned_clients)
         completion_rate = metric_values['throughput'] / target_throughput if target_throughput > 0 else 1.0
