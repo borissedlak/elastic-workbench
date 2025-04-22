@@ -123,7 +123,7 @@ def train_lgbn_model(df, show_result=False):
             print(cpd)
 
         if show_result:
-            for states in [["quality", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
+            for states in [["cores", "avg_p_latency"], ["model_size", "avg_p_latency"]]:  # , ["cores", "avg_p_latency"]]:
                 X_samples = model.simulate(1500, 35)
                 X_df = pd.DataFrame(X_samples, columns=states)
 
@@ -144,8 +144,8 @@ def get_lgbn_for_service_type(service_type: ServiceType):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=True)
-    print(lgbn.get_linear_relations(ServiceType.QR))
+    lgbn = LGBN(show_figures=False)
+    print(lgbn.get_linear_relations(ServiceType.CV))
     # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     # print("Full State", state_expected)
     # slo_registry = SLO_Registry()
