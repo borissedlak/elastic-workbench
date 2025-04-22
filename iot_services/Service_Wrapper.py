@@ -6,6 +6,7 @@ from flask import Flask, request
 import utils
 from DockerClient import DockerClient
 from IoTService import IoTService
+from agent.ES_Registry import EsType
 from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
 from iot_services.QrDetector.QrDetector import QrDetector
 
@@ -47,7 +48,7 @@ class ServiceWrapper:
         self.app = Flask(__name__)
         self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['POST'])
         self.app.add_url_rule('/stop_all', 'stop_all', self.terminate_processing, methods=['POST'])
-        self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
+        # self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
         self.app.add_url_rule('/model_scaling', 'model_scaling', self.model_scaling, methods=['PUT'])
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
@@ -75,17 +76,20 @@ class ServiceWrapper:
     ######################################
 
     # @app.route("/change_config", methods=['PUT'])
-    def change_config(self):
-        service_d = ast.literal_eval(request.args.get('service_description'))
-        self.service.change_config(service_d)
-        return ""
+    # def change_config(self):
+    #     service_d = ast.literal_eval(request.args.get('service_description'))
+    #     self.service.change_config(service_d)
+    #     self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
+    #     return ""
 
     # @app.route("/change_config", methods=['PUT'])
     def quality_scaling(self):
         quality = int(request.args.get('quality'))
         s_conf = self.service.service_conf
         s_conf['quality'] = quality
+
         self.service.change_config(s_conf)
+        self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         return ""
 
     # @app.route("/change_config", methods=['PUT'])
@@ -93,7 +97,9 @@ class ServiceWrapper:
         model_size = int(request.args.get('model_size'))
         s_conf = self.service.service_conf
         s_conf['model_size'] = model_size
+
         self.service.change_config(s_conf)
+        self.service.set_flag_and_cooldown(EsType.MODEL_SCALE)
         return ""
 
     # @app.route("/vertical_scaling", methods=['PUT'])

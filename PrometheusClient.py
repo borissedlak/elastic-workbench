@@ -10,7 +10,7 @@ class PrometheusClient:
 
     # TODO: Not AVG still not working
     # @utils.print_execution_time  # only around 3ms
-    def get_metrics(self, metric_names: [str], service_id: ServiceID = None, period=None, avg=True):
+    def get_metrics(self, metric_names: list[str], service_id: ServiceID = None, period=None, avg=True):
         avg_str = "avg_over_time" if avg else ""
         start = f"{avg_str}(" if period is not None else ""
         end = f"[{period}])" if period is not None else ""

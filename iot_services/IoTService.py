@@ -43,6 +43,7 @@ class IoTService:
         self.prom_quality = Gauge('quality', 'Current configured quality',
                                   ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
+        self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
 
     def process_one_iteration(self, params, frame) -> None:
         pass
@@ -65,7 +66,6 @@ class IoTService:
         pass
 
     def change_config(self, config):
-        self.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         self.service_conf = config
         self.reinitialize_models()
         logger.info(f"{self.service_type} changed to {config}")
@@ -88,7 +88,7 @@ class IoTService:
 
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:
-            self.client_arrivals[client_id] = 0 # Should be able to delete this??
+            self.client_arrivals[client_id] = 0  # Should be able to delete this??
             del self.client_arrivals[client_id]
             logger.info(f"Removed client {client_id} from service {self.service_type}")
         else:

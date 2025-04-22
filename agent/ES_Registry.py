@@ -17,8 +17,8 @@ class ServiceType(Enum):
 
 class EsType(Enum):
     STARTUP = 'startup'
-    RESOURCE_SCALE = 'resource_scaling'
     QUALITY_SCALE = 'quality_scaling'
+    RESOURCE_SCALE = 'resource_scaling'
     MODEL_SCALE = 'model_scaling'
     RESOURCE_SWAP = 'resource_swapping'
     OFFLOADING = 'offloading'
@@ -33,7 +33,7 @@ class ServiceID(NamedTuple):
 class ES_Registry:
     # TODO: This is super buggy because the order is important for the variables in the Policy Solver!!
     _ES_activate_default = {'elastic-workbench-qr-detector': ['quality_scaling', 'resource_scaling'],
-                            'elastic-workbench-cv-analyzer': ['quality_scaling', 'resource_scaling', 'model_scaling']}
+                            'elastic-workbench-cv-analyzer': ['resource_scaling', 'model_scaling']}
 
     def __init__(self):
         self.http_client = HttpClient()
@@ -87,6 +87,7 @@ class ES_Registry:
                 for es in service["elasticity_strategies"]:
                     if es["ES_name"] == es_type.value:
                         return es
+        logger.warning(f"Trying to find unknown strategy {es_type.value} for service {service_type.value}")
         return None
 
     def get_random_ES_for_service(self, service_type: ServiceType) -> EsType:

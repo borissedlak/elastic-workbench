@@ -24,17 +24,17 @@ ROOT = os.path.dirname(__file__)
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 800, 'model_size': 1}
+        self.service_conf = {'model_size': 1}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader()
 
         self.detectors = {}
         self.metric_buffer = []
-        # self.model = FaceDetector("./models/version-RFB-640.onnx")
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
         model_path = ROOT + f"/models/version-RFB-{fd_model_sizes[self.service_conf['model_size']]}.onnx"
+        # TODO: Remove list
         for i in range(0, self.cores_reserved):
             self.detectors[i] = FaceDetector(model_path)
 
@@ -74,8 +74,8 @@ class CvAnalyzer(IoTService):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
 
-            logger.info(processed_item_durations)
-            logger.info(processed_item_counter)
+            # logger.info(processed_item_durations)
+            # logger.info(processed_item_counter)
 
             # This is only executed once after the batch is processed
             self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
@@ -83,8 +83,8 @@ class CvAnalyzer(IoTService):
             avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
             self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                            metric_id="avg_p_latency").set(avg_p_latency_v)
-            self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                     metric_id="quality").set(self.service_conf['quality'])
+            self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                        metric_id="model_size").set(self.service_conf['model_size'])
             self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                    metric_id="cores").set(self.cores_reserved)
 

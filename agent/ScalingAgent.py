@@ -22,13 +22,13 @@ PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 
 class ScalingAgent(Thread):
-    def __init__(self, prom_server, services_monitored: [ServiceID], evaluation_cycle):
+    def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle):
         super().__init__()
         self._running = True
         self._idle = False
         self.evaluation_cycle = evaluation_cycle
 
-        self.services_monitored: [ServiceID] = services_monitored
+        self.services_monitored: list[ServiceID] = services_monitored
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
@@ -146,7 +146,7 @@ class ScalingAgent(Thread):
         all_ES = self.es_registry.get_active_ES_for_s(service.service_type)
         return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
-    def get_assigned_cores(self, service_list: [ServiceID]):
+    def get_assigned_cores(self, service_list: list[ServiceID]):
         cores_per_service = {}
 
         for service_id in service_list:
@@ -157,6 +157,6 @@ class ScalingAgent(Thread):
 
 if __name__ == '__main__':
     ps = "http://localhost:9090"
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
+    # qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[qr_local, cv_local], prom_server=ps, evaluation_cycle=15).start()
+    ScalingAgent(services_monitored=[cv_local], prom_server=ps, evaluation_cycle=15).start()

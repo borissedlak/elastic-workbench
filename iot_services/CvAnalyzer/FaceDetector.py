@@ -13,8 +13,10 @@ class FaceDetector:
 
     # @utils.print_execution_time
     def detect_faces(self, frame):
+        width, height = self.face_detector.get_inputs()[0].shape[3], self.face_detector.get_inputs()[0].shape[2]
+
         _image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        _image = cv2.resize(_image, (320, 240))
+        _image = cv2.resize(_image, (width, height))
         image_mean = np.array([127, 127, 127])
         _image = (_image - image_mean) / 128
         _image = np.transpose(_image, [2, 0, 1])
@@ -30,7 +32,7 @@ class FaceDetector:
 
 
 if __name__ == '__main__':
-    model_path = "./models/version-RFB-320.onnx"
+    model_path = "./models/version-RFB-640.onnx"
 
     # Initialize YOLOv10 object detector
     detector = FaceDetector(model_path)

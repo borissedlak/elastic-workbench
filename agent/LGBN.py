@@ -138,7 +138,7 @@ def get_lgbn_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
         return LinearGaussianBayesianNetwork([('quality', 'avg_p_latency')])  # , ('cores', 'avg_p_latency')])
     elif service_type == ServiceType.CV:
-        return LinearGaussianBayesianNetwork([('quality', 'avg_p_latency'), ('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')])
+        return LinearGaussianBayesianNetwork([('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')])
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
