@@ -1,19 +1,39 @@
 import onnx
-from onnx import version_converter, helper
+from onnx import helper, numpy_helper, ModelProto
 
-# Load the original model
-model = onnx.load("old_model.onnx")
+def eliminate_unused_initializers(model: ModelProto) -> ModelProto:
+    graph = model.graph
+    # Find all used initializer names
+    used_tensor_names = set()
+    for node in graph.node:
+        used_tensor_names.update(node.input)
 
-# Optionally check what's the current opset version
-original_opset = None
-for opset in model.opset_import:
-    if opset.domain == "":
-        original_opset = opset.version
-print(f"Original opset: {original_opset}")
+    # Keep only initializers that are used
+    used_initializers = [init for init in graph.initializer if init.name in used_tensor_names]
+    graph.ClearField("initializer")
+    graph.initializer.extend(used_initializers)
+    return model
 
-# Upgrade the opset version to 19 (or latest you want)
-target_opset = 19
-converted_model = version_converter.convert_version(model, target_opset)
+def extract_constants_from_graph_inputs(model: ModelProto) -> ModelProto:
+    graph = model.graph
+    initializer_names = {init.name for init in graph.initializer}
+    inputs = [i for i in graph.input if i.name not in initializer_names]
+    graph.ClearField("input")
+    graph.input.extend(inputs)
+    return model
 
-# Save the upgraded model
-onnx.save(converted_model, "upgraded_model.onnx")
+def optimize_model(input,output):
+    # Load the model
+    # onnxfile = "your_model.onnx"
+    model = onnx.load(input)
+
+    # Apply passes manually
+    model = extract_constants_from_graph_inputs(model)
+    model = eliminate_unused_initializers(model)
+
+    # Save the optimized model
+    onnx.save(model, output)
+
+
+optimize_model("version-RFB-320.onnx", "version-RFB-320.onnx")
+# optimize_model("version-RFB-640.onnx", "version-RFB-640.onnx")

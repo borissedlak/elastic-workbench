@@ -5,8 +5,6 @@ import numpy as np
 import requests
 import tqdm
 
-import utils
-
 class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
                'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
@@ -18,6 +16,7 @@ class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tra
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
 yolo_model_sizes = {1: 'n', 2: 's', 3: 'm', 4: 'l', 5: 'x'}
+fd_model_sizes = {1: '320', 2: '640'}
 
 # Create a list of colors for each class where each color is a tuple of 3 integer values
 rng = np.random.default_rng(3)
@@ -71,6 +70,7 @@ def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3):
 
     return det_img
 
+
 def draw_detections_simple(image, boxes):
     det_img = image.copy()
 
@@ -81,6 +81,7 @@ def draw_detections_simple(image, boxes):
         draw_box(det_img, box)
 
     return det_img
+
 
 def draw_box(image: np.ndarray, box: np.ndarray, color: tuple[int, int, int] = (0, 0, 255),
              thickness: int = 2) -> np.ndarray:

@@ -4,17 +4,17 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
+import utils
 from video_utils import predict, draw_detections_simple
-
-logging.getLogger("onnxruntime").setLevel(logging.WARNING)
 
 class FaceDetector:
     def __init__(self, model_path):
-        self.face_detector =  ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+        self.face_detector = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
 
+    # @utils.print_execution_time
     def detect_faces(self, frame):
         _image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        _image = cv2.resize(_image, (640, 480))
+        _image = cv2.resize(_image, (320, 240))
         image_mean = np.array([127, 127, 127])
         _image = (_image - image_mean) / 128
         _image = np.transpose(_image, [2, 0, 1])
@@ -30,7 +30,7 @@ class FaceDetector:
 
 
 if __name__ == '__main__':
-    model_path = "./models/version-RFB-640.onnx"
+    model_path = "./models/version-RFB-320.onnx"
 
     # Initialize YOLOv10 object detector
     detector = FaceDetector(model_path)

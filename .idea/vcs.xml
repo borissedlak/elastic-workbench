@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/onnxoptimizer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/onnxoptimizer/third_party/onnx" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/onnxoptimizer/third_party/protobuf" vcs="Git" />
   </component>
 </project>
