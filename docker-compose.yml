@@ -42,7 +42,7 @@ services:
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_3:300
-      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+      - TZ=Europe/Vienna
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux
 #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows

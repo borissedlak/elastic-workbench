@@ -144,7 +144,7 @@ def get_lgbn_for_service_type(service_type: ServiceType):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=False)
+    lgbn = LGBN(show_figures=True)
     print(lgbn.get_linear_relations(ServiceType.CV))
     # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     # print("Full State", state_expected)

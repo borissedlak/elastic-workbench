@@ -8,6 +8,7 @@ WORKDIR /src
 COPY ./iot_services/QrDetector/requirements.txt /src/iot_services/QrDetector/
 RUN pip install -r ./iot_services/QrDetector/requirements.txt
 RUN pip install torch~=2.3.0 --index-url https://download.pytorch.org/whl/cpu # TODO: THis is also wrong...
+RUN pip install onnxruntime~=1.19.2
 
 # TODO: Should not copy other service types, but I'm incapable :(
 COPY ./iot_services /src/iot_services
