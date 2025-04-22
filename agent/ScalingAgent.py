@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
+EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 30))
 
 
 class ScalingAgent(Thread):
@@ -77,7 +78,7 @@ class ScalingAgent(Thread):
                     logger.warning(warning_msg)
                     continue
 
-                if False:  # random.randint(1, 2) == 1:
+                if True:  # random.randint(1, 2) == 1:
                     target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
                     for es_type in target_ES:
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
@@ -139,13 +140,14 @@ class ScalingAgent(Thread):
             else:
                 return [], {}
 
-        linear_relations = self.lgbn.get_linear_relations()
+        linear_relations = self.lgbn.get_linear_relations(service.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         all_ES = self.es_registry.get_active_ES_for_s(service.service_type)
         return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
+    @utils.print_execution_time
     def get_assigned_cores(self, service_list: list[ServiceID]):
         cores_per_service = {}
 
@@ -159,4 +161,4 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     # qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[cv_local], prom_server=ps, evaluation_cycle=15).start()
+    ScalingAgent(services_monitored=[cv_local], prom_server=ps, evaluation_cycle=EVALUATION_CYCLE_DELAY).start()

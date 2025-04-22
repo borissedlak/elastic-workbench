@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 from scipy import stats
 
@@ -57,14 +58,13 @@ class LGBN:
         full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
         return full_state_expected
 
-    def get_linear_relations(self, service_type: ServiceType):
+    def get_linear_relations(self, service_type: ServiceType) -> Dict[str, LinearGaussianCPD]:
         linear_relations = {}
         for cpd in self.models[service_type.value].get_cpds():
             if cpd.evidence == []:  # Only get those relations with dependencies
                 continue
 
-            # TODO: This I will need to fix when I get more variables
-            linear_relations[cpd.variable] = [(cpd.variables[1], cpd.beta[1], cpd.beta[0])]
+            linear_relations[cpd.variable] = cpd
         return linear_relations
 
 
