@@ -19,7 +19,9 @@ logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
+
 class QrDetector(IoTService):
+
     def __init__(self, store_to_csv=True):
         super().__init__()
         self.service_conf = {'quality': 800}
@@ -64,14 +66,14 @@ class QrDetector(IoTService):
 
             # This is only executed once after the batch is processed
             self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                              metric_id="throughput").set(processed_item_counter)
+                                        metric_id="throughput").set(processed_item_counter)
             avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
             self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                 metric_id="avg_p_latency").set(avg_p_latency_v)
+                                           metric_id="avg_p_latency").set(avg_p_latency_v)
             self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                           metric_id="quality").set(self.service_conf['quality'])
+                                     metric_id="quality").set(self.service_conf['quality'])
             self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                         metric_id="cores").set(self.cores_reserved)
+                                   metric_id="cores").set(self.cores_reserved)
 
             if self.store_to_csv:
                 metric_buffer.append((datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,

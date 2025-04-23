@@ -98,6 +98,9 @@ class ES_Registry:
         raise RuntimeError(f"Requesting strategy for unknown service {service_type.value}")
 
     def get_ES_cooldown(self, service_type: ServiceType, es_type: EsType) -> int:
+        if es_type == EsType.STARTUP:
+            return 3000
+
         service_info = self.get_ES_information(service_type, es_type)
 
-        return service_info['cooldown'] if es_type != EsType.STARTUP else 2000
+        return service_info['cooldown']

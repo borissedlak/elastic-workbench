@@ -1,8 +1,8 @@
-import datetime
 import logging
 import threading
 import time
-from typing import Dict
+from abc import ABC, abstractmethod
+from typing import Dict, Any
 
 from prometheus_client import start_http_server, Gauge
 
@@ -17,7 +17,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
-class IoTService:
+class IoTService(ABC):
     def __init__(self):
         self.docker_container_ref = CONTAINER_REF
         self.service_type = None
@@ -34,7 +34,7 @@ class IoTService:
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
         self.docker_client = DockerClient()
         self.container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
-        self.flag_metric_cooldown = EsType.STARTUP  # Start with flag
+        self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(Any, EsType.STARTUP)  # Start with flag
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
@@ -45,6 +45,7 @@ class IoTService:
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
 
+    @abstractmethod
     def process_one_iteration(self, params, frame) -> None:
         pass
 
@@ -62,6 +63,7 @@ class IoTService:
     def is_running(self):
         return self._running
 
+    @abstractmethod
     def process_loop(self):
         pass
 

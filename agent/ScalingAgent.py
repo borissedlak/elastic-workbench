@@ -13,7 +13,7 @@ from RedisClient import RedisClient
 from agent import agent_utils, PolicySolver
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import LGBN
-from agent.SLO_Registry import SLO_Registry
+from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -107,7 +107,7 @@ class ScalingAgent(Thread):
                 logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
                 continue
 
-            client_SLO_F_emp = self.slo_registry.calculate_slo_fulfillment(service_state, client_SLOs)
+            client_SLO_F_emp = calculate_slo_fulfillment(service_state, client_SLOs)
             all_client_SLO_F[client_id] = client_SLO_F_emp
 
         print("Actual SLO-F", all_client_SLO_F)

@@ -49,12 +49,11 @@ def print_execution_time(func):
 
 
 class FPS_:
-    def __init__(self, max_fps=300, sliding_window=5):
+    def __init__(self, max_fps=300):
         self.prev_time = 0
         self.new_time = 0
 
         self.time_store = Cyclical_Array(max_fps)
-        # self.fps_store = Cyclical_Array(sliding_window)
 
     def tick(self) -> None:
         self.time_store.put(time.time())
@@ -64,10 +63,6 @@ class FPS_:
         current_time = time.time()
         recent_timestamps = [t for t in self.time_store.data if current_time - t <= 1]
         return len(recent_timestamps)
-
-    # def get_balanced_fps(self) -> int:
-    #     self.fps_store.put(self.get_current_fps())
-    #     return int(self.fps_store.get_average())
 
 
 class Cyclical_Array:
@@ -114,8 +109,7 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(
-                ["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores", "cooldown"])
+            writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores", "cooldown"])
 
         writer.writerows(lines)
 
