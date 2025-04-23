@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Dict, Any, List, Tuple
 
 import numpy as np
@@ -8,9 +7,9 @@ from agent.ES_Registry import ServiceType
 
 
 class SLO_Registry:
-    def __init__(self):
-        ROOT = os.path.dirname(__file__)
-        with open(ROOT + '/conf/slo_config.json', 'r') as f:
+    def __init__(self, slo_config_path):
+
+        with open(slo_config_path, 'r') as f:
             self.slo_lib = json.load(f)
 
     def get_all_SLOs_for_assigned_clients(self, service_type: ServiceType, assigned_clients: Dict[str, int]):
@@ -21,7 +20,6 @@ class SLO_Registry:
             all_client_slos.append(client_slos)
 
         return all_client_slos
-
 
     def get_SLOs_for_client(self, client_id, service_type: ServiceType):
         result = {}
@@ -53,10 +51,3 @@ class SLO_Registry:
 
 def to_avg_SLO_F(slof: List[Tuple[str, float]]) -> float:
     return sum(value for _, value in slof) / float(len(slof))
-
-
-if __name__ == '__main__':
-    slo_registry = SLO_Registry()
-    slos = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
-
-    print(slo_registry.calculate_slo_fulfillment({"quality": 10}, slos))

@@ -19,7 +19,6 @@ class LGBN:
     def __init__(self, show_figures=False):
         self.show_figures = show_figures
         self.models: Dict[str, LinearGaussianBayesianNetwork] = self.init_models()
-        self.service_type: ServiceType = None  # TODO: Must set this correctly and use in file collection
 
     def init_models(self):
         df_combined = self.collect_all_metric_files()
@@ -43,7 +42,7 @@ class LGBN:
         for index, v in enumerate(var):
             mu, sigma = mean[0][index], np.sqrt(vari[index][index])
             sample_val = np.random.normal(mu, sigma, 1)[0]
-            samples = samples | {v: int(sample_val)}  # TODO: Might need a different data type at some point
+            samples = samples | {v: int(sample_val)}
 
         # TODO: Move somewhere else
         if sanitize:

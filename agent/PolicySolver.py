@@ -114,27 +114,3 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps, verify=Fa
         es_param_ass[param["name"]] = int(result.x[index])
 
     return es_param_ass
-
-
-if __name__ == '__main__':
-    # cpd_1 = LinearGaussianCPD(variable='avg_p_latency', evidence=['cores', 'model_size'], beta=[34.512, -7.509, 41.19],
-    #                           std=740.654)
-    #
-    # parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'max': 8, 'min': 1, 'name': 'cores'},
-    #                     {'es_type': EsType.MODEL_SCALE, 'max': 2, 'min': 1, 'name': 'model_size'}]
-    # linear_relation = {'avg_p_latency': cpd_1}
-    # clients_slos = [{'avg_p_latency': {'var': 'avg_p_latency', 'larger': 'False', 'thresh': '30', 'weight': 1.0},
-    #                  'completion_rate': {'var': 'completion_rate', 'larger': 'True', 'thresh': '1.0', 'weight': 1.0}},
-    #                 {'avg_p_latency': {'var': 'avg_p_latency', 'larger': 'False', 'thresh': '70', 'weight': 1.0},
-    #                  'completion_rate': {'var': 'completion_rate', 'larger': 'True', 'thresh': '1.0', 'weight': 1.0}}]
-
-    cpd_1 = LinearGaussianCPD(variable='avg_p_latency', evidence=['quality'], beta=[-6.7, 0.05004630052983987], std=740.654)
-    parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'max': 8, 'min': 1, 'name': 'cores'}, {'es_type': EsType.QUALITY_SCALE, 'max': 1080, 'min': 360, 'name': 'quality'}]
-    linear_relation = {'avg_p_latency': cpd_1}
-    clients_slos = [{'quality': {'var': 'quality', 'larger': 'True', 'thresh': '800', 'weight': 1.0},
-                     'avg_p_latency': {'var': 'avg_p_latency', 'larger': 'False', 'thresh': '30', 'weight': 1.0},
-                     'completion_rate': {'var': 'completion_rate', 'larger': 'True', 'thresh': '1.0', 'weight': 1.0}},
-                    {'quality': {'var': 'quality', 'larger': 'True', 'thresh': '1000', 'weight': 1.0},
-                     'avg_p_latency': {'var': 'avg_p_latency', 'larger': 'False', 'thresh': '70', 'weight': 1.0},
-                     'completion_rate': {'var': 'completion_rate', 'larger': 'True', 'thresh': '1.0', 'weight': 1.0}}]
-    print(solve(parameter_bounds, linear_relation, clients_slos, 1, True))

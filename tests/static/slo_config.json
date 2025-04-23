@@ -1,0 +1,94 @@
+{
+  "clientSLOs": [
+    {
+      "client_id": "C_1",
+      "service_type": "elastic-workbench-qr-detector",
+      "SLOs": [
+        {
+          "var": "quality",
+          "larger": true,
+          "thresh": 800,
+          "weight": 1.0
+        },
+        {
+          "var": "avg_p_latency",
+          "larger": false,
+          "thresh": 1000,
+          "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": true,
+          "thresh": 1.0,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "client_id": "C_2",
+      "service_type": "elastic-workbench-qr-detector",
+      "SLOs": [
+        {
+          "var": "quality",
+          "larger": true,
+          "thresh": 1000,
+          "weight": 1.0
+        },
+        {
+          "var": "avg_p_latency",
+          "larger": false,
+          "thresh": 1000,
+          "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": true,
+          "thresh": 1.0,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "client_id": "C_3",
+      "service_type": "elastic-workbench-qr-detector",
+      "SLOs": [
+        {
+          "var": "quality",
+          "larger": true,
+          "thresh": 1000,
+          "weight": 1.0
+        },
+        {
+          "var": "avg_p_latency",
+          "larger": false,
+          "thresh": 70,
+          "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": true,
+          "thresh": 1.0,
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "client_id": "C_3",
+      "service_type": "elastic-workbench-cv-analyzer",
+      "SLOs": [
+        {
+          "var": "avg_p_latency",
+          "larger": false,
+          "thresh": 70,
+          "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": true,
+          "thresh": 1.0,
+          "weight": 1.0
+        }
+      ]
+    }
+  ]
+}

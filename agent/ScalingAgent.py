@@ -33,14 +33,24 @@ class ScalingAgent(Thread):
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
-        self.es_registry = ES_Registry()
         self.reddis_client = RedisClient()
-        self.slo_registry = SLO_Registry()
+        self.slo_registry = SLO_Registry("./config/slo_config.json")
+        self.es_registry = ES_Registry("./config/es_registry.json")
         self.lgbn = LGBN()
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
+        """
+        Queries the basic state from Prometheus and then extends it with the calculated metrics.
+
+        :param service_id:
+        :param assigned_clients:
+        :return: Full service state; otherwise empty dict
+        """
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
         parameter_ass = self.prom_client.get_metrics(["quality", "cores", "model_size"], service_id)
+
+        if metric_values == {} and parameter_ass == {}:
+            return {}
 
         target_throughput = utils.to_absolut_rps(assigned_clients)
         completion_rate = metric_values['throughput'] / target_throughput if target_throughput > 0 else 1.0
@@ -161,4 +171,5 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[qr_local,cv_local], prom_server=ps, evaluation_cycle=EVALUATION_CYCLE_DELAY).start()
+    ScalingAgent(services_monitored=[qr_local, cv_local], prom_server=ps,
+                 evaluation_cycle=EVALUATION_CYCLE_DELAY).start()
