@@ -60,7 +60,7 @@ class LGBN:
     def get_linear_relations(self, service_type: ServiceType) -> Dict[str, LinearGaussianCPD]:
         linear_relations = {}
         for cpd in self.models[service_type.value].get_cpds():
-            if cpd.evidence == []:  # Only get those relations with dependencies
+            if not cpd.evidence:  # Only get those relations with dependencies
                 continue
 
             linear_relations[cpd.variable] = cpd

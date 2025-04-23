@@ -11,7 +11,7 @@ import numpy as np
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.FaceDetector import FaceDetector
-from iot_services.CvAnalyzer.VideoReader import VideoReader
+from iot_services.VideoReader import VideoReader
 from iot_services.IoTService import IoTService
 from video_utils import fd_model_sizes
 
@@ -27,7 +27,7 @@ class CvAnalyzer(IoTService):
         self.service_conf = {'model_size': 1}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
-        self.video_stream = VideoReader()
+        self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
         self.detectors = {}
         self.metric_buffer = []

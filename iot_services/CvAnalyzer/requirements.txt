@@ -9,3 +9,4 @@ docker~=7.1.0
 prometheus-api-client~=0.5.5 # Query from Server
 redis~=5.2.1
 tqdm~=4.67.1
+onnxruntime~=1.19.2

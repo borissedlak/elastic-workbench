@@ -1,0 +1,5 @@
+venv
+share/metrics
+agent/obsolete
+
+iot_services/QrDetector

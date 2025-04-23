@@ -34,8 +34,8 @@ class ScalingAgent(Thread):
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
         self.reddis_client = RedisClient()
-        self.slo_registry = SLO_Registry("./config/slo_config.json")
-        self.es_registry = ES_Registry("./config/es_registry.json")
+        self.slo_registry = SLO_Registry("../config/slo_config.json")
+        self.es_registry = ES_Registry("../config/es_registry.json")
         self.lgbn = LGBN()
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
@@ -99,7 +99,7 @@ class ScalingAgent(Thread):
 
     def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
 
-        all_client_SLO_F = []
+        all_client_SLO_F = {}
         for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
 
             client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
@@ -108,7 +108,7 @@ class ScalingAgent(Thread):
                 continue
 
             client_SLO_F_emp = self.slo_registry.calculate_slo_fulfillment(service_state, client_SLOs)
-            all_client_SLO_F.append((client_id, client_SLO_F_emp))
+            all_client_SLO_F[client_id] = client_SLO_F_emp
 
         print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F

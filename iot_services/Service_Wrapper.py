@@ -1,14 +1,11 @@
-import ast
 import logging
 
 from flask import Flask, request
 
 import utils
 from DockerClient import DockerClient
-from IoTService import IoTService
 from agent.ES_Registry import EsType
-from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
-from iot_services.QrDetector.QrDetector import QrDetector
+from iot_services.IoTService import IoTService
 
 app = Flask(__name__)
 
@@ -24,8 +21,10 @@ SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
 
 def init_service(s_type):
     if s_type == "QR":
+        from iot_services.QrDetector.QrDetector import QrDetector
         return QrDetector()
     if s_type == "CV":
+        from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
         return CvAnalyzer()
     else:
         raise RuntimeError("Must pass type!")

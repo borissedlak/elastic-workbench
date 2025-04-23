@@ -25,7 +25,7 @@ class IoTService:
         self._running = False
         self.service_conf = {}
         self.cores_reserved = 2
-        self.es_registry = ES_Registry()
+        self.es_registry = ES_Registry("./config/es_registry.json")
 
         self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms

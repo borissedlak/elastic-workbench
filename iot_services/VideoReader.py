@@ -1,14 +1,10 @@
-import os
-
 import cv2
 
 
-# TODO: Should move to one folder up, but I was incapable with the folder structure /data
 class VideoReader:
-    def __init__(self, buffer_size=200):
+    def __init__(self, path, buffer_size=200):
 
-        ROOT = os.path.dirname(__file__)
-        self.video_path = ROOT + "/data/CV_Video.mp4"
+        self.video_path = path #"/data/CV_Video.mp4"
         self.buffer_size = buffer_size
         self.buffer = []
 

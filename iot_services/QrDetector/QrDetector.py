@@ -1,6 +1,7 @@
 import concurrent.futures
 import datetime
 import logging
+import os
 import time
 from typing import Any
 
@@ -11,10 +12,11 @@ from pyzbar.pyzbar import decode
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.IoTService import IoTService
-from iot_services.QrDetector.VideoReader import VideoReader
+from iot_services.VideoReader import VideoReader
 
 logger = logging.getLogger("multiscale")
 
+ROOT = os.path.dirname(__file__)
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 
 class QrDetector(IoTService):
@@ -23,7 +25,7 @@ class QrDetector(IoTService):
         self.service_conf = {'quality': 800}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
-        self.video_stream = VideoReader()
+        self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
         start = time.perf_counter()

@@ -41,6 +41,8 @@ class ES_Registry:
         with open(es_registry_path, 'r') as f:
             self.es_api = json.load(f)
 
+        logger.info(self.es_api)
+
     def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:
         services = self.es_api['services']
         for service in services:

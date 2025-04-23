@@ -1,5 +1,5 @@
 import onnx
-from onnx import helper, numpy_helper, ModelProto
+from onnx import ModelProto
 
 def eliminate_unused_initializers(model: ModelProto) -> ModelProto:
     graph = model.graph

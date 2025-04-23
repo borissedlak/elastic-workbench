@@ -7,13 +7,10 @@ RUN apt-get install zbar-tools -y
 WORKDIR /src
 COPY ./iot_services/CvAnalyzer/requirements.txt /src/iot_services/CvAnalyzer/
 RUN pip install -r ./iot_services/CvAnalyzer/requirements.txt
-RUN pip install torch~=2.3.0 --index-url https://download.pytorch.org/whl/cpu
-RUN pip install onnxruntime~=1.19.2
 
-COPY ./iot_services /src/iot_services
-COPY . /src/iot_services
+COPY . /src/
 
 ENV SERVICE_TYPE CV
 
 EXPOSE 8080
-CMD [ "python", "iot_services/Service_Wrapper.py" ]
+CMD [ "python", "-m", "iot_services.Service_Wrapper" ]
