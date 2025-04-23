@@ -14,7 +14,7 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in utils.to_absolut_rps(self.client_arrivals)Container
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_1:300
+      - DEFAULT_CLIENTS=C_1:50
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux
@@ -41,7 +41,7 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_3:300
+      - DEFAULT_CLIENTS=C_3:50
       - TZ=Europe/Vienna
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux

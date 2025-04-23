@@ -11,8 +11,8 @@ import numpy as np
 import utils
 from agent.ES_Registry import ServiceType
 from iot_services.CvAnalyzer.FaceDetector import FaceDetector
-from iot_services.VideoReader import VideoReader
 from iot_services.IoTService import IoTService
+from iot_services.VideoReader import VideoReader
 from video_utils import fd_model_sizes
 
 logger = logging.getLogger("multiscale")
@@ -101,6 +101,10 @@ class CvAnalyzer(IoTService):
 
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")
+
+    # Since this has a static threadpool, no need to restart. Depending on the 3rd service I might move the method
+    def vertical_scaling(self, c_cores):
+        pass
 
 
 if __name__ == '__main__':

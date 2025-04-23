@@ -34,8 +34,6 @@ class TestSLO_Registry(TestCase):
         self.assertDictEqual(t_slos_c_3_cv, self.slos_c_3_cv)
 
     def test_calculate_slo_fulfillment_qr(self):
-        # TODO: See in agent if the state commonly looks like this
-
         t_slo_f_qr_1 = [("quality", 0.875), ("avg_p_latency", 0.8), ("completion_rate", 0.8)]
         slo_f_qr_1 = calculate_slo_fulfillment(self.service_state_qr, self.slos_c_1_qr)
         t_slo_f_qr_2 = [("quality", 1.0), ("avg_p_latency", 1.0), ("completion_rate", 1.0)]

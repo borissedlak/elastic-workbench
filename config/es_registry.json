@@ -21,7 +21,7 @@
         },
         {
           "ES_name": "resource_scaling",
-          "cooldown": 1500,
+          "cooldown": 2000,
           "endpoints": [
             {
               "target": "/resource_scaling",
@@ -42,7 +42,7 @@
       "elasticity_strategies": [
         {
           "ES_name": "resource_scaling",
-          "cooldown": 1500,
+          "cooldown": 1000,
           "endpoints": [
             {
               "target": "/resource_scaling",

@@ -34,7 +34,7 @@ class IoTService(ABC):
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
         self.docker_client = DockerClient()
         self.container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
-        self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(Any, EsType.STARTUP)  # Start with flag
+        self.flag_metric_cooldown = 0
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
@@ -75,10 +75,7 @@ class IoTService(ABC):
     def reinitialize_models(self):
         pass
 
-    # I'm always between calling this threads and cores, but it's the number of cores and I choose the threads
-    # according to that. I think this is best to keep the abstract structure of the services
     def vertical_scaling(self, c_cores):
-        self.set_flag_and_cooldown(EsType.RESOURCE_SCALE)
         self.terminate()
         # Wait until it is really terminated and then start new
         while not self._terminated:
@@ -86,7 +83,9 @@ class IoTService(ABC):
 
         self.cores_reserved = c_cores
         self.start_process()
+
         logger.info(f"{self.service_type} set to {c_cores} cores")
+        self.set_flag_and_cooldown(EsType.RESOURCE_SCALE)
 
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:

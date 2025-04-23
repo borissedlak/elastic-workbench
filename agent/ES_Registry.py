@@ -41,8 +41,6 @@ class ES_Registry:
         with open(es_registry_path, 'r') as f:
             self.es_api = json.load(f)
 
-        logger.info(self.es_api)
-
     def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:
         services = self.es_api['services']
         for service in services:
@@ -99,7 +97,7 @@ class ES_Registry:
 
     def get_ES_cooldown(self, service_type: ServiceType, es_type: EsType) -> int:
         if es_type == EsType.STARTUP:
-            return 3000
+            return 3500
 
         service_info = self.get_ES_information(service_type, es_type)
 
