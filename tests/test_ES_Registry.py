@@ -38,3 +38,8 @@ class TestES_Registry(TestCase):
         self.assertDictEqual(t_param_dict_qr, self.es_registry.get_parameter_bounds_for_active_ES(ServiceType.QR, 4))
 
         self.assertDictEqual({}, self.es_registry.get_parameter_bounds_for_active_ES(ServiceType.CV))
+
+    def test_get_random_ES_and_params(self):
+        random_es, random_params= self.es_registry.get_random_ES_and_params(ServiceType.QR)
+        self.assertTrue(random_es == EsType.QUALITY_SCALE or random_es == EsType.RESOURCE_SCALE)
+        self.assertEqual(1, len(random_params))

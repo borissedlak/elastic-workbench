@@ -2,9 +2,10 @@ import json
 import logging
 import random
 from enum import Enum
-from typing import NamedTuple, List, Dict
+from typing import NamedTuple, List, Dict, Tuple
 
 from HttpClient import HttpClient
+from agent import agent_utils
 
 logger = logging.getLogger("multiscale")
 
@@ -56,8 +57,15 @@ class ES_Registry:
         strategies = self.es_api.get(service_type.value, {})
         return [EsType(es) for es in strategies]
 
-    def get_random_ES_for_service(self, service_type: ServiceType) -> EsType:
+    def _get_random_ES_for_service(self, service_type: ServiceType) -> EsType:
         return random.choice(self.get_supported_ES_for_service(service_type))
+
+    def get_random_ES_and_params(self, service_type: ServiceType) -> Tuple[EsType, Dict]:
+        rand_ES = self._get_random_ES_for_service(service_type)
+        parameter_bounds = self.get_parameter_bounds_for_active_ES(service_type).get(rand_ES, {})
+        random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
+
+        return rand_ES, random_params
 
     def get_parameter_bounds_for_active_ES(self, service_type: ServiceType, available_cores=None) -> Dict[EsType, Dict]:
         parameter_bounds = {}

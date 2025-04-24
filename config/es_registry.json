@@ -41,16 +41,6 @@
           "max": 2
         }
       }
-    },
-    "deactivated_strategy": {
-      "cooldown": 1500,
-      "endpoint": "/deactivated_strategy",
-      "parameters": {
-        "model_size": {
-          "min": 1,
-          "max": 2
-        }
-      }
     }
   }
 }

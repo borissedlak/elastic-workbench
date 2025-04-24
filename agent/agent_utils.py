@@ -39,13 +39,13 @@ def filter_rows_during_cooldown(df: pd.DataFrame):
 
 
 def get_random_parameter_assignments(parameters):
-    random_ass = {}
+    random_params = {}
 
-    for param in parameters:
-        value = random.randint(param['min'], param['max'])
-        random_ass[param['name']] = value
+    for param, bounds in parameters.items():
+        random_ass = random.randint(bounds['min'], bounds['max'])
+        random_params[param] = random_ass
 
-    return random_ass
+    return random_params
 
 
 def to_partial(full_state):

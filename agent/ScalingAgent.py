@@ -93,7 +93,8 @@ class ScalingAgent(Thread):
                     for es_type in target_ES:
                         self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
                 else:
-                    self.execute_random_ES(host_fix, service_m.service_type)
+                    rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
+                    self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
 
             time.sleep(self.evaluation_cycle)
 
@@ -113,25 +114,16 @@ class ScalingAgent(Thread):
         print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
-    def execute_random_ES(self, host, service_type: ServiceType):
-        rand_ES = self.es_registry.get_random_ES_for_service(service_type)
-
-        self.execute_ES(host, service_type, rand_ES, None, True)
-
-    def execute_ES(self, host, service_type: ServiceType, es_type: EsType, all_params, random_ass=False):
-        params = all_params
+    def execute_ES(self, host, service_type: ServiceType, es_type: EsType, params):
 
         if not self.es_registry.is_ES_supported(service_type, es_type):
             logger.warning(f"Trying to call unsupported ES for {service_type}, {es_type}")
             return
 
-        ES_endpoints = self.es_registry.get_ES_information(service_type, es_type)['endpoints']
-        for endpoint in ES_endpoints:
-            if random_ass:
-                params = agent_utils.get_random_parameter_assignments(endpoint['parameters'])
+        ES_endpoint = self.es_registry.get_ES_information(service_type, es_type)['endpoint']
 
-            self.http_client.call_ES_endpoint(host, endpoint['target'], params)
-            logger.info(f"Calling {"random " if random_ass else ""}ES <{service_type},{es_type}> with {params}")
+        self.http_client.call_ES_endpoint(host, ES_endpoint, params)
+        logger.info(f"Calling ES <{service_type},{es_type}> with {params}")
 
     def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
 
@@ -154,11 +146,11 @@ class ScalingAgent(Thread):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
-        all_ES = self.es_registry.get_supported_ES_for_s(service.service_type)
+        all_ES = self.es_registry.get_supported_ES_for_service(service.service_type)
         return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
     @utils.print_execution_time
-    def get_assigned_cores(self, service_list: list[ServiceID]):
+    def get_assigned_cores(self, service_list: list[ServiceID]) -> Dict[str, int]:
         cores_per_service = {}
 
         for service_id in service_list:
