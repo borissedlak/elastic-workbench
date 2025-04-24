@@ -42,22 +42,14 @@ class ES_Registry:
             self.es_api = json.load(f)
 
     def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:
-        services = self.es_api['services']
-        for service in services:
-            if service['name'] == service_type.value:
-                for es in service['elasticity_strategies']:
-                    if (
-                            # es.get("service_type") == service_type and
-                            es.get("ES_name") == es_type.value
-                    ):
-                        if es_type.value in self.ES_activated.get(service_type.value, []):
-                            return True
-                        else:
-                            logger.info(
-                                f"Strategy <{service_type.value},{es_type.value}> is registered, but not activated")
-                            return False
+        if service_type.value in self.es_api and es_type.value in self.es_api[service_type.value]:
+            if es_type.value in self.ES_activated.get(service_type.value, []):
+                return True
 
-        logger.info("No corresponding strategy registered")
+            logger.warning(f"Strategy <{service_type.value},{es_type.value}> exists, but is not activated")
+            return False
+
+        logger.warning(f"Strategy <{service_type.value},{es_type.value}> does not exist")
         return False
 
     def get_active_ES_for_s(self, service_type: ServiceType) -> List[EsType]:

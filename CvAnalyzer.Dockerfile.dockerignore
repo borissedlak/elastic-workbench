@@ -1,5 +1,9 @@
 venv
 share/metrics
 agent/obsolete
+results
+tests
 
 iot_services/QrDetector
+# I still dont need the Yolo one here
+iot_services/CvAnalyzer_Yolo
