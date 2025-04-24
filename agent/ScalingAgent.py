@@ -154,7 +154,7 @@ class ScalingAgent(Thread):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
-        all_ES = self.es_registry.get_active_ES_for_s(service.service_type)
+        all_ES = self.es_registry.get_supported_ES_for_s(service.service_type)
         return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 
     @utils.print_execution_time
