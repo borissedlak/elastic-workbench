@@ -1,62 +1,74 @@
+import logging
+
 import open3d as o3d
 import numpy as np
 import time
-import os
+
+import utils
+
+logging.basicConfig(level=logging.INFO)
 
 # Load Eagle example point cloud
 eagle = o3d.data.EaglePointCloud()
-pcd = o3d.io.read_point_cloud(eagle.path)
-
-print(f"Original number of points: {np.asarray(pcd.points).shape[0]}")
+pcd_1 = o3d.io.read_point_cloud(eagle.path)
 
 # Downsample to speed up
-voxel_size = 0.002
-pcd = pcd.voxel_down_sample(voxel_size=voxel_size)
+pcd_2 = pcd_1.voxel_down_sample(voxel_size=0.002)
 
-print(f"Downsampled number of points: {np.asarray(pcd.points).shape[0]}")
+pcd_3 = pcd_1.voxel_down_sample(voxel_size=0.5)
 
-# Set colors (optional, but improves visibility)
-pcd.paint_uniform_color([1.0, 0.0, 0.0])  # Red points
+time.sleep(0.1)
 
-# Create a scene
-scene = o3d.visualization.rendering.Open3DScene(o3d.visualization.rendering.OffscreenRenderer(800, 600).scene)
+@utils.print_execution_time
+def export_img(data):
+    # Set colors (optional, but improves visibility)
+    # pcd.paint_uniform_color([1.0, 0.0, 0.0])  # Red points
 
-# Or create a new renderer first
-renderer = o3d.visualization.rendering.OffscreenRenderer(800, 600)
+    # Create OffscreenRenderer
+    renderer = o3d.visualization.rendering.OffscreenRenderer(800, 600)
 
-# Setup material
-material = o3d.visualization.rendering.MaterialRecord()
-material.shader = "defaultUnlit"  # no lighting (much faster)
-# material.point_size = 5.0          # FAT points
+    # Get the scene from the renderer
+    scene = renderer.scene
 
-# Add point cloud to scene
-scene = renderer.scene
-scene.add_geometry("eagle", pcd, material)
+    # Setup material for the point cloud
+    material = o3d.visualization.rendering.MaterialRecord()
+    material.shader = "defaultUnlit"  # no lighting for faster rendering
+    # material.point_size = 5.0         # Make points bigger
 
-# Set background color
-scene.set_background([0, 0, 0, 1])  # RGBA black
+    # Add the point cloud to the scene
+    scene.add_geometry("eagle", data, material)
 
-# Setup camera
-bounds = pcd.get_axis_aligned_bounding_box()
-center = bounds.get_center()
-extent = bounds.get_extent()
-diameter = np.linalg.norm(extent)
-camera = scene.camera
+    # Set the background color (black in this case)
+    scene.set_background([0, 0, 0, 1])  # RGBA black
 
-camera.look_at(center, center + [0, 0, 1], [0, -1, 0])  # look from z+, up is -y
-camera.set_projection(60.0, 800 / 600, 0.1, 1000.0)     # fov, aspect, near, far
-camera.set_zoom(0.6)
+    # Setup camera view (for visualization)
+    bounds = data.get_axis_aligned_bounding_box()
+    center = bounds.get_center()
+    # extent = bounds.get_extent()
+    # diameter = np.linalg.norm(extent)
+    camera = scene.camera
 
-# Wait a tiny bit if needed (not necessary here)
+    # Camera parameters
+    camera.look_at(center, center + [0, 0, 1], [0, -1, 0])  # Look at the center
 
-# Render to image
-image = renderer.render_to_image()
+    # Perspective projection using the correct method
+    camera.set_projection(
+        field_of_view=300.0,  # Field of view in degrees
+        aspect_ratio=800 / 600,  # Aspect ratio
+        near_plane=0.1,  # Near plane
+        far_plane=1000.0,  # Far plane
+        field_of_view_type=o3d.visualization.rendering.Camera.FovType.Horizontal  # Specify the FOV type
+    )
 
-# Save to disk
-output_path = "eagle_offscreen.png"
-o3d.io.write_image(output_path, image)
+    # Render the scene to an image
+    image = renderer.render_to_image()
 
-print(f"Saved image to {output_path}")
+    # Save the image to disk
+    output_path = "eagle_offscreen.png"
+    o3d.io.write_image(output_path, image)
 
-# Clean up
-renderer.release()
+    print(f"Saved image to {output_path}")
+
+export_img(pcd_1)
+export_img(pcd_2)
+export_img(pcd_3)
