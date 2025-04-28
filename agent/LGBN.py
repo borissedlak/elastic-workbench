@@ -9,7 +9,7 @@ from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 from scipy import stats
 
-import agent_utils
+from agent import agent_utils
 import utils
 from agent.ES_Registry import ServiceType
 from utils import print_execution_time
@@ -18,7 +18,7 @@ from utils import print_execution_time
 class LGBN:
     def __init__(self, show_figures=False):
         self.show_figures = show_figures
-        self.models: Dict[str, LinearGaussianBayesianNetwork] = self.init_models()
+        self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models()
 
     def init_models(self):
         df_combined = self.collect_all_metric_files()
@@ -34,9 +34,9 @@ class LGBN:
         return combined_df
 
     @utils.print_execution_time
-    def predict_lgbn_vars(self, partial_state, sanitize=True):
+    def predict_lgbn_vars(self, partial_state, service_type: ServiceType, sanitize=True):
         wrapped_in_list = {k: [v] for k, v in partial_state.items()}
-        var, mean, vari = self.models.predict(pd.DataFrame(wrapped_in_list))
+        var, mean, vari = self.models[service_type].predict(pd.DataFrame(wrapped_in_list))
 
         samples = {}
         for index, v in enumerate(var):
@@ -52,14 +52,14 @@ class LGBN:
 
         return partial_state | samples
 
-    def get_expected_state(self, partial_state, assigned_clients):
-        partial_state_extended = self.predict_lgbn_vars(partial_state)
-        full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
+    def get_expected_state(self, partial_state, service_type: ServiceType, total_rps):
+        partial_state_extended = self.predict_lgbn_vars(partial_state, service_type)
+        full_state_expected = calculate_missing_vars(partial_state_extended, total_rps)
         return full_state_expected
 
     def get_linear_relations(self, service_type: ServiceType) -> Dict[str, LinearGaussianCPD]:
         linear_relations = {}
-        for cpd in self.models[service_type.value].get_cpds():
+        for cpd in self.models[service_type].get_cpds():
             if not cpd.evidence:  # Only get those relations with dependencies
                 continue
 
@@ -67,7 +67,7 @@ class LGBN:
         return linear_relations
 
 
-def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
+def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
     if "throughput" not in partial_state.keys():
@@ -75,8 +75,7 @@ def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
         full_state = full_state | {"throughput": throughput_expected}
 
     if "completion_rate" not in partial_state.keys():
-        target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_r_expected = full_state['throughput'] / target_throughput
+        completion_r_expected = full_state['throughput'] / total_rps
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
@@ -113,22 +112,22 @@ def get_local_metric_file(path="../share/metrics/metrics.csv"):
 def train_lgbn_model(df, show_result=False):
     service_models = {}
 
-    for service_type in df['service_type'].unique():
-        model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type)))
-        df_service = df[df['service_type'] == service_type]
+    for service_type_s in df['service_type'].unique():
+        model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type_s)))
+        df_service = df[df['service_type'] == service_type_s]
         model.fit(df_service)
 
         for cpd in model.get_cpds():
             print(cpd)
 
         if show_result:
-            for states in [[t[0], t[1]] for t in get_edges_for_service_type(ServiceType(service_type))]:
+            for states in [[t[0], t[1]] for t in get_edges_for_service_type(ServiceType(service_type_s))]:
                 X_samples = model.simulate(1500, 35)
                 X_df = pd.DataFrame(X_samples, columns=states)
 
                 sns.jointplot(x=X_df[states[0]], y=X_df[states[1]], kind="kde", height=10, space=0, cmap="viridis")
                 plt.show()
-        service_models[service_type] = model
+        service_models[ServiceType(service_type_s)] = model
 
     return service_models
 
