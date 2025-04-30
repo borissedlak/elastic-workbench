@@ -29,20 +29,18 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
-        self.detectors = {}
+        self.detector = None
         self.metric_buffer = []
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
         model_path = ROOT + f"/models/version-RFB-{fd_model_sizes[self.service_conf['model_size']]}.onnx"
-        # TODO: Remove list
-        for i in range(0, self.cores_reserved):
-            self.detectors[i] = FaceDetector(model_path)
+        self.detector = FaceDetector(model_path)
 
     def process_one_iteration(self, config_params, frame) -> (Any, int):
         start = time.perf_counter()
 
-        detector_index = int(threading.current_thread().name.split("_")[1])
-        processed_frame = self.detectors[detector_index].detect_faces(frame)
+        # detector_index = int(threading.current_thread().name.split("_")[1])
+        processed_frame = self.detector.detect_faces(frame)
         # self.model.detect_faces(frame)
 
         # Resulting image and total processing time --> unused
@@ -53,26 +51,26 @@ class CvAnalyzer(IoTService):
         self.reinitialize_models()  # Place here so that it reloads when cores are changed
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                start_time = time.perf_counter()
-                buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
-                future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
-                               for frame in buffer}
+            # with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            start_time = time.perf_counter()
+            buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
+            # future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
+            #                for frame in buffer}
 
-                processed_item_counter = 0
-                processed_item_durations = []
-                for future in concurrent.futures.as_completed(future_dict):
-                    processed_item_durations.append(np.abs(future.result()[1]))
-                    processed_item_counter += 1
+            processed_item_counter = 0
+            processed_item_durations = []
+            for frame in buffer:
+                result = self.process_one_iteration(self.service_conf, frame)
+                processed_item_durations.append(np.abs(result[1]))
+                processed_item_counter += 1
 
-                    # cv2.imshow("Detected Objects", future.result()[0])
-                    # # Press key q to stop
-                    # if cv2.waitKey(1) & 0xFF == ord('q'):
-                    #     self.terminate()
+                # cv2.imshow("Detected Objects", future.result()[0])
+                # # Press key q to stop
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                #     self.terminate()
 
-                    if self.has_processing_timeout(start_time):
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        break
+                if self.has_processing_timeout(start_time):
+                    break
 
             # logger.info(processed_item_durations)
             # logger.info(processed_item_counter)
@@ -104,7 +102,7 @@ class CvAnalyzer(IoTService):
 
     # Since this has a static threadpool, no need to restart. Depending on the 3rd service I might move the method
     def vertical_scaling(self, c_cores):
-        pass
+        self.cores_reserved = c_cores
 
 
 if __name__ == '__main__':

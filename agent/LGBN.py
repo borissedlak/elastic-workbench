@@ -5,33 +5,28 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+from pgmpy.base import DAG
+from pgmpy.estimators import AIC, HillClimbSearch
 from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 from scipy import stats
 
-from agent import agent_utils
 import utils
+from agent import agent_utils
 from agent.ES_Registry import ServiceType
 from utils import print_execution_time
 
 
 class LGBN:
-    def __init__(self, show_figures=False):
+    def __init__(self, show_figures=False, structural_training=False):
         self.show_figures = show_figures
+        self.structural_training = structural_training
         self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models()
 
     def init_models(self):
-        df_combined = self.collect_all_metric_files()
+        df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
-        return train_lgbn_model(df_cleared, show_result=self.show_figures)
-
-    # TODO: This should also fetch files from remote hosts
-    # TODO: Also, if I implement multiple service types, this must be considered here
-    def collect_all_metric_files(self):
-        metrics_local = get_local_metric_file()
-        metrics_contents = [metrics_local]
-        combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
-        return combined_df
+        return train_lgbn_model(df_cleared, self.show_figures, self.structural_training)
 
     @utils.print_execution_time
     def predict_lgbn_vars(self, partial_state, service_type: ServiceType, sanitize=True):
@@ -67,6 +62,7 @@ class LGBN:
         return linear_relations
 
 
+# TODO: This is somehow a mess, I wish I could include the replication factor
 def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
@@ -100,6 +96,15 @@ def preprocess_data(df):
     return combined_df_expanded
 
 
+# TODO: This should also fetch files from remote hosts
+# TODO: Also, if I implement multiple service types, this must be considered here
+def collect_all_metric_files():
+    metrics_local = get_local_metric_file()
+    metrics_contents = [metrics_local]
+    combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
+    return combined_df
+
+
 def get_local_metric_file(path="../share/metrics/metrics.csv"):
     try:
         df = pd.read_csv(path)
@@ -109,12 +114,24 @@ def get_local_metric_file(path="../share/metrics/metrics.csv"):
 
 
 @print_execution_time  # Roughly 1 to 1.5s
-def train_lgbn_model(df, show_result=False):
+def train_lgbn_model(df, show_result=False, structure_training=False):
     service_models = {}
 
     for service_type_s in df['service_type'].unique():
-        model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type_s)))
         df_service = df[df['service_type'] == service_type_s]
+
+        if structure_training:
+            del df_service['service_type']
+            del df_service['container_id']
+
+            scoring_method = AIC(data=df_service)  # BDeuScore | AICScore
+            estimator = HillClimbSearch(data=df_service)
+
+            dag: DAG = estimator.estimate(scoring_method=scoring_method, max_indegree=5)
+            model = LinearGaussianBayesianNetwork(ebunch=dag)
+        else:
+            model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type_s)))
+
         model.fit(df_service)
 
         for cpd in model.get_cpds():
@@ -142,7 +159,7 @@ def get_edges_for_service_type(service_type: ServiceType):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=True)
+    lgbn = LGBN(show_figures=False, structural_training=False)
     print(lgbn.get_linear_relations(ServiceType.CV))
     # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     # print("Full State", state_expected)

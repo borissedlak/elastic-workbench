@@ -1,33 +1,137 @@
+# from sklearn.linear_model import LinearRegression
+# from sklearn.preprocessing import PolynomialFeatures
+#
+# from agent import LGBN
+# from agent.ES_Registry import ServiceType
+#
+# df = LGBN.preprocess_data(LGBN.collect_all_metric_files())
+# df = df[df['service_type'] == ServiceType.QR.value]
+#
+# # Suppose you already have a DataFrame `df` with columns: x1, x2, y
+# X = df[['cores', 'quality']]  # independent variables
+# y = df['avg_p_latency']  # dependent variable
+#
+# # Create polynomial features up to degree 2 (you can try higher too)
+# poly = PolynomialFeatures(degree=1, include_bias=False)
+# X_poly = poly.fit_transform(X)
+#
+# # Fit the model
+# model = LinearRegression()
+# model.fit(X_poly, y)
+#
+# # Inspect learned coefficients
+# print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'quality']))
+# print("Coefficients:", model.coef_)
+# print("Intercept:", model.intercept_)
+#
+# # Predict on new data or the original
+# y_pred = model.predict(X_poly)
+#
+# import plotly.graph_objects as go
+# import numpy as np
+#
+# # Create a meshgrid as before
+# x1_range = np.linspace(df['cores'].min(), df['cores'].max(), 50)
+# x2_range = np.linspace(df['quality'].min(), df['quality'].max(), 50)
+# x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+#
+# # Predict on the grid
+# X_grid = np.column_stack((x1_grid.ravel(), x2_grid.ravel()))
+# X_poly_grid = poly.transform(X_grid)
+# y_pred_grid = model.predict(X_poly_grid).reshape(x1_grid.shape)
+#
+# # Create the surface plot
+# fig = go.Figure(data=[
+#     go.Surface(x=x1_grid, y=x2_grid, z=y_pred_grid, colorscale='Viridis', opacity=0.7),
+#     go.Scatter3d(
+#         x=df['cores'],
+#         y=df['quality'],
+#         z=df['avg_p_latency'],
+#         mode='markers',
+#         marker=dict(size=4, color='red'),
+#         name='Actual Data'
+#     )
+# ])
+#
+# fig.update_layout(
+#     title='Interactive 3D Polynomial Regression Surface',
+#     scene=dict(
+#         xaxis_title='Cores',
+#         yaxis_title='Quality',
+#         zaxis_title='Avg P Latency'
+#     ),
+#     width=900,
+#     height=700
+# )
+#
+# fig.show()
+#
+
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+
+from agent import LGBN
+from agent.ES_Registry import ServiceType
+
+df = LGBN.preprocess_data(LGBN.collect_all_metric_files())
+df = df[df['service_type'] == ServiceType.CV.value]
+
+# Suppose you already have a DataFrame `df` with columns: x1, x2, y
+X = df[['cores', 'model_size']]  # independent variables
+y = df['avg_p_latency']  # dependent variable
+
+# Create polynomial features up to degree 2 (you can try higher too)
+poly = PolynomialFeatures(degree=1, include_bias=False)
+X_poly = poly.fit_transform(X)
+
+# Fit the model
+model = LinearRegression()
+model.fit(X_poly, y)
+
+# Inspect learned coefficients
+print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'model_size']))
+print("Coefficients:", model.coef_)
+print("Intercept:", model.intercept_)
+
+# Predict on new data or the original
+y_pred = model.predict(X_poly)
+
+import plotly.graph_objects as go
 import numpy as np
-import matplotlib.pyplot as plt
 
-# Tuned Sigmoid
-def tuned_sigmoid(x):
-    sharpness = 10  # make it sharper
-    return 1 / (1 + np.exp(-sharpness * (x - 0.5)))  # center at 0.5
+# Create a meshgrid as before
+x1_range = np.linspace(df['cores'].min(), df['cores'].max(), 50)
+x2_range = np.linspace(df['model_size'].min(), df['model_size'].max(), 50)
+x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
 
-# Tuned Tanh
-def tuned_tanh(x):
-    sharpness = 3  # smaller than sigmoid to match shapes better
-    return (np.tanh(sharpness * (x - 0.5)) + 1) / 2  # center at 0.5 and scale to [0,1]
+# Predict on the grid
+X_grid = np.column_stack((x1_grid.ravel(), x2_grid.ravel()))
+X_poly_grid = poly.transform(X_grid)
+y_pred_grid = model.predict(X_poly_grid).reshape(x1_grid.shape)
 
-# Generate x values
-x = np.linspace(-0.5, 1.5, 500)  # wider view around [0,1]
+# Create the surface plot
+fig = go.Figure(data=[
+    go.Surface(x=x1_grid, y=x2_grid, z=y_pred_grid, colorscale='Viridis', opacity=0.7),
+    go.Scatter3d(
+        x=df['cores'],
+        y=df['model_size'],
+        z=df['avg_p_latency'],
+        mode='markers',
+        marker=dict(size=4, color='red'),
+        name='Actual Data'
+    )
+])
 
-# Compute tuned activations
-y_sigmoid = tuned_sigmoid(x)
-y_tanh = tuned_tanh(x)
+fig.update_layout(
+    title='Interactive 3D Polynomial Regression Surface',
+    scene=dict(
+        xaxis_title='Cores',
+        yaxis_title='model_size',
+        zaxis_title='Avg P Latency'
+    ),
+    width=900,
+    height=700
+)
 
-# Plot
-plt.figure(figsize=(10, 6))
-plt.plot(x, y_sigmoid, label='Tuned Sigmoid', linestyle='-')
-plt.plot(x, y_tanh, label='Tuned Tanh', linestyle='--')
+fig.show()
 
-plt.title('Tuned Sigmoid and Tanh (0 below 0, 1 above 1)')
-plt.xlabel('x')
-plt.ylabel('Activation Output')
-plt.axvline(x=0, color='grey', linestyle=':', label='x=0')
-plt.axvline(x=1, color='grey', linestyle='--', label='x=1')
-plt.grid(True)
-plt.legend()
-plt.show()
