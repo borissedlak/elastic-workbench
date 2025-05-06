@@ -4,16 +4,16 @@ from typing import NamedTuple
 
 import gymnasium
 import numpy as np
-import pandas as pd
 
 import utils
 from agent.ES_Registry import ServiceType
 from agent.LGBN import LGBN
-from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry
+from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry, SLO, to_avg_SLO_F
 
 logger = logging.getLogger("multiscale")
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
+
 
 class LGBN_Env(gymnasium.Env):
     def __init__(self):
@@ -48,8 +48,11 @@ class LGBN_Env(gymnasium.Env):
         new_state['fps'] = self.sample_values_from_lgbn(new_state['pixel'], new_state['cores'])['fps']
         self.state = Full_State(**new_state)
 
-        client_SLOs = self.slo_registry.get_SLOs_for_client("C_1", ServiceType.QR_DEPRECATED)
-        reward = np.sum(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + punishment_off
+        # client_SLOs = self.slo_registry.get_SLOs_for_client("LGBN", ServiceType.QR_DEPRECATED)
+        client_SLOs = {
+            'pixel': SLO(**{'var': 'pixel', 'larger': True, 'thresh': self.state.pixel_thresh, 'weight': 1.0}),
+            'fps': SLO(**{'var': 'fps', 'larger': False, 'thresh': self.state.fps_thresh, 'weight': 1.0})}
+        reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + punishment_off
         return self.state, reward, False, False, {}
 
     # @utils.print_execution_time

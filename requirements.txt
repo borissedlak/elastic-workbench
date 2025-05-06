@@ -11,3 +11,6 @@ seaborn~=0.13.2
 pgmpy~=1.0.0
 matplotlib~=3.9.2
 redis~=5.2.1
+
+# Required for IWAI
+gymnasium~=1.1.1

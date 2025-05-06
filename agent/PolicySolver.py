@@ -1,7 +1,6 @@
 import random
 from typing import Dict
 
-import numpy as np
 from pgmpy.factors.continuous import LinearGaussianCPD
 from scipy.optimize import minimize
 
