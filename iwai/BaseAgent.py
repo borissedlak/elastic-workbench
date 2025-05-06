@@ -6,7 +6,7 @@ import utils
 from DockerClient import DockerInfo
 from agent.ScalingAgent_v2 import ScalingAgent
 from agent.agent_utils import log_agent_experience
-from agent.obsolete.slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
+from slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 # MAX_CORES = utils.get_env_param('MAX_CORES', 10)
@@ -27,7 +27,7 @@ class BaseAgent(ScalingAgent):
 
         initial_state = self.get_state_PW()
         with access_state:
-            core_state = core_state | {self.container.container_id: initial_state.cores}
+            core_state = core_state | {self.container.id: initial_state.cores}
             logger.info(core_state)
 
         while self._running:

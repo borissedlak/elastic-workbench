@@ -18,17 +18,21 @@ from utils import print_execution_time
 
 
 class LGBN:
-    def __init__(self, show_figures=False, structural_training=False):
+    def __init__(self, show_figures=False, structural_training=False, df = None):
         self.show_figures = show_figures
         self.structural_training = structural_training
-        self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models()
+        self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models(df)
 
-    def init_models(self):
-        df_combined = collect_all_metric_files()
-        df_cleared = preprocess_data(df_combined)
+    def init_models(self, df):
+        if df is None: # Remove this df when not needed anymore
+            df_combined = collect_all_metric_files()
+            df_cleared = preprocess_data(df_combined)
+        else:
+            df_cleared = df
+
         return train_lgbn_model(df_cleared, self.show_figures, self.structural_training)
 
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def predict_lgbn_vars(self, partial_state, service_type: ServiceType, sanitize=True):
         wrapped_in_list = {k: [v] for k, v in partial_state.items()}
         var, mean, vari = self.models[service_type].predict(pd.DataFrame(wrapped_in_list))
@@ -154,6 +158,8 @@ def get_edges_for_service_type(service_type: ServiceType):
         return [('quality', 'avg_p_latency')]
     elif service_type == ServiceType.CV:
         return [('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')]
+    elif service_type == ServiceType.QR_DEPRECATED:
+        return [('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
