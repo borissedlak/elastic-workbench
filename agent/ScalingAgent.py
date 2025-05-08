@@ -10,7 +10,7 @@ from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent import agent_utils, PolicySolver
+from agent import PolicySolver
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import LGBN
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
@@ -88,13 +88,10 @@ class ScalingAgent(Thread):
                     logger.warning(warning_msg)
                     continue
 
-                if False:  # random.randint(1, 2) == 1:
-                    target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
-                    for es_type in target_ES:
-                        self.execute_ES(host_fix, service_m.service_type, es_type, all_elastic_params_ass)
-                else:
-                    rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-                    self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
+                # target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
+
+                rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
+                self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
 
             time.sleep(self.evaluation_cycle)
 

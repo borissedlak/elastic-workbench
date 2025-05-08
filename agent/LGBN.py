@@ -5,38 +5,37 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+from pgmpy.base import DAG
+from pgmpy.estimators import AIC, HillClimbSearch
 from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 from scipy import stats
 
-import agent_utils
 import utils
+from agent import agent_utils
 from agent.ES_Registry import ServiceType
 from utils import print_execution_time
 
 
 class LGBN:
-    def __init__(self, show_figures=False):
+    def __init__(self, show_figures=False, structural_training=False, df = None):
         self.show_figures = show_figures
-        self.models: Dict[str, LinearGaussianBayesianNetwork] = self.init_models()
+        self.structural_training = structural_training
+        self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models(df)
 
-    def init_models(self):
-        df_combined = self.collect_all_metric_files()
-        df_cleared = preprocess_data(df_combined)
-        return train_lgbn_model(df_cleared, show_result=self.show_figures)
+    def init_models(self, df):
+        if df is None: # Remove this df when not needed anymore
+            df_combined = collect_all_metric_files()
+            df_cleared = preprocess_data(df_combined)
+        else:
+            df_cleared = df
 
-    # TODO: This should also fetch files from remote hosts
-    # TODO: Also, if I implement multiple service types, this must be considered here
-    def collect_all_metric_files(self):
-        metrics_local = get_local_metric_file()
-        metrics_contents = [metrics_local]
-        combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
-        return combined_df
+        return train_lgbn_model(df_cleared, self.show_figures, self.structural_training)
 
-    @utils.print_execution_time
-    def predict_lgbn_vars(self, partial_state, sanitize=True):
+    # @utils.print_execution_time
+    def predict_lgbn_vars(self, partial_state, service_type: ServiceType, sanitize=True):
         wrapped_in_list = {k: [v] for k, v in partial_state.items()}
-        var, mean, vari = self.models.predict(pd.DataFrame(wrapped_in_list))
+        var, mean, vari = self.models[service_type].predict(pd.DataFrame(wrapped_in_list))
 
         samples = {}
         for index, v in enumerate(var):
@@ -52,14 +51,14 @@ class LGBN:
 
         return partial_state | samples
 
-    def get_expected_state(self, partial_state, assigned_clients):
-        partial_state_extended = self.predict_lgbn_vars(partial_state)
-        full_state_expected = calculate_missing_vars(partial_state_extended, assigned_clients)
+    def get_expected_state(self, partial_state, service_type: ServiceType, total_rps):
+        partial_state_extended = self.predict_lgbn_vars(partial_state, service_type)
+        full_state_expected = calculate_missing_vars(partial_state_extended, total_rps)
         return full_state_expected
 
     def get_linear_relations(self, service_type: ServiceType) -> Dict[str, LinearGaussianCPD]:
         linear_relations = {}
-        for cpd in self.models[service_type.value].get_cpds():
+        for cpd in self.models[service_type].get_cpds():
             if not cpd.evidence:  # Only get those relations with dependencies
                 continue
 
@@ -67,7 +66,8 @@ class LGBN:
         return linear_relations
 
 
-def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
+# TODO: This is somehow a mess, I wish I could include the replication factor
+def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
     if "throughput" not in partial_state.keys():
@@ -75,8 +75,7 @@ def calculate_missing_vars(partial_state, assigned_clients: Dict[str, int]):
         full_state = full_state | {"throughput": throughput_expected}
 
     if "completion_rate" not in partial_state.keys():
-        target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_r_expected = full_state['throughput'] / target_throughput
+        completion_r_expected = full_state['throughput'] / total_rps
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
@@ -101,6 +100,15 @@ def preprocess_data(df):
     return combined_df_expanded
 
 
+# TODO: This should also fetch files from remote hosts
+# TODO: Also, if I implement multiple service types, this must be considered here
+def collect_all_metric_files():
+    metrics_local = get_local_metric_file()
+    metrics_contents = [metrics_local]
+    combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
+    return combined_df
+
+
 def get_local_metric_file(path="../share/metrics/metrics.csv"):
     try:
         df = pd.read_csv(path)
@@ -110,25 +118,37 @@ def get_local_metric_file(path="../share/metrics/metrics.csv"):
 
 
 @print_execution_time  # Roughly 1 to 1.5s
-def train_lgbn_model(df, show_result=False):
+def train_lgbn_model(df, show_result=False, structure_training=False):
     service_models = {}
 
-    for service_type in df['service_type'].unique():
-        model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type)))
-        df_service = df[df['service_type'] == service_type]
+    for service_type_s in df['service_type'].unique():
+        df_service = df[df['service_type'] == service_type_s]
+
+        if structure_training:
+            del df_service['service_type']
+            del df_service['container_id']
+
+            scoring_method = AIC(data=df_service)  # BDeuScore | AICScore
+            estimator = HillClimbSearch(data=df_service)
+
+            dag: DAG = estimator.estimate(scoring_method=scoring_method, max_indegree=5)
+            model = LinearGaussianBayesianNetwork(ebunch=dag)
+        else:
+            model = LinearGaussianBayesianNetwork(get_edges_for_service_type(ServiceType(service_type_s)))
+
         model.fit(df_service)
 
         for cpd in model.get_cpds():
             print(cpd)
 
         if show_result:
-            for states in [[t[0], t[1]] for t in get_edges_for_service_type(ServiceType(service_type))]:
+            for states in [[t[0], t[1]] for t in get_edges_for_service_type(ServiceType(service_type_s))]:
                 X_samples = model.simulate(1500, 35)
                 X_df = pd.DataFrame(X_samples, columns=states)
 
                 sns.jointplot(x=X_df[states[0]], y=X_df[states[1]], kind="kde", height=10, space=0, cmap="viridis")
                 plt.show()
-        service_models[service_type] = model
+        service_models[ServiceType(service_type_s)] = model
 
     return service_models
 
@@ -138,12 +158,14 @@ def get_edges_for_service_type(service_type: ServiceType):
         return [('quality', 'avg_p_latency')]
     elif service_type == ServiceType.CV:
         return [('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')]
+    elif service_type == ServiceType.QR_DEPRECATED:
+        return [('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=True)
+    lgbn = LGBN(show_figures=False, structural_training=False)
     print(lgbn.get_linear_relations(ServiceType.CV))
     # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
     # print("Full State", state_expected)
