@@ -9,6 +9,7 @@ from agent.ES_Registry import ServiceID, ServiceType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
 from iwai.DQN_Trainer import DQN
 from iwai.DQN_Trainer import STATE_DIM
+from iwai.LGBN_Env import Full_State
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
@@ -25,8 +26,11 @@ class DQN_Agent(ScalingAgent):
 
         self.dqn = DQN(state_dim=STATE_DIM, action_dim=5)
 
-    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
-        pass
+    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
+        max_available_c = self.get_max_available_cores(service)
+        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
+
+        state_pw = Full_State(service_state.quality, )
         action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
 
 

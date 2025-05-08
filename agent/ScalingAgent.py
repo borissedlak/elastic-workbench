@@ -12,7 +12,6 @@ from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
-from agent.LGBN import LGBN
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
 
 logging.basicConfig(level=logging.INFO)
@@ -88,7 +87,7 @@ class ScalingAgent(Thread, ABC):
                     logger.warning(warning_msg)
                     continue
 
-                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
+                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
 
                 rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
                 self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
@@ -123,7 +122,7 @@ class ScalingAgent(Thread, ABC):
         logger.info(f"Calling ES <{service_type},{es_type}> with {params}")
 
     @abstractmethod
-    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
+    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
         pass
 
     def get_max_available_cores(self, service: ServiceID):

@@ -20,7 +20,7 @@ class LGBNAgent(ScalingAgent):
 
         self.lgbn = LGBN()
 
-    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
+    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
 
         max_available_c = self.get_max_available_cores(service)
         # TODO: The problem is that these parameter bounds are different from the policy solver test

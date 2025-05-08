@@ -159,7 +159,7 @@ def get_edges_for_service_type(service_type: ServiceType):
     elif service_type == ServiceType.CV:
         return [('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')]
     elif service_type == ServiceType.QR_DEPRECATED:
-        return [('pixel', 'fps'), ('cores', 'fps'), ('cores', 'energy'), ('pixel', 'energy')]
+        return [('quality', 'throughput'), ('cores', 'throughput')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 

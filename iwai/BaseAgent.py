@@ -43,7 +43,7 @@ class BaseAgent(ScalingAgent):
 
     def choose_action(self, state: Full_State):
 
-        rate = state.fps / state.fps_thresh
+        rate = state.throughput / state.tp_thresh
 
         if rate < 1.0 and state.free_cores > 0:
             return 4
