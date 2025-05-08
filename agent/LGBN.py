@@ -70,6 +70,8 @@ class LGBN:
 def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
+    # TODO: I need to change this formula and remove the #cores as a factor, but include them in the LGBN
+    #  Also, I will have to calculate the throughput as the min ((1000 / avg_p), rps)
     if "throughput" not in partial_state.keys():
         throughput_expected = (1000 / partial_state['avg_p_latency']) * partial_state['cores']
         full_state = full_state | {"throughput": throughput_expected}

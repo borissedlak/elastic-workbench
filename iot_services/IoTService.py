@@ -11,7 +11,7 @@ from prometheus_client import start_http_server, Gauge
 import utils
 from DockerClient import DockerClient
 from RedisClient import RedisClient
-from agent.ES_Registry import EsType, ES_Registry, ServiceID
+from agent.ES_Registry import EsType, ES_Registry, ServiceID, ServiceType
 
 logger = logging.getLogger("multiscale")
 
@@ -22,7 +22,7 @@ REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 class IoTService(ABC):
     def __init__(self, store_to_csv=True):
         self.docker_container_ref = CONTAINER_REF
-        self.service_type = None
+        self.service_type = ServiceType.UNKNOWN
         self._terminated = True
         self._running = False
         self.service_conf = {}
@@ -55,11 +55,17 @@ class IoTService(ABC):
         avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
         self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                        metric_id="avg_p_latency").set(avg_p_latency_v)
-        self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                 metric_id="quality").set(self.service_conf['quality'])
         self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                metric_id="cores").set(self.cores_reserved)
 
+        if self.service_type == ServiceType.CV:
+            self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                        metric_id="model_size").set(self.service_conf['model_size'])
+        elif self.service_type in [ServiceType.QR, ServiceType.QR_DEPRECATED]:
+            self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                     metric_id="quality").set(self.service_conf['quality'])
+
+        # TODO: I might need to log the rps as well
         if self.store_to_csv:
             metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
                               self.service_conf, self.cores_reserved, self.flag_metric_cooldown)]
