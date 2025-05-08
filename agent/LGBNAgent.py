@@ -41,6 +41,7 @@ class LGBNAgent(ScalingAgent):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
+        # TODO: This returns multiple ES that can all be executed, however ScalingAgent.py only uses one
         all_ES = self.es_registry.get_supported_ES_for_service(service.service_type)
         return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
 

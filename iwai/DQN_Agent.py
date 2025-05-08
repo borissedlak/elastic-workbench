@@ -5,7 +5,7 @@ from typing import Dict
 import numpy as np
 
 import utils
-from agent.ES_Registry import ServiceID, ServiceType
+from agent.ES_Registry import ServiceID, ServiceType, EsType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
 from iwai.DQN_Trainer import DQN
 from iwai.DQN_Trainer import STATE_DIM
@@ -30,8 +30,19 @@ class DQN_Agent(ScalingAgent):
         max_available_c = self.get_max_available_cores(service)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
 
-        state_pw = Full_State(service_state.quality, )
+        quality_t, throughput_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
+        state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'], throughput_t,
+                              service_state['cores'], max_available_c)
         action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
+
+        if 1 <= action_pw <= 2:
+            delta_quality = -100 if action_pw == 1 else 100
+            return EsType.QUALITY_SCALE, {'quality': int(state_pw.quality + delta_quality)}
+        if 3 <= action_pw <= 4:
+            delta_cores = -1 if action_pw == 3 else 1
+            return EsType.RESOURCE_SCALE, {'cores': int(state_pw.cores + delta_cores)}
+
+        return None, None
 
 
 if __name__ == '__main__':

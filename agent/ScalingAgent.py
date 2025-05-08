@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
-EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 30))
+EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
 
 
 class ScalingAgent(Thread, ABC):
@@ -88,9 +88,11 @@ class ScalingAgent(Thread, ABC):
                     continue
 
                 target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
+                if target_ES is not None:
+                    self.execute_ES(host_fix, service_m.service_type, target_ES, all_elastic_params_ass)
 
-                rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-                self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
+                # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
+                # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
 
             time.sleep(self.evaluation_cycle)
 

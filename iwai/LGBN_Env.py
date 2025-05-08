@@ -50,7 +50,7 @@ class LGBN_Env(gymnasium.Env):
         # client_SLOs = self.slo_registry.get_SLOs_for_client("LGBN", ServiceType.QR_DEPRECATED)
         client_SLOs = {
             'quality': SLO(**{'var': 'quality', 'larger': True, 'thresh': self.state.quality_thresh, 'weight': 1.0}),
-            'throughput': SLO(**{'var': 'throughput', 'larger': False, 'thresh': self.state.tp_thresh, 'weight': 1.0})}
+            'throughput': SLO(**{'var': 'throughput', 'larger': True, 'thresh': self.state.tp_thresh, 'weight': 1.0})}
         reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + punishment_off
         return self.state, reward, False, False, {}
 
