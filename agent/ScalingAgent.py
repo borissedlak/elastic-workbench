@@ -163,5 +163,5 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[qr_local, cv_local], prom_server=ps,
+    ScalingAgent(services_monitored=[cv_local], prom_server=ps,
                  evaluation_cycle=EVALUATION_CYCLE_DELAY).start()
