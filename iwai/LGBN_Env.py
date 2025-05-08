@@ -22,24 +22,28 @@ class LGBN_Env(gymnasium.Env):
         # self.slo_registry = SLO_Registry("../config/slo_config.json")
 
     def step(self, action):
-        punishment_off = 0
+        behavioral_punishment = 0
         new_state = self.state._asdict()
+
+        # Do nothing at 0
+        if action == 0:
+            behavioral_punishment = 0.1  # Encourage the client not to oscillate
 
         # Do nothing at 0
         if 1 <= action <= 2:
             delta_quality = -100 if action == 1 else 100
-            if new_state['quality'] == 100 or new_state['quality'] >= 2000:
-                punishment_off = - 30
+            if (self.state.quality + delta_quality < 300) or (self.state.quality + delta_quality > 1100):
+                behavioral_punishment = - 30
             else:
                 new_state['quality'] = new_state['quality'] + delta_quality
 
         elif 3 <= action <= 4:
             delta_cores = -1 if action == 3 else 1
 
-            if delta_cores == -1 and new_state['cores'] == 1:  # Want to go lower
-                punishment_off = - 30
-            elif delta_cores == +1 and new_state['free_cores'] <= 0:  # Want to consume what does not exist
-                punishment_off = - 30
+            if delta_cores == -1 and self.state.cores == 1:  # Want to go lower
+                behavioral_punishment = - 30
+            elif delta_cores == +1 and self.state.free_cores <= 0:  # Want to consume what does not exist
+                behavioral_punishment = - 30
             else:
                 new_state['cores'] = new_state['cores'] + delta_cores
                 new_state['free_cores'] = new_state['free_cores'] - delta_cores
@@ -51,7 +55,7 @@ class LGBN_Env(gymnasium.Env):
         client_SLOs = {
             'quality': SLO(**{'var': 'quality', 'larger': True, 'thresh': self.state.quality_thresh, 'weight': 1.0}),
             'throughput': SLO(**{'var': 'throughput', 'larger': True, 'thresh': self.state.tp_thresh, 'weight': 1.0})}
-        reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + punishment_off
+        reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + behavioral_punishment
         return self.state, reward, False, False, {}
 
     # @utils.print_execution_time
@@ -61,12 +65,12 @@ class LGBN_Env(gymnasium.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        quality = randint(3, 10) * 100
+        quality = randint(3, 11) * 100
+        quality_thresh = max(quality, randint(3, 11) * 100)
         ass_cores = randint(1, PHYSICAL_CORES)
         free_cores = PHYSICAL_CORES - ass_cores
         throughput = self.sample_values_from_lgbn(quality, ass_cores)['throughput']
-        quality_thresh = randint(5, 12) * 100
-        tp_thresh = randint(20, 40)
+        tp_thresh = randint(10, 1000)
 
         self.state = Full_State(quality, quality_thresh, throughput, tp_thresh, ass_cores, free_cores)
         return self.state, {}

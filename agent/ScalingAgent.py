@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
-EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
+EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 7))
 
 
 class ScalingAgent(Thread, ABC):

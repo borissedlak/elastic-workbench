@@ -27,6 +27,7 @@ if not torch.cuda.is_available():
 torch.autograd.set_detect_anomaly(True)
 
 STATE_DIM = 6
+ACTION_DIM = 5
 
 
 class DQN:
@@ -94,7 +95,7 @@ class DQN:
         score_list = []
         round_counter = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 80
+        NO_EPISODE = 150
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -155,7 +156,6 @@ class DQN:
         torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"" + suffix if suffix else ""}.pt")
 
 
-# NO_NEURONS = 16
 class QNetwork(nn.Module):
     def __init__(self, state_dim, action_dim, q_lr, neurons):
         super(QNetwork, self).__init__()
@@ -208,4 +208,4 @@ class ReplayBuffer:
 
 if __name__ == '__main__':
     df_t = pd.read_csv("../share/metrics/LGBN.csv")
-    DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True).train_dqn_from_env(df_t)
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(df_t)
