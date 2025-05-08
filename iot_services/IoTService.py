@@ -1,9 +1,11 @@
+import datetime
 import logging
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict
 
+import numpy as np
 from prometheus_client import start_http_server, Gauge
 
 import utils
@@ -18,7 +20,7 @@ REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
 class IoTService(ABC):
-    def __init__(self):
+    def __init__(self, store_to_csv=True):
         self.docker_container_ref = CONTAINER_REF
         self.service_type = None
         self._terminated = True
@@ -26,6 +28,7 @@ class IoTService(ABC):
         self.service_conf = {}
         self.cores_reserved = 2
         self.es_registry = ES_Registry("./config/es_registry.json")
+        self.store_to_csv = store_to_csv
 
         self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms
@@ -44,6 +47,25 @@ class IoTService(ABC):
                                   ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
+
+    def export_processing_metrics(self, processed_item_counter, processed_item_durations):
+        # This is only executed once after the batch is processed
+        self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                    metric_id="throughput").set(processed_item_counter)
+        avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
+        self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                       metric_id="avg_p_latency").set(avg_p_latency_v)
+        self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                 metric_id="quality").set(self.service_conf['quality'])
+        self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                               metric_id="cores").set(self.cores_reserved)
+
+        if self.store_to_csv:
+            metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
+                              self.service_conf, self.cores_reserved, self.flag_metric_cooldown)]
+            self.flag_metric_cooldown = 0
+            utils.write_metrics_to_csv(metric_buffer)
+            metric_buffer.clear()
 
     @abstractmethod
     def process_one_iteration(self, params, frame) -> None:

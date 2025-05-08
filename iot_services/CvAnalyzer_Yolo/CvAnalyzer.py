@@ -23,9 +23,8 @@ ROOT = os.path.dirname(__file__)
 
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
-        super().__init__()
+        super().__init__(store_to_csv)
         self.service_conf = {'quality': 800, 'model_size': 1}
-        self.store_to_csv = store_to_csv
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
@@ -58,7 +57,7 @@ class CvAnalyzer(IoTService):
         return frame, duration
 
     def process_loop(self):
-        self.reinitialize_models()  # Place here so that it reloads when cores are changed
+        self.reinitialize_models()  # Place here so that it reloads when model size is changed
 
         while self._running:
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -82,27 +81,8 @@ class CvAnalyzer(IoTService):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
 
-            logger.info(processed_item_durations)
-            logger.info(processed_item_counter)
-
             # This is only executed once after the batch is processed
-            self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                        metric_id="throughput").set(processed_item_counter)
-            avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
-            self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                           metric_id="avg_p_latency").set(avg_p_latency_v)
-            self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                     metric_id="quality").set(self.service_conf['quality'])
-            self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                   metric_id="cores").set(self.cores_reserved)
-
-            if self.store_to_csv:
-                self.metric_buffer.append(
-                    (datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
-                     self.service_conf, self.cores_reserved, self.flag_metric_cooldown))
-                self.flag_metric_cooldown = 0
-                utils.write_metrics_to_csv(self.metric_buffer)
-                self.metric_buffer.clear()
+            self.export_processing_metrics(processed_item_counter, processed_item_durations)
 
             if self.simulate_arrival_interval:
                 self.simulate_interval(start_time)
