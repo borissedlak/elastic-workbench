@@ -7,7 +7,7 @@ import gymnasium
 import utils
 from agent.ES_Registry import ServiceType
 from agent.LGBN import LGBN
-from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry, SLO, to_avg_SLO_F
+from agent.SLO_Registry import calculate_slo_fulfillment, SLO, to_avg_SLO_F
 
 logger = logging.getLogger("multiscale")
 
@@ -29,7 +29,7 @@ class LGBN_Env(gymnasium.Env):
         if 1 <= action <= 2:
             delta_quality = -100 if action == 1 else 100
             if new_state['quality'] == 100 or new_state['quality'] >= 2000:
-                punishment_off = - 5
+                punishment_off = - 30
             else:
                 new_state['quality'] = new_state['quality'] + delta_quality
 
@@ -37,9 +37,9 @@ class LGBN_Env(gymnasium.Env):
             delta_cores = -1 if action == 3 else 1
 
             if delta_cores == -1 and new_state['cores'] == 1:  # Want to go lower
-                punishment_off = - 10
+                punishment_off = - 30
             elif delta_cores == +1 and new_state['free_cores'] <= 0:  # Want to consume what does not exist
-                punishment_off = - 10
+                punishment_off = - 30
             else:
                 new_state['cores'] = new_state['cores'] + delta_cores
                 new_state['free_cores'] = new_state['free_cores'] - delta_cores
@@ -61,14 +61,14 @@ class LGBN_Env(gymnasium.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        quality = randint(1, 20) * 100
-        cores = randint(1, PHYSICAL_CORES)
-        avail_cores = PHYSICAL_CORES - cores - randint(0, PHYSICAL_CORES - cores)
-        throughput = self.sample_values_from_lgbn(quality, cores)['throughput']
+        quality = randint(3, 10) * 100
+        ass_cores = randint(1, PHYSICAL_CORES)
+        free_cores = PHYSICAL_CORES - ass_cores
+        throughput = self.sample_values_from_lgbn(quality, ass_cores)['throughput']
         quality_thresh = randint(5, 12) * 100
         tp_thresh = randint(20, 40)
 
-        self.state = Full_State(quality, quality_thresh, throughput, tp_thresh, cores, avail_cores)
+        self.state = Full_State(quality, quality_thresh, throughput, tp_thresh, ass_cores, free_cores)
         return self.state, {}
 
     def reload_lgbn_model(self, df):

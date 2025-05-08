@@ -87,8 +87,11 @@ class ScalingAgent(Thread, ABC):
                     logger.warning(warning_msg)
                     continue
 
-                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
-                if target_ES is not None:
+                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state,
+                                                                              assigned_clients)
+                if target_ES is None:
+                    logger.info("Agent decided to do nothing")
+                else:
                     self.execute_ES(host_fix, service_m.service_type, target_ES, all_elastic_params_ass)
 
                 # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
@@ -126,6 +129,11 @@ class ScalingAgent(Thread, ABC):
     @abstractmethod
     def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
         pass
+
+    def get_free_cores(self):
+        cores_ass = self.get_core_assignment(self.services_monitored)
+        free_cores = PHYSICAL_CORES - sum(cores_ass.values())
+        return free_cores
 
     def get_max_available_cores(self, service: ServiceID):
         cores_ass = self.get_core_assignment(self.services_monitored)

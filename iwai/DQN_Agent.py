@@ -27,13 +27,13 @@ class DQN_Agent(ScalingAgent):
         self.dqn = DQN(state_dim=STATE_DIM, action_dim=5)
 
     def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
-        max_available_c = self.get_max_available_cores(service)
+        free_cores = self.get_free_cores()
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
 
         quality_t, throughput_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
         state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'], throughput_t,
-                              service_state['cores'], max_available_c)
-        action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.15)
+                              service_state['cores'], free_cores)
+        action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.0)
 
         if 1 <= action_pw <= 2:
             delta_quality = -100 if action_pw == 1 else 100

@@ -94,7 +94,7 @@ class DQN:
         score_list = []
         round_counter = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 100
+        NO_EPISODE = 80
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
