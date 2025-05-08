@@ -10,19 +10,19 @@ from agent.SLO_Registry import SLO
 class TestPolicySolver(TestCase):
 
     def setUp(self):
-        self.cpd_qr = LinearGaussianCPD(variable='avg_p_latency', evidence=['quality'], beta=[-6.7, 0.05], std=740.654)
-        self.cpd_cv = LinearGaussianCPD(variable='avg_p_latency', evidence=['cores'], beta=[34.512, -7.509], std=740.6)
+        self.cpd_qr = LinearGaussianCPD(variable='avg_p_latency', evidence=['quality'], beta=[-6.7, 0.05], std=740)
+        self.cpd_cv = LinearGaussianCPD(variable='avg_p_latency', evidence=['cores'], beta=[34.512, -7.509], std=740)
 
     def test_composite_obj(self):
         parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'min': 1, 'max': 8, 'name': 'cores'},
                             {'es_type': EsType.QUALITY_SCALE, 'min': 360, 'max': 1080, 'name': 'quality'}]
-        linear_relation = {'avg_p_latency': self.cpd_qr}
+        linear_relation = {'avg_p_latency': self.cpd_qr}  # TODO: I think this needs the throughput relation
         clients_slos = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
                          'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
                          'quality': SLO(var='quality', larger=True, thresh=800, weight=0.7)}]
 
-        expected_slo_f = composite_obj([6.0, 800.0], parameter_bounds, linear_relation, clients_slos, 1)
-        self.assertAlmostEqual((1.7 / 2.7), -expected_slo_f, places=2)
+        calculated_slo_f = composite_obj([6.0, 800.0], parameter_bounds, linear_relation, clients_slos, 1)
+        self.assertAlmostEqual((1.7 / 2.7), -calculated_slo_f, places=2)
 
         calculated_slo_f = composite_obj([6.0, 360.0], parameter_bounds, linear_relation, clients_slos, 1)
         self.assertAlmostEqual((1.0 + ((360 / 800) * 0.7)) / 2.7, -calculated_slo_f, places=2)

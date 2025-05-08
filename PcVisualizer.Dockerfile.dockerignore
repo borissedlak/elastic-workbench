@@ -5,6 +5,5 @@ results
 tests
 
 iot_services/QrDetector
-# I still dont need the Yolo one here
 iot_services/CvAnalyzer_Yolo
-iot_services/PcVisualizer
+iot_services/CvAnalyzer

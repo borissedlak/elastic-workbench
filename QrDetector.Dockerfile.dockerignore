@@ -6,3 +6,4 @@ tests
 
 iot_services/CvAnalyzer
 iot_services/CvAnalyzer_Yolo
+iot_services/PcVisualizer

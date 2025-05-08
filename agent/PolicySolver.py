@@ -1,19 +1,15 @@
 import random
 from typing import Dict
 
+import numpy as np
 from pgmpy.factors.continuous import LinearGaussianCPD
 from scipy.optimize import minimize
 
 from agent.LGBN import calculate_missing_vars
 
 
-# Exponential decay from linear start
-# def soft_clip(x):  # thats a tuned sigmoid
-#     sharpness = 10  # make it sharper
-#     return 1 / (1 + np.exp(-sharpness * (x - 0.5)))  # center at 0.5
-
-def soft_clip(x, upper_bound=1.0):
-    return min(x, 1.0)
+def soft_clip(x):
+    return x * np.exp(-1.5 * x) + 1.0 * (1 - np.exp(-1.5 * x))
 
 
 def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussianCPD], slos_all_clients, total_rps):

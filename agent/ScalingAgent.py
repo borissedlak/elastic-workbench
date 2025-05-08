@@ -2,6 +2,7 @@ import logging
 import platform
 import random
 import time
+from abc import ABC, abstractmethod
 from threading import Thread
 from typing import Dict
 
@@ -10,7 +11,6 @@ from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent import PolicySolver
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import LGBN
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
@@ -22,7 +22,7 @@ PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 30))
 
 
-class ScalingAgent(Thread):
+class ScalingAgent(Thread, ABC):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle):
         super().__init__()
         self._running = True
@@ -36,7 +36,7 @@ class ScalingAgent(Thread):
         self.reddis_client = RedisClient()
         self.slo_registry = SLO_Registry("../config/slo_config.json")
         self.es_registry = ES_Registry("../config/es_registry.json")
-        self.lgbn = LGBN()
+        # self.lgbn = LGBN()
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         """
@@ -88,7 +88,7 @@ class ScalingAgent(Thread):
                     logger.warning(warning_msg)
                     continue
 
-                # target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
+                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
 
                 rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
                 self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
@@ -122,32 +122,18 @@ class ScalingAgent(Thread):
         self.http_client.call_ES_endpoint(host, ES_endpoint, params)
         logger.info(f"Calling ES <{service_type},{es_type}> with {params}")
 
+    @abstractmethod
     def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
+        pass
 
-        cores_ass = self.get_assigned_cores(self.services_monitored)
+    def get_max_available_cores(self, service: ServiceID):
+        cores_ass = self.get_core_assignment(self.services_monitored)
         free_cores = PHYSICAL_CORES - sum(cores_ass.values())
         max_available_c = free_cores + cores_ass[service.container_id]
-        ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service.service_type, max_available_c)
-
-        if not ES_parameter_bounds:
-            logger.warning("Cannot get optimal ES parameters because no ES configured")
-            return [], {}
-        if not assigned_clients:
-            if EsType.RESOURCE_SCALE in [item['es_type'] for item in ES_parameter_bounds]:
-                logger.info("No clients connected, releasing all cores except one")
-                return [EsType.RESOURCE_SCALE], {'cores': 1}  # Free all cores, just in case. If this ES is active
-            else:
-                return [], {}
-
-        linear_relations = self.lgbn.get_linear_relations(service.service_type)
-        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
-        total_rps = utils.to_absolut_rps(assigned_clients)
-
-        all_ES = self.es_registry.get_supported_ES_for_service(service.service_type)
-        return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
+        return max_available_c
 
     @utils.print_execution_time
-    def get_assigned_cores(self, service_list: list[ServiceID]) -> Dict[str, int]:
+    def get_core_assignment(self, service_list: list[ServiceID]) -> Dict[str, int]:
         cores_per_service = {}
 
         for service_id in service_list:

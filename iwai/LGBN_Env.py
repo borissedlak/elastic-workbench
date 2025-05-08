@@ -3,7 +3,6 @@ from random import randint
 from typing import NamedTuple
 
 import gymnasium
-import numpy as np
 
 import utils
 from agent.ES_Registry import ServiceType
