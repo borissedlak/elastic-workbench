@@ -82,7 +82,7 @@ class Full_State(NamedTuple):
 def log_agent_experience(state: Full_State, prefix):
     # Define the directory and file name
     directory = "./"
-    file_name = "slo_f.csv"
+    file_name = "agent_experience.csv"
     file_path = os.path.join(directory, file_name)
 
     file_exists = os.path.isfile(file_path)
@@ -93,6 +93,17 @@ def log_agent_experience(state: Full_State, prefix):
 
         if not file_exists or os.path.getsize(file_path) == 0:
             writer.writerow(
-                ["rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
+                ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores", "free_cores"])
 
         writer.writerow([prefix, datetime.datetime.now()] + list(state))
+
+def delete_experience_file():
+    directory = "./"
+    file_name = "agent_experience.csv"
+    file_path = os.path.join(directory, file_name)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"{file_path} deleted.")
+    else:
+        print(f"{file_path} does not exist.")

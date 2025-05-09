@@ -1,5 +1,4 @@
 import logging
-from typing import NamedTuple
 
 import docker
 
@@ -8,7 +7,6 @@ import utils
 logger = logging.getLogger("multiscale")
 logging.getLogger("multiscale").setLevel(logging.INFO)
 
-# default_socket = "npipe:////./pipe/docker_engine" if platform.system() == "Windows" else "unix:///var/run/docker.sock"
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
 
 
@@ -43,12 +41,6 @@ class DockerClient:
     def get_container_cores(self, container_ref):
         c_stats = self.get_container_stats(container_ref)
         return int(c_stats.attrs['HostConfig'].get('CpuQuota', 0) / 100000)
-
-
-class DockerInfo(NamedTuple):
-    container_id: str
-    ip_a: str
-    alias: str
 
 
 if __name__ == "__main__":
