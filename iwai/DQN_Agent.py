@@ -16,8 +16,8 @@ PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
 
-core_state = {}
-access_state = threading.Lock()
+# core_state = {}
+# access_state = threading.Lock()
 
 
 class DQN_Agent(ScalingAgent):

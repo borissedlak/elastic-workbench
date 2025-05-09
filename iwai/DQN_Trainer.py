@@ -39,24 +39,24 @@ class DQN:
         self.gamma = 0.98
         self.tau = 0.01  # 0.01
         self.epsilon = 1.0
-        self.epsilon_decay = 0.95  # 0.98
+        self.epsilon_decay = 0.98  # 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
         self.batch_size = 200
         self.memory = ReplayBuffer(self.buffer_size)
-        self.training_rounds = 1.0
+        self.training_lenght_coeff = 1.0
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
 
         if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
             self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
-            self.training_rounds = 0.5
+            self.training_lenght_coeff = 0.5
             logger.info("Loaded existing Q network on startup")
 
         self.Q_target.load_state_dict(self.Q.state_dict())
-        self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
-        self.currently_training = False
+        # self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
+        # self.currently_training = False
         self.env = LGBN_Env()
         self.nn_folder = nn_folder
 
@@ -93,13 +93,14 @@ class DQN:
 
         episode_score = 0.0
         score_list = []
-        round_counter = 0
+        episode_position = 0
+        finished_episodes = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 150
+        NO_EPISODE = 3000
 
-        self.epsilon = np.clip(self.epsilon, 0, self.training_rounds)
+        self.epsilon = np.clip(self.epsilon, 0, self.training_lenght_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
-        while round_counter < (NO_EPISODE * self.training_rounds) * EPISODE_LENGTH:
+        while finished_episodes < (NO_EPISODE * self.training_lenght_coeff):
 
             initial_state = self.env.state
             action = self.choose_action(np.array(self.env.state.for_tensor()))
@@ -113,13 +114,16 @@ class DQN:
             if self.memory.size() > self.batch_size:
                 self.train_batch()
 
-            round_counter += 1
+            episode_position += 1
 
-            if round_counter % EPISODE_LENGTH == 0:
+            if episode_position >= EPISODE_LENGTH or done:
                 self.env.reset()
                 self.epsilon *= self.epsilon_decay
                 score_list.append(episode_score)
+
                 episode_score = 0.0
+                episode_position = 0
+                finished_episodes += 1
 
         if logger.level <= logging.INFO:
             logger.info(f"Average Score for 5 last rounds: {np.average(score_list[-5:])}")
@@ -129,7 +133,7 @@ class DQN:
         self.store_dqn_as_file(suffix=suffix)
         self.last_time_trained = datetime.now()
         self.currently_training = False
-        self.training_rounds = np.clip(self.training_rounds - 0.2, 0.15, 1.0)
+        self.training_lenght_coeff = np.clip(self.training_lenght_coeff - 0.2, 0.15, 1.0)
         self.epsilon = 1.0
 
     # @utils.print_execution_time

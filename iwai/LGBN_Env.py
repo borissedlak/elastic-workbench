@@ -24,6 +24,7 @@ class LGBN_Env(gymnasium.Env):
     def step(self, action):
         behavioral_punishment = 0
         new_state = self.state._asdict()
+        done = False
 
         # Do nothing at 0
         if action == 0:
@@ -33,7 +34,8 @@ class LGBN_Env(gymnasium.Env):
         if 1 <= action <= 2:
             delta_quality = -100 if action == 1 else 100
             if (self.state.quality + delta_quality < 300) or (self.state.quality + delta_quality > 1100):
-                behavioral_punishment = - 30
+                behavioral_punishment = - 50
+                done = True
             else:
                 new_state['quality'] = new_state['quality'] + delta_quality
 
@@ -41,9 +43,11 @@ class LGBN_Env(gymnasium.Env):
             delta_cores = -1 if action == 3 else 1
 
             if delta_cores == -1 and self.state.cores == 1:  # Want to go lower
-                behavioral_punishment = - 30
+                behavioral_punishment = - 50
+                done = True
             elif delta_cores == +1 and self.state.free_cores <= 0:  # Want to consume what does not exist
-                behavioral_punishment = - 30
+                behavioral_punishment = - 50
+                done = True
             else:
                 new_state['cores'] = new_state['cores'] + delta_cores
                 new_state['free_cores'] = new_state['free_cores'] - delta_cores
@@ -55,8 +59,9 @@ class LGBN_Env(gymnasium.Env):
         client_SLOs = {
             'quality': SLO(**{'var': 'quality', 'larger': True, 'thresh': self.state.quality_thresh, 'weight': 1.0}),
             'throughput': SLO(**{'var': 'throughput', 'larger': True, 'thresh': self.state.tp_thresh, 'weight': 1.0})}
+        # print(calculate_slo_fulfillment(self.state._asdict(), client_SLOs))
         reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + behavioral_punishment
-        return self.state, reward, False, False, {}
+        return self.state, reward, done, False, {}
 
     # @utils.print_execution_time
     def sample_values_from_lgbn(self, quality, cores):
@@ -90,5 +95,11 @@ class Full_State(NamedTuple):
     free_cores: int
 
     def for_tensor(self):
-        return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
-                self.quality > 100, self.quality < 2000, self.free_cores > 0]
+        # return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
+        #         self.quality > 300, self.quality < 1100, self.free_cores > 0]
+
+        # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
+        #     self.cores, self.free_cores > 0]
+
+        return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
+            self.cores, self.free_cores > 0]

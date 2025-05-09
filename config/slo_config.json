@@ -7,13 +7,13 @@
         {
           "var": "quality",
           "larger": true,
-          "thresh": 1100,
+          "thresh": 400,
           "weight": 1.0
         },
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 10,
+          "thresh": 100,
           "weight": 1.0
         },
         {
