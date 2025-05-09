@@ -13,6 +13,7 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
+from agent.agent_utils import log_agent_experience, Full_State
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -22,20 +23,22 @@ EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 7))
 
 
 class ScalingAgent(Thread, ABC):
-    def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle):
+    def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
+                 slo_registry_path, es_registry_path, log_experience):
+
         super().__init__()
         self._running = True
         self._idle = False
         self.evaluation_cycle = evaluation_cycle
+        self.log_experience = log_experience
 
         self.services_monitored: list[ServiceID] = services_monitored
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
         self.reddis_client = RedisClient()
-        self.slo_registry = SLO_Registry("../config/slo_config.json")
-        self.es_registry = ES_Registry("../config/es_registry.json")
-        # self.lgbn = LGBN()
+        self.slo_registry = SLO_Registry(slo_registry_path)
+        self.es_registry = ES_Registry(es_registry_path)
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         """
@@ -74,28 +77,29 @@ class ScalingAgent(Thread, ABC):
 
                 logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
                 all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
-                # continue
-
-                # TODO: According to this discrepancy, I must adjust the model, or is this done automatically?
-                # service_state_exp = self.lgbn.get_expected_state(agent_utils.to_partial(service_state), assigned_clients)
-                # client_SLO_F_exp = self.slo_registry.calculate_slo_fulfillment(service_state_exp, client_SLOs)
-                # print("Expected SLO-F", client_SLO_F_exp)
 
                 host_fix = "localhost" if platform.system() == "Windows" else service_m.host
-                if self.reddis_client.is_under_cooldown(service_m):
-                    warning_msg = f"Service <{service_m.host, service_m.container_id}> under cooldown, cannot call ES"
-                    logger.warning(warning_msg)
-                    continue
 
                 target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state,
                                                                               assigned_clients)
                 if target_ES is None:
                     logger.info("Agent decided to do nothing")
                 else:
-                    self.execute_ES(host_fix, service_m.service_type, target_ES, all_elastic_params_ass)
+                    self.execute_ES(host_fix, service_m, target_ES, all_elastic_params_ass)
 
                 # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
                 # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
+
+                # TODO: Too much logic (i.e., lines) here, also too time intensive
+                if self.log_experience is not None:
+                    all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type,
+                                                                                          assigned_clients)
+                    free_cores = self.get_free_cores()
+                    quality_t, tp_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
+                    state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'],
+                                          tp_t, service_state['cores'], free_cores)
+
+                    log_agent_experience(state_pw, self.log_experience)
 
             time.sleep(self.evaluation_cycle)
 
@@ -112,19 +116,24 @@ class ScalingAgent(Thread, ABC):
             client_SLO_F_emp = calculate_slo_fulfillment(service_state, client_SLOs)
             all_client_SLO_F[client_id] = client_SLO_F_emp
 
-        print("Actual SLO-F", all_client_SLO_F)
+        # print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
-    def execute_ES(self, host, service_type: ServiceType, es_type: EsType, params):
+    def execute_ES(self, host, service: ServiceID, es_type: EsType, params):
 
-        if not self.es_registry.is_ES_supported(service_type, es_type):
-            logger.warning(f"Trying to call unsupported ES for {service_type}, {es_type}")
+        if self.reddis_client.is_under_cooldown(service):
+            warning_msg = f"Service <{service.host, service.container_id}> is under cooldown, cannot call ES"
+            logger.warning(warning_msg)
             return
 
-        ES_endpoint = self.es_registry.get_ES_information(service_type, es_type)['endpoint']
+        if not self.es_registry.is_ES_supported(service.service_type, es_type):
+            logger.warning(f"Trying to call unsupported ES for {service.service_type}, {es_type}")
+            return
+
+        ES_endpoint = self.es_registry.get_ES_information(service.service_type, es_type)['endpoint']
 
         self.http_client.call_ES_endpoint(host, ES_endpoint, params)
-        logger.info(f"Calling ES <{service_type},{es_type}> with {params}")
+        logger.info(f"Calling ES <{service.service_type},{es_type}> with {params}")
 
     @abstractmethod
     def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
@@ -149,6 +158,18 @@ class ScalingAgent(Thread, ABC):
             s_cores = self.docker_client.get_container_cores(service_id.container_id)
             cores_per_service[service_id.container_id] = s_cores
         return cores_per_service
+
+    # Between the experiments, we need to reset the processing environment to a default state
+    def reset_services_states(self):
+        for service_m in self.services_monitored:  # For all monitored services
+            if service_m.service_type == ServiceType.QR:
+                self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 1})
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800})
+            else:
+                raise RuntimeError("Not supported yet")
+
+    def terminate_gracefully(self):
+        self._running = False
 
 
 if __name__ == '__main__':

@@ -1,0 +1,28 @@
+{
+  "clientSLOs": [
+    {
+      "client_id": "C_1",
+      "service_type": "elastic-workbench-qr-detector",
+      "SLOs": [
+        {
+          "var": "quality",
+          "larger": true,
+          "thresh": 800,
+          "weight": 1.0
+        },
+        {
+          "var": "throughput",
+          "larger": true,
+          "thresh": 100,
+          "weight": 1.0
+        },
+        {
+          "var": "completion_rate",
+          "larger": true,
+          "thresh": 1.0,
+          "weight": 1.0
+        }
+      ]
+    }
+  ]
+}

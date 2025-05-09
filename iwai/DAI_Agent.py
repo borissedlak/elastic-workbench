@@ -13,7 +13,7 @@ logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
 
 
-class DQN_Agent(ScalingAgent):
+class DAI_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle):
         super().__init__(prom_server, services_monitored, evaluation_cycle)
 

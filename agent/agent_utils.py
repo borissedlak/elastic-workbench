@@ -1,6 +1,10 @@
+import csv
+import datetime
 import logging
+import os
 import random
 import time
+from typing import NamedTuple
 
 import pandas as pd
 
@@ -37,7 +41,6 @@ def filter_rows_during_cooldown(df: pd.DataFrame):
     return filtered_df
 
 
-
 def get_random_parameter_assignments(parameters):
     random_params = {}
 
@@ -55,3 +58,41 @@ def to_partial(full_state):
     del partial_state["completion_rate"]
 
     return partial_state
+
+
+class Full_State(NamedTuple):
+    quality: int
+    quality_thresh: int
+    throughput: int
+    tp_thresh: int
+    cores: int
+    free_cores: int
+
+    def for_tensor(self):
+        return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
+                self.quality > 300, self.quality < 1100, self.free_cores > 0]
+
+        # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
+        #     self.cores, self.free_cores > 0]
+
+        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
+        #     self.cores, self.free_cores > 0]
+
+
+def log_agent_experience(state: Full_State, prefix):
+    # Define the directory and file name
+    directory = "./"
+    file_name = "slo_f.csv"
+    file_path = os.path.join(directory, file_name)
+
+    file_exists = os.path.isfile(file_path)
+
+    # Open the file in append mode
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        if not file_exists or os.path.getsize(file_path) == 0:
+            writer.writerow(
+                ["rep", "timestamp", "pixel", "pixel_thresh", "fps", "fps_thresh", "energy", "cores", "free_cores"])
+
+        writer.writerow([prefix, datetime.datetime.now()] + list(state))

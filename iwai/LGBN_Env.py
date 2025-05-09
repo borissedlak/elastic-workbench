@@ -8,6 +8,7 @@ import utils
 from agent.ES_Registry import ServiceType
 from agent.LGBN import LGBN
 from agent.SLO_Registry import calculate_slo_fulfillment, SLO, to_avg_SLO_F
+from agent.agent_utils import Full_State
 
 logger = logging.getLogger("multiscale")
 
@@ -84,22 +85,3 @@ class LGBN_Env(gymnasium.Env):
         df['service_type'] = ServiceType.QR_DEPRECATED.value
         self.lgbn = LGBN(show_figures=False, structural_training=False, df=df)
         logger.info("Retrained LGBN model for Env")
-
-
-class Full_State(NamedTuple):
-    quality: int
-    quality_thresh: int
-    throughput: int
-    tp_thresh: int
-    cores: int
-    free_cores: int
-
-    def for_tensor(self):
-        return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
-                self.quality > 300, self.quality < 1100, self.free_cores > 0]
-
-        # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
-        #     self.cores, self.free_cores > 0]
-
-        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
-        #     self.cores, self.free_cores > 0]

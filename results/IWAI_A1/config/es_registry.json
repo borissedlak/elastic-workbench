@@ -1,0 +1,46 @@
+{
+  "elastic-workbench-qr-detector": {
+    "quality_scaling": {
+      "cooldown": 1500,
+      "endpoint": "/quality_scaling",
+      "parameters": {
+        "quality": {
+          "min": 360,
+          "max": 1080
+        }
+      }
+    },
+    "resource_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/resource_scaling",
+      "parameters": {
+        "cores": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    }
+  },
+  "elastic-workbench-cv-analyzer": {
+    "resource_scaling": {
+      "cooldown": 1000,
+      "endpoint": "/resource_scaling",
+      "parameters": {
+        "cores": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    },
+    "model_scaling": {
+      "cooldown": 1500,
+      "endpoint": "/model_scaling",
+      "parameters": {
+        "model_size": {
+          "min": 1,
+          "max": 2
+        }
+      }
+    }
+  }
+}

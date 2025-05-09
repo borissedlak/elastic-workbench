@@ -17,7 +17,6 @@ import utils
 from iwai.LGBN_Env import LGBN_Env
 
 logger = logging.getLogger("multiscale")
-logging.getLogger("multiscale").setLevel(logging.INFO)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using {"GPU (CUDA)" if torch.cuda.is_available() else "CPU"} for training")
@@ -96,7 +95,7 @@ class DQN:
         episode_position = 0
         finished_episodes = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 1000
+        NO_EPISODE = 100
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_lenght_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -167,8 +166,6 @@ class QNetwork(nn.Module):
         self.fc_1 = nn.Linear(state_dim, neurons).to(device)
         self.fc_2 = nn.Linear(neurons, neurons).to(device)
         self.fc_out = nn.Linear(neurons, action_dim).to(device)
-
-        # TODO: Read more about Adam
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
 
     def forward(self, x):
@@ -211,5 +208,7 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
+    logging.getLogger("multiscale").setLevel(logging.INFO)
+
     df_t = pd.read_csv("../share/metrics/LGBN.csv")
     DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(df_t)
