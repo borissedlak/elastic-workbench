@@ -96,7 +96,7 @@ class DQN:
         episode_position = 0
         finished_episodes = 0
         EPISODE_LENGTH = 100
-        NO_EPISODE = 3000
+        NO_EPISODE = 1000
 
         self.epsilon = np.clip(self.epsilon, 0, self.training_lenght_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")

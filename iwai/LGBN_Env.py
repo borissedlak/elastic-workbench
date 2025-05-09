@@ -71,11 +71,11 @@ class LGBN_Env(gymnasium.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         quality = randint(3, 11) * 100
-        quality_thresh = max(quality, randint(3, 11) * 100)
+        quality_thresh = randint(3, 10) * 100
         ass_cores = randint(1, PHYSICAL_CORES)
         free_cores = PHYSICAL_CORES - ass_cores
         throughput = self.sample_values_from_lgbn(quality, ass_cores)['throughput']
-        tp_thresh = randint(10, 1000)
+        tp_thresh = randint(10, 100)
 
         self.state = Full_State(quality, quality_thresh, throughput, tp_thresh, ass_cores, free_cores)
         return self.state, {}
@@ -95,11 +95,11 @@ class Full_State(NamedTuple):
     free_cores: int
 
     def for_tensor(self):
-        # return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
-        #         self.quality > 300, self.quality < 1100, self.free_cores > 0]
+        return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
+                self.quality > 300, self.quality < 1100, self.free_cores > 0]
 
         # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
-        return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
-            self.cores, self.free_cores > 0]
+        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
+        #     self.cores, self.free_cores > 0]
