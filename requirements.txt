@@ -15,3 +15,4 @@ redis~=5.2.1
 # Required for IWAI
 gymnasium~=1.1.1
 torch~=2.7.0
+git+https://github.com/infer-actively/pymdp.git@v1.0.0_alpha#egg=inferactively-pymdp

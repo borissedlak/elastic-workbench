@@ -4,8 +4,7 @@ from typing import Dict
 import utils
 from agent.ES_Registry import ServiceID, ServiceType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
-from iwai.DQN_Trainer import DQN
-from iwai.DQN_Trainer import STATE_DIM
+import pymdp
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
