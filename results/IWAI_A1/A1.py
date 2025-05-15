@@ -23,7 +23,7 @@ ps = "http://172.20.0.2:9090"
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
 # cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
-EVALUATION_FREQUENCY = 5
+EVALUATION_FREQUENCY = 4
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 slo_registry = SLO_Registry("./config/slo_config.json")
@@ -67,7 +67,7 @@ def visualize_data(slof_files, output_file):
     # m_base, _ = calculate_mean_std(slof_files[1])
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
 
-    # TODO: Maybe I can switch to timesteps on the x axis?
+    # TODO: Maybe I can switch to timesteps on the x axis? Also is more intuitive to read
     x = np.arange(len(m_meth))
     lower_bound = np.array(m_meth) - np.array(std_meth)
     upper_bound = np.array(m_meth) + np.array(std_meth)

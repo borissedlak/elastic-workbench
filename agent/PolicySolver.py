@@ -8,8 +8,12 @@ from scipy.optimize import minimize
 from agent.LGBN import calculate_missing_vars
 
 
-def soft_clip(x):
-    return x * np.exp(-1.5 * x) + 1.0 * (1 - np.exp(-1.5 * x))
+# def soft_clip(x):
+#     return x * np.exp(-1.5 * x) + 1.0 * (1 - np.exp(-1.5 * x))
+
+def soft_clip(x, x0=0.0, x1=1.0):
+    t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
+    return t ** 3 * (t * (6 * t - 15) + 10)
 
 
 def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussianCPD], slos_all_clients, total_rps):

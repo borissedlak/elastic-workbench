@@ -74,10 +74,10 @@ from agent import LGBN
 from agent.ES_Registry import ServiceType
 
 df = LGBN.preprocess_data(LGBN.collect_all_metric_files())
-df = df[df['service_type'] == ServiceType.CV.value]
+df = df[df['service_type'] == ServiceType.QR.value]
 
 # Suppose you already have a DataFrame `df` with columns: x1, x2, y
-X = df[['cores', 'model_size']]  # independent variables
+X = df[['cores', 'quality']]  # independent variables
 y = df['avg_p_latency']  # dependent variable
 
 # Create polynomial features up to degree 2 (you can try higher too)
@@ -89,7 +89,7 @@ model = LinearRegression()
 model.fit(X_poly, y)
 
 # Inspect learned coefficients
-print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'model_size']))
+print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'quality']))
 print("Coefficients:", model.coef_)
 print("Intercept:", model.intercept_)
 
@@ -101,7 +101,7 @@ import numpy as np
 
 # Create a meshgrid as before
 x1_range = np.linspace(df['cores'].min(), df['cores'].max(), 50)
-x2_range = np.linspace(df['model_size'].min(), df['model_size'].max(), 50)
+x2_range = np.linspace(df['quality'].min(), df['quality'].max(), 50)
 x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
 
 # Predict on the grid
@@ -114,7 +114,7 @@ fig = go.Figure(data=[
     go.Surface(x=x1_grid, y=x2_grid, z=y_pred_grid, colorscale='Viridis', opacity=0.7),
     go.Scatter3d(
         x=df['cores'],
-        y=df['model_size'],
+        y=df['quality'],
         z=df['avg_p_latency'],
         mode='markers',
         marker=dict(size=4, color='red'),
@@ -126,7 +126,7 @@ fig.update_layout(
     title='Interactive 3D Polynomial Regression Surface',
     scene=dict(
         xaxis_title='Cores',
-        yaxis_title='model_size',
+        yaxis_title='quality',
         zaxis_title='Avg P Latency'
     ),
     width=900,

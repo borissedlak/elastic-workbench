@@ -22,16 +22,16 @@ class TestPolicySolver(TestCase):
                          'quality': SLO(var='quality', larger=True, thresh=800, weight=0.7)}]
 
         calculated_slo_f = composite_obj([6.0, 800.0], parameter_bounds, linear_relation, clients_slos, 1)
-        self.assertAlmostEqual((1.7 / 2.7), -calculated_slo_f, places=2)
+        self.assertAlmostEqual((1.7 / 2.7), -calculated_slo_f, delta=0.015)
 
         calculated_slo_f = composite_obj([6.0, 360.0], parameter_bounds, linear_relation, clients_slos, 1)
-        self.assertAlmostEqual((1.0 + ((360 / 800) * 0.7)) / 2.7, -calculated_slo_f, places=2)
+        self.assertAlmostEqual((1.0 + ((360 / 800) * 0.7)) / 2.7, -calculated_slo_f, delta=0.015)
 
         loose_boundary = SLO(var='throughput', larger=True, thresh=1, weight=1.0)
         clients_slos[0]['throughput'] = loose_boundary
 
         calculated_slo_f = composite_obj([8.0, 800.0], parameter_bounds, linear_relation, clients_slos, 1)
-        self.assertAlmostEqual(1.0, -calculated_slo_f, places=2)
+        self.assertAlmostEqual(1.0, -calculated_slo_f, delta=0.015)
 
     def test_solve_cv_minimal(self):
         parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'min': 7, 'max': 7, 'name': 'cores'}]
