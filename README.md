@@ -30,5 +30,11 @@ docker compose up -d
 start the experiments, which evaluate one scaling agent type after the other
 
 ```bash
-python3.12 results/IWAI_A1/A1.py
+PYTHONPATH=. python3.12 results/IWAI_A1/A1.py
+```
+
+@Daniel, you can also directly start the pdmyp agent
+
+```bash
+PYTHONPATH=. python3.12 ./iwai/pymdp_Agent.py
 ```
