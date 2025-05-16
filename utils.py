@@ -109,14 +109,14 @@ def write_metrics_to_csv(lines):
         writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores", "cooldown"])
+            writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores",
+                             "rps", "throughput", "cooldown"])
 
         writer.writerows(lines)
 
 
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
     return sum(i for i in client_arrivals.values())
-
 
 # def calculate_cpu_percentage(stats):
 #     cpu_delta: int = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']

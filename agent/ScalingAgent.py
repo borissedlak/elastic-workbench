@@ -51,6 +51,7 @@ class ScalingAgent(Thread, ABC):
         if metric_values == {} and parameter_ass == {}:
             return {}
 
+        # TODO: Use LGBN.calculate_missing_vars() here
         target_throughput = utils.to_absolut_rps(assigned_clients)
         completion_rate = metric_values['throughput'] / target_throughput if target_throughput > 0 else 1.0
         return metric_values | parameter_ass | {"completion_rate": completion_rate}

@@ -65,10 +65,10 @@ class IoTService(ABC):
             self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                      metric_id="quality").set(self.service_conf['quality'])
 
-        # TODO: I might need to log the rps as well
         if self.store_to_csv:
             metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
-                              self.service_conf, self.cores_reserved, self.flag_metric_cooldown)]
+                              self.service_conf, self.cores_reserved, utils.to_absolut_rps(self.client_arrivals),
+                              processed_item_counter, self.flag_metric_cooldown)]
             self.flag_metric_cooldown = 0
             utils.write_metrics_to_csv(metric_buffer)
             metric_buffer.clear()
