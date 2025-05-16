@@ -11,20 +11,19 @@ from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 from scipy import stats
 
-import utils
 from agent import agent_utils
 from agent.ES_Registry import ServiceType
 from utils import print_execution_time
 
 
 class LGBN:
-    def __init__(self, show_figures=False, structural_training=False, df = None):
+    def __init__(self, show_figures=False, structural_training=False, df=None):
         self.show_figures = show_figures
         self.structural_training = structural_training
         self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models(df)
 
     def init_models(self, df):
-        if df is None: # Remove this df when not needed anymore
+        if df is None:  # Remove this df when not needed anymore
             df_combined = collect_all_metric_files()
             df_cleared = preprocess_data(df_combined)
         else:
@@ -73,11 +72,12 @@ def calculate_missing_vars(partial_state, total_rps: int):
     # TODO: I need to change this formula and remove the #cores as a factor, but include them in the LGBN
     #  Also, I will have to calculate the throughput as the min ((1000 / avg_p), rps)
     if "throughput" not in partial_state.keys():
+        # raise RuntimeWarning("Should be included!!")
         throughput_expected = (1000 / partial_state['avg_p_latency']) * partial_state['cores']
         full_state = full_state | {"throughput": throughput_expected}
 
     if "completion_rate" not in partial_state.keys():
-        completion_r_expected = full_state['throughput'] / total_rps
+        completion_r_expected = partial_state['throughput'] / total_rps if total_rps > 0 else 1.0
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
