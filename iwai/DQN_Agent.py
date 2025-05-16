@@ -1,5 +1,7 @@
 import logging
 import os
+import platform
+import random
 from typing import Dict
 
 import numpy as np
@@ -29,6 +31,42 @@ class DQN_Agent(ScalingAgent):
                          log_experience)
 
         self.dqn = dqn if dqn is not None else DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM)
+
+
+    # TODO: Adjust to new agent structure for DQN
+    def orchestrate_services_optimally(self, services_m):
+        shuffled_services = self.services_monitored.copy()
+        random.shuffle(shuffled_services)  # Shuffling the clients avoids that one can always pick cores first
+
+        for service_m in shuffled_services:  # For all monitored services
+
+            service_m: ServiceID = service_m
+            assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
+            service_state = self.resolve_service_state(service_m, assigned_clients)
+
+            if service_state == {}:
+                logger.warning(f"Cannot find state for service {service_m}")
+                continue
+
+            logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
+            all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
+            print(all_client_SLO_F)
+
+            host_fix = "localhost" if platform.system() == "Windows" else service_m.host
+
+            # TODO: This will cause the service to oscillate.....
+            ES_list, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
+            if ES_list is None:
+                logger.info("Agent decided to do nothing")
+            else:
+                for target_ES in ES_list:
+                    self.execute_ES(host_fix, service_m, target_ES, all_elastic_params_ass, respect_cooldown=False)
+
+            # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
+            # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
+
+            if self.log_experience is not None:
+                self.build_state_and_log(service_state, service_m, assigned_clients)
 
     def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
         free_cores = self.get_free_cores()

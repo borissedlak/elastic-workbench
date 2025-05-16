@@ -61,7 +61,6 @@ class LGBN_Local_Agent(ScalingAgent):
             # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
             # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
 
-            # TODO: Too much logic (i.e., lines) here, also too time intensive
             if self.log_experience is not None:
                 self.build_state_and_log(service_state, service_m, assigned_clients)
 
