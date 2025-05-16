@@ -1,0 +1,9 @@
+venv
+share/metrics
+agent/obsolete
+results
+tests
+
+iot_services/QrDetector
+iot_services/CvAnalyzer
+iot_services/PcVisualizer

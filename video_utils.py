@@ -15,7 +15,7 @@ class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tra
                'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
-yolo_model_sizes = {1: 'n', 2: 's', 3: 'm', 4: 'l', 5: 'x'}
+yolo_model_sizes = {1: 'n', 2: 's', 3: 'm'} #, 4: 'l', 5: 'x'}
 fd_model_sizes = {1: '320', 2: '640'}
 
 # Create a list of colors for each class where each color is a tuple of 3 integer values

@@ -11,7 +11,7 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in utils.to_absolut_rps(self.client_arrivals)Container
+      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always same in container
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_1:100
@@ -31,7 +31,7 @@ services:
     container_name: elastic-workbench-cv-analyzer-1
     build:
       context: .
-      dockerfile: iot_services/CvAnalyzer/CvAnalyzer.Dockerfile
+      dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
     networks:
       docker_network:
         ipv4_address: 172.20.0.10
