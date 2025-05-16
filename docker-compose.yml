@@ -31,7 +31,7 @@ services:
     container_name: elastic-workbench-cv-analyzer-1
     build:
       context: .
-      dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
+      dockerfile: iot_services/CvAnalyzer/CvAnalyzer.Dockerfile
     networks:
       docker_network:
         ipv4_address: 172.20.0.10

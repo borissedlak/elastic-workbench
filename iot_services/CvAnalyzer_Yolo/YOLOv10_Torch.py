@@ -35,6 +35,11 @@ class YOLOv10:
 
         input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+        # h, w = input_img.shape[:2]
+        # new_h, new_w = (h // 32) * 32, (w // 32) * 32
+        # input_img = cv2.resize(input_img, (new_w, new_h))
+
+        # TODO: If I keep this, changing the original image size will never have any impact
         # Resize input image
         input_img = cv2.resize(input_img, (self.input_width, self.input_height))
 
@@ -69,11 +74,11 @@ class YOLOv10:
         # return class_ids, boxes, confidences
         return [], [], []
 
-    def rescale_boxes(self, boxes):
-        input_shape = np.array([self.input_width, self.input_height, self.input_width, self.input_height])
-        boxes = np.divide(boxes, input_shape, dtype=np.float32)
-        boxes *= np.array([self.img_width, self.img_height, self.img_width, self.img_height])
-        return boxes
+    # def rescale_boxes(self, boxes):
+    #     input_shape = np.array([self.input_width, self.input_height, self.input_width, self.input_height])
+    #     boxes = np.divide(boxes, input_shape, dtype=np.float32)
+    #     boxes *= np.array([self.img_width, self.img_height, self.img_width, self.img_height])
+    #     return boxes
 
     def get_input_details(self):
         # Define input dimensions (based on model architecture)

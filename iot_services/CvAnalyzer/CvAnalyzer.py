@@ -106,8 +106,8 @@ class CvAnalyzer(IoTService):
 
 
 if __name__ == '__main__':
-    qd = CvAnalyzer(store_to_csv=True)
-    qd.client_arrivals = {'C3': 10}
+    qd = CvAnalyzer(store_to_csv=False)
+    qd.client_arrivals = {'C3': 100}
     qd.start_process()
 
     while qd.is_running():
