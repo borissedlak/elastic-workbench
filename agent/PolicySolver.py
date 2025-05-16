@@ -50,11 +50,10 @@ def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussia
                 slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))
 
             slo_f_single_client += soft_clip(slo_f_single_slo) * weight
-            # print("soft_clip(slo_f_single_slo) * weight", soft_clip(slo_f_single_slo) * weight)
         slo_f_all_clients += (slo_f_single_client / max_slo_f_single_client)
 
     slo_f = slo_f_all_clients / len(slos_all_clients)
-    # print(f"Calculated SLO-F for {variables}: {slo_f}")
+    print(f"Calculated SLO-F for {variables}: {slo_f}")
     return -slo_f  # because we want to maximize
 
 

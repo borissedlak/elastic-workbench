@@ -65,16 +65,11 @@ class LGBN:
         return linear_relations
 
 
-# TODO: This is somehow a mess, I wish I could include the replication factor
 def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
-    # TODO: I need to change this formula and remove the #cores as a factor, but include them in the LGBN
-    #  Also, I will have to calculate the throughput as the min ((1000 / avg_p), rps)
     if "throughput" not in partial_state.keys():
         raise RuntimeWarning("Should be included!!")
-        # throughput_expected = (1000 / partial_state['avg_p_latency']) * partial_state['cores']
-        # full_state = full_state | {"throughput": throughput_expected}
 
     if "completion_rate" not in partial_state.keys():
         completion_r_expected = partial_state['throughput'] / total_rps if total_rps > 0 else 1.0
@@ -157,9 +152,9 @@ def train_lgbn_model(df, show_result=False, structure_training=False):
 
 def get_edges_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return [('quality', 'avg_p_latency')]
+        return [('quality', 'throughput'), ('cores', 'throughput')]
     elif service_type == ServiceType.CV:
-        return [('cores', 'avg_p_latency'), ('model_size', 'avg_p_latency')]
+        return [('cores', 'throughput'), ('model_size', 'throughput')]
     elif service_type == ServiceType.QR_DEPRECATED:
         return [('quality', 'throughput'), ('cores', 'throughput')]
     else:

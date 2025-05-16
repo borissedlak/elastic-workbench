@@ -1,12 +1,10 @@
 import concurrent.futures
-import datetime
 import logging
 import os
 import time
 from typing import Any
 
 import cv2
-import numpy as np
 from pyzbar.pyzbar import decode
 
 import utils
