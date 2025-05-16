@@ -14,8 +14,10 @@ class TestPolicySolver(TestCase):
         self.cpd_cv = LinearGaussianCPD(variable='avg_p_latency', evidence=['cores'], beta=[34.512, -7.509], std=740)
 
     def test_composite_obj(self):
-        parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'min': 1, 'max': 8, 'name': 'cores'},
-                            {'es_type': EsType.QUALITY_SCALE, 'min': 360, 'max': 1080, 'name': 'quality'}]
+        # parameter_bounds = [{'es_type': EsType.RESOURCE_SCALE, 'min': 1, 'max': 8, 'name': 'cores'},
+        #                     {'es_type': EsType.QUALITY_SCALE, 'min': 360, 'max': 1080, 'name': 'quality'}]
+        parameter_bounds = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                            EsType.QUALITY_SCALE: {'quality': {'min': 360, 'max': 1080}}}
         linear_relation = {'avg_p_latency': self.cpd_qr}  # TODO: I think this needs the throughput relation
         clients_slos = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
                          'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),

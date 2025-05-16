@@ -1,6 +1,4 @@
 import logging
-import platform
-import random
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
@@ -60,46 +58,7 @@ class ScalingAgent(Thread, ABC):
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
         while self._running:
-
-            shuffled_services = self.services_monitored.copy()
-            random.shuffle(shuffled_services)  # Shuffling the clients avoids that one can always pick cores first
-
-            for service_m in shuffled_services:  # For all monitored services
-
-                service_m: ServiceID = service_m
-                assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
-                service_state = self.resolve_service_state(service_m, assigned_clients)
-
-                if service_state == {}:
-                    logger.warning(f"Cannot find state for service {service_m}")
-                    continue
-
-                logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
-                all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
-
-                host_fix = "localhost" if platform.system() == "Windows" else service_m.host
-
-                target_ES, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state,
-                                                                              assigned_clients)
-                if target_ES is None:
-                    logger.info("Agent decided to do nothing")
-                else:
-                    self.execute_ES(host_fix, service_m, target_ES, all_elastic_params_ass)
-
-                # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-                # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
-
-                # TODO: Too much logic (i.e., lines) here, also too time intensive
-                if self.log_experience is not None:
-                    all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type,
-                                                                                          assigned_clients)
-                    free_cores = self.get_free_cores()
-                    quality_t, tp_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
-                    state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'],
-                                          tp_t, service_state['cores'], free_cores)
-
-                    log_agent_experience(state_pw, self.log_experience)
-
+            self.orchestrate_services_optimally(self.services_monitored)
             time.sleep(self.evaluation_cycle)
 
     def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
@@ -118,7 +77,7 @@ class ScalingAgent(Thread, ABC):
         # print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
-    def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown = True):
+    def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown=True):
 
         if respect_cooldown and self.reddis_client.is_under_cooldown(service):
             warning_msg = f"Service <{service.host, service.container_id}> is under cooldown, cannot call ES"
@@ -135,8 +94,12 @@ class ScalingAgent(Thread, ABC):
         logger.info(f"Calling ES <{service.service_type},{es_type}> with {params}")
 
     @abstractmethod
-    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
+    def orchestrate_services_optimally(self, services_m):
         pass
+
+    # @abstractmethod
+    # def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
+    #     pass
 
     def get_free_cores(self):
         cores_ass = self.get_core_assignment(self.services_monitored)
@@ -149,7 +112,7 @@ class ScalingAgent(Thread, ABC):
         max_available_c = free_cores + cores_ass[service.container_id]
         return max_available_c
 
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def get_core_assignment(self, service_list: list[ServiceID]) -> Dict[str, int]:
         cores_per_service = {}
 
@@ -163,17 +126,20 @@ class ScalingAgent(Thread, ABC):
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800},
+                                respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 
     def terminate_gracefully(self):
         self._running = False
 
+    def build_state_and_log(self, service_state, service_m, assigned_clients):
+        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type,
+                                                                              assigned_clients)
+        free_cores = self.get_free_cores()
+        quality_t, tp_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
+        state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'],
+                              tp_t, service_state['cores'], free_cores)
 
-if __name__ == '__main__':
-    ps = "http://localhost:9090"
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    ScalingAgent(services_monitored=[cv_local], prom_server=ps,
-                 evaluation_cycle=EVALUATION_CYCLE_DELAY).start()
+        log_agent_experience(state_pw, self.log_experience)

@@ -41,7 +41,7 @@ services:
       - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_3:50
+      - DEFAULT_CLIENTS=C_3:100
       - TZ=Europe/Vienna
     volumes:
       - /home/boris/development/elastic-workbench/share:/src/share # Linux

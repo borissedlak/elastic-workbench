@@ -17,7 +17,7 @@ def soft_clip(x, x0=0.0, x1=1.0):
 
 
 def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussianCPD], slos_all_clients, total_rps):
-    variables = {param['name']: val for param, val in zip(parameter_bounds, x)}
+    variables = {list(param.keys())[0]: val for param, val in zip(parameter_bounds.values(), x)}
 
     # ---------- Part 1: LGBN Relations ----------
 
@@ -54,23 +54,23 @@ def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussia
         slo_f_all_clients += (slo_f_single_client / max_slo_f_single_client)
 
     slo_f = slo_f_all_clients / len(slos_all_clients)
-    print(f"Calculated SLO-F for {variables}: {slo_f}")
+    # print(f"Calculated SLO-F for {variables}: {slo_f}")
     return -slo_f  # because we want to maximize
 
 
 def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps):
-    bounds = [(param["min"], param["max"]) for param in parameter_bounds]  # Shape [(360, 1080), (1, 8)]
+    bounds = [(inner["min"], inner["max"]) for param in parameter_bounds.values() for inner in param.values()] # Shape [(360, 1080), (1, 8)]
     x0 = [random.randint(mini, maxi) for mini, maxi in bounds]  # Initial guess; Shape [520, 4]
 
     result = minimize(composite_obj, x0, method='L-BFGS-B', bounds=bounds,
                       args=(parameter_bounds, linear_relations, clients_SLOs, total_rps))
 
-    print(result)
+    # print(result)
     if not result.success:
         raise RuntimeWarning("Policy solver encountered an error: " + result.message)
 
     es_param_ass = {}
-    for index, param in enumerate(parameter_bounds):
-        es_param_ass[param["name"]] = result.x[index]
+    for index, var_name in enumerate([inner for param in parameter_bounds.values() for inner in param.keys()]):
+        es_param_ass[var_name] = int(result.x[index]) # Might need higher precision for resources later
 
     return es_param_ass
