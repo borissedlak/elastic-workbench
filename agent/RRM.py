@@ -9,6 +9,7 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
+import utils
 from agent import agent_utils
 from agent.ES_Registry import ServiceType
 
@@ -20,6 +21,7 @@ class RRM:
         self.show_figures = show_figures
         self.models: Dict[ServiceType, Dict] = self.init_models()
 
+    @utils.print_execution_time
     def init_models(self):
         df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)

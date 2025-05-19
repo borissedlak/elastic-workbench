@@ -105,6 +105,9 @@ def constraint_total_cores(x, services, max_total_cores):
 
 
 def solve_global(service_contexts_m, max_cores):
+    global rrm
+    rrm.init_models() # Might not be needed every time we solve the assignment
+
     constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
