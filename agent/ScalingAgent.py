@@ -141,11 +141,14 @@ class ScalingAgent(Thread, ABC):
         self._running = False
 
     def build_state_and_log(self, service_state, service_m, assigned_clients):
-        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type,
-                                                                              assigned_clients)
+        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
         free_cores = self.get_free_cores()
-        quality_t, tp_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
-        state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'],
+
+        # TODO: A bit too cheep here.....
+        extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
+
+        quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
+        state_pw = Full_State(service_state[extra_var], quality_t, service_state['throughput'],
                               tp_t, service_state['cores'], free_cores)
 
         log_agent_experience(state_pw, self.log_experience)

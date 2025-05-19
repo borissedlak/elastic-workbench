@@ -32,10 +32,7 @@ class RRM_Global_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-            # if self.log_experience is not None:
-            #     self.build_state_and_log(service_state, service_m, assigned_clients)
-
-        if np.random.rand() > 0.15:
+        if np.random.rand() > 0.15: # TODO: Start high and converge to a minimum of 0.05 (?)
             assignments = solve_global(service_contexts, MAX_CORES)
             assignments = apply_gaussian_noise_to_asses(assignments)
             self.orchestrate_all_ES_deterministic(services_m, assignments)
@@ -47,7 +44,10 @@ class RRM_Global_Agent(ScalingAgent):
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
-        # service_state = self.resolve_service_state(service_m, assigned_clients)
+
+        service_state = self.resolve_service_state(service_m, assigned_clients)
+        if self.log_experience is not None:
+            self.build_state_and_log(service_state, service_m, assigned_clients)
 
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
-                             evaluation_cycle=EVALUATION_CYCLE_DELAY)
+                             evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="RRM Agent")
 
     agent.reset_services_states()
     agent.start()
