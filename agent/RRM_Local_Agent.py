@@ -6,6 +6,7 @@ from typing import Dict
 
 import utils
 from agent.ES_Registry import ServiceID, ServiceType, EsType
+from agent.PolicySolver_RRM import solve
 from agent.ScalingAgent import ScalingAgent
 from agent.obsolete.LGBN import LGBN
 
@@ -45,7 +46,7 @@ class LGBN_Local_Agent(ScalingAgent):
 
             logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
             all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
-            print(all_client_SLO_F)
+            # print(all_client_SLO_F)
 
             host_fix = "localhost" if platform.system() == "Windows" else service_m.host
 
@@ -79,12 +80,11 @@ class LGBN_Local_Agent(ScalingAgent):
             else:
                 return [], {}
 
-        linear_relations = self.lgbn.get_linear_relations(service.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         all_ES = self.es_registry.get_supported_ES_for_service(service.service_type)
-        return all_ES, PolicySolver.solve(ES_parameter_bounds, linear_relations, all_client_slos, total_rps)
+        return all_ES, solve(service.service_type, ES_parameter_bounds, all_client_slos, total_rps)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,6 @@ from agent.RRM import calculate_missing_vars
 from utils import print_execution_time
 
 
-# TODO: Transform this entirely into a custom regression model class
 class LGBN:
     def __init__(self, show_figures=False, structural_training=False, df=None):
         self.show_figures = show_figures

@@ -81,7 +81,6 @@ class ServiceWrapper:
     #     self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
     #     return ""
 
-    # @app.route("/change_config", methods=['PUT'])
     def quality_scaling(self):
         quality = round(float(request.args.get('quality')))
         s_conf = self.service.service_conf
@@ -91,7 +90,6 @@ class ServiceWrapper:
         self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         return ""
 
-    # @app.route("/change_config", methods=['PUT'])
     def model_scaling(self):
         model_size = round(float(request.args.get('model_size')))
         s_conf = self.service.service_conf
@@ -101,7 +99,6 @@ class ServiceWrapper:
         self.service.set_flag_and_cooldown(EsType.MODEL_SCALE)
         return ""
 
-    # @app.route("/vertical_scaling", methods=['PUT'])
     def resource_scaling(self):
         cpu_cores = round(float(request.args.get('cores')), 2)
         self.scale_cores(cpu_cores)

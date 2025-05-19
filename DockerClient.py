@@ -17,8 +17,9 @@ class DockerClient:
     # @utils.print_execution_time
     def update_cpu(self, container_ref, cpus):
         try:
+            print(f"CPUs{cpus}")
             container = self.client.containers.get(container_ref)
-            container.update(cpu_quota=cpus * 100000)
+            container.update(cpu_quota=int(cpus * 100000)) # This again needs to be integer nanoseconds
             logger.info(f"Container set to work with {cpus} cores")
         except Exception as e:
             logger.error("Could not connect to docker container", e)
