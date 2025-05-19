@@ -81,7 +81,7 @@ X = df[['cores', 'quality']]  # independent variables
 y = df['avg_p_latency']  # dependent variable
 
 # Create polynomial features up to degree 2 (you can try higher too)
-poly = PolynomialFeatures(degree=1, include_bias=False)
+poly = PolynomialFeatures(degree=2, include_bias=False)
 X_poly = poly.fit_transform(X)
 
 # Fit the model
