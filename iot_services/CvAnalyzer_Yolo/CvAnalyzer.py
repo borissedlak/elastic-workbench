@@ -21,6 +21,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 ROOT = os.path.dirname(__file__)
 
 
+# WRITE: Show the impact of resources on throughput and that this is heavily penalized
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__(store_to_csv)
@@ -46,13 +47,7 @@ class CvAnalyzer(IoTService):
         class_ids, boxes, confidences = self.detectors[detector_index](frame)
         # combined_img = draw_detections(frame, boxes, confidences, class_ids)
 
-        # model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
-        # detector = YOLOv10(model_path, conf_thres=0.3)
-        # detector(frame)
-        # combined_img = None
-        # time.sleep(0.8)
-
-        # Resulting image and total processing time --> unused
+        # Resulting image and total processing time
         duration = (time.perf_counter() - start) * 1000
         return frame, duration
 

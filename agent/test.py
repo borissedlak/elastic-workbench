@@ -2,34 +2,41 @@
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
+import utils
 from agent import LGBN
 from agent.ES_Registry import ServiceType
 
 df = LGBN.preprocess_data(LGBN.collect_all_metric_files())
 df = df[df['service_type'] == ServiceType.CV.value]
 
-# Suppose you already have a DataFrame `df` with columns: x1, x2, y
-X = df[['cores', 'model_size']]  # independent variables
-y = df['throughput']  # dependent variable
+@utils.print_execution_time
+def calculate_model():
 
-# Create polynomial features up to degree 2 (you can try higher too)
-poly = PolynomialFeatures(degree=1, include_bias=False)
-X_poly = poly.fit_transform(X)
+    # Suppose you already have a DataFrame `df` with columns: x1, x2, y
+    X = df[['cores', 'model_size']]  # independent variables
+    y = df['throughput']  # dependent variable
 
-# Fit the model
-model = LinearRegression()
-model.fit(X_poly, y)
+    # Create polynomial features up to degree 2 (you can try higher too)
+    poly = PolynomialFeatures(degree=2, include_bias=False)
+    X_poly = poly.fit_transform(X)
 
-# Inspect learned coefficients
-print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'model_size']))
-print("Coefficients:", model.coef_)
-print("Intercept:", model.intercept_)
+    # Fit the model
+    model = LinearRegression()
+    model.fit(X_poly, y)
 
-# Predict on new data or the original
-y_pred = model.predict(X_poly)
+    # Inspect learned coefficients
+    print("Polynomial feature names:", poly.get_feature_names_out(['cores', 'model_size']))
+    print("Coefficients:", model.coef_)
+    print("Intercept:", model.intercept_)
+
+    return poly, model
+    # Predict on new data or the original
+    # y_pred = model.predict(X_poly)
 
 import plotly.graph_objects as go
 import numpy as np
+
+poly, model = calculate_model()
 
 # Create a meshgrid as before
 x1_range = np.linspace(df['cores'].min(), df['cores'].max(), 50)

@@ -8,18 +8,17 @@ from scipy.optimize import minimize
 from agent.LGBN import calculate_missing_vars
 
 
-# TODO: Next problem is that I should change to quadratic relations and incorporate this to the solver
 def soft_clip(x, x0=0.0, x1=1.0):
     t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
     return t ** 3 * (t * (6 * t - 15) + 10)
 
 
-def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussianCPD], slos_all_clients, total_rps):
+def local_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussianCPD], slos_all_clients, total_rps):
     variables = {list(param.keys())[0]: val for param, val in zip(parameter_bounds.values(), x)}
 
     # ---------- Part 1: LGBN Relations ----------
 
-    # arguments = {}
+    # TODO: I should change to quadratic relations and incorporate this to the solver
     for key, item in linear_relations.items():
         variables[key] = item.beta[0]
         for i in range(1, len(item.beta)):
@@ -61,10 +60,9 @@ def solve(parameter_bounds, linear_relations, clients_SLOs, total_rps):
               param.values()]  # Shape [(360, 1080), (1, 8)]
     x0 = [random.randint(mini, maxi) for mini, maxi in bounds]  # Initial guess; Shape [520, 4]
 
-    result = minimize(composite_obj, x0, method='L-BFGS-B', bounds=bounds,
+    result = minimize(local_obj, x0, method='L-BFGS-B', bounds=bounds,
                       args=(parameter_bounds, linear_relations, clients_SLOs, total_rps))
 
-    # print(result)
     if not result.success:
         raise RuntimeWarning("Policy solver encountered an error: " + result.message)
 
@@ -84,7 +82,7 @@ def composite_obj_global(x, service_context):
         x_i = x[offset:offset + num_params]
         offset += num_params
 
-        slo_f_i = composite_obj(x_i, parameter_bounds, linear_relations, slos, total_rps)
+        slo_f_i = local_obj(x_i, parameter_bounds, linear_relations, slos, total_rps)
         total_slo_f += slo_f_i
 
     return total_slo_f  # already negative (since composite_obj returns -slo_f)
