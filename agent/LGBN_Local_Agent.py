@@ -51,7 +51,7 @@ class LGBN_Local_Agent(ScalingAgent):
             host_fix = "localhost" if platform.system() == "Windows" else service_m.host
 
             # TODO: This will cause the service to oscillate.....
-            ES_list, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
+            ES_list, all_elastic_params_ass = self.get_optimal_local_ES(service_m, assigned_clients)
             if ES_list is None:
                 logger.info("Agent decided to do nothing")
             else:
@@ -64,7 +64,7 @@ class LGBN_Local_Agent(ScalingAgent):
             if self.log_experience is not None:
                 self.build_state_and_log(service_state, service_m, assigned_clients)
 
-    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
+    def get_optimal_local_ES(self, service: ServiceID, assigned_clients: Dict[str, int]):
 
         max_available_c = self.get_max_available_cores(service)
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service.service_type, max_available_c)
