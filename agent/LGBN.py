@@ -162,5 +162,5 @@ def get_edges_for_service_type(service_type: ServiceType):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=False, structural_training=False)
+    lgbn = LGBN(show_figures=True, structural_training=False)
     print(lgbn.get_linear_relations(ServiceType.CV))

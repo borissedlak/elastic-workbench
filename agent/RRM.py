@@ -26,13 +26,22 @@ class RRM:
 
         return train_rrn_models(df_cleared, self.show_figures)
 
-    def predict_single_sample(self, service_type: ServiceType, var: str, sample_state: Dict[str, Any]):
+    def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
+        dependent_variables = list(get_dependent_variable_mapping(service_type).keys())
 
-        independent_variables = get_dependent_variable_mapping(service_type)[var]
+        dependent_vars_ass = {}
+        for var in dependent_variables:
+            dependent_vars_ass[var] = self.predict_single_sample(service_type, var, sample_state)
+
+        return dependent_vars_ass
+
+    def predict_single_sample(self, service_type: ServiceType, dep_var: str, sample_state: Dict[str, Any]):
+
+        independent_variables = get_dependent_variable_mapping(service_type)[dep_var]
         for independent_var in independent_variables:
             if independent_var not in sample_state.keys():
-                raise RuntimeWarning(f"Cannot predict assignment for {var}, missing '{independent_var}' in state")
-        poly, model = self.models[service_type][var]
+                raise RuntimeWarning(f"Cannot predict assignment for {dep_var}, missing '{independent_var}' in state")
+        poly, model = self.models[service_type][dep_var]
 
         filtered_sorted_state = {k: sample_state[k] for k in sorted(independent_variables) if k in sample_state}
         X_single = np.array([list(filtered_sorted_state.values())])  # Shape np.array([[4, 400]])
