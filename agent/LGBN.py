@@ -98,7 +98,6 @@ def preprocess_data(df):
 
 
 # TODO: This should also fetch files from remote hosts
-# TODO: Also, if I implement multiple service types, this must be considered here
 def collect_all_metric_files():
     metrics_local = get_local_metric_file()
     metrics_contents = [metrics_local]
@@ -164,10 +163,3 @@ def get_edges_for_service_type(service_type: ServiceType):
 if __name__ == "__main__":
     lgbn = LGBN(show_figures=False, structural_training=False)
     print(lgbn.get_linear_relations(ServiceType.CV))
-    # state_expected = lgbn.get_expected_state({'pixel': 700, 'cores': 2}, {"C_1": 100})
-    # print("Full State", state_expected)
-    # slo_registry = SLO_Registry()
-    #
-    # client_SLOs = slo_registry.get_SLOs_for_client("C_1", ServiceType.QR)
-    # client_SLO_F_emp = slo_registry.calculate_slo_fulfillment(state_expected, client_SLOs)
-    # print(client_SLO_F_emp)

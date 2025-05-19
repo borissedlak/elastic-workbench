@@ -10,6 +10,7 @@ from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
+from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
 from agent.agent_utils import log_agent_experience, Full_State
 
@@ -51,10 +52,8 @@ class ScalingAgent(Thread, ABC):
         if metric_values == {} and parameter_ass == {}:
             return {}
 
-        # TODO: Use LGBN.calculate_missing_vars() here
-        target_throughput = utils.to_absolut_rps(assigned_clients)
-        completion_rate = metric_values['throughput'] / target_throughput if target_throughput > 0 else 1.0
-        return metric_values | parameter_ass | {"completion_rate": completion_rate}
+        missing_vars = calculate_missing_vars(metric_values, utils.to_absolut_rps(assigned_clients))
+        return metric_values | parameter_ass | missing_vars
 
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):

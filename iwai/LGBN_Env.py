@@ -20,7 +20,6 @@ class LGBN_Env(gymnasium.Env):
         super().__init__()
         self.state: Full_State = None
         self.lgbn: LGBN = None
-        # self.slo_registry = SLO_Registry("../config/slo_config.json")
 
     def step(self, action):
         behavioral_punishment = 0
@@ -56,15 +55,13 @@ class LGBN_Env(gymnasium.Env):
         new_state['throughput'] = self.sample_values_from_lgbn(new_state['quality'], new_state['cores'])['throughput']
         self.state = Full_State(**new_state)
 
-        # client_SLOs = self.slo_registry.get_SLOs_for_client("LGBN", ServiceType.QR_DEPRECATED)
         client_SLOs = {
             'quality': SLO(**{'var': 'quality', 'larger': True, 'thresh': self.state.quality_thresh, 'weight': 1.0}),
             'throughput': SLO(**{'var': 'throughput', 'larger': True, 'thresh': self.state.tp_thresh, 'weight': 1.0})}
-        # print(calculate_slo_fulfillment(self.state._asdict(), client_SLOs))
+
         reward = to_avg_SLO_F(calculate_slo_fulfillment(self.state._asdict(), client_SLOs)) + behavioral_punishment
         return self.state, reward, done, False, {}
 
-    # @utils.print_execution_time
     def sample_values_from_lgbn(self, quality, cores):
         full_state = self.lgbn.predict_lgbn_vars({'quality': quality, 'cores': cores}, ServiceType.QR_DEPRECATED)
         return full_state
