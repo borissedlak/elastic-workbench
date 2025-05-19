@@ -77,6 +77,7 @@ class ScalingAgent(Thread, ABC):
         # print("Actual SLO-F", all_client_SLO_F)
         return all_client_SLO_F
 
+    # TODO: Remove this host fix as soon as possible
     def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown=True):
 
         if respect_cooldown and self.reddis_client.is_under_cooldown(service):
@@ -126,11 +127,13 @@ class ScalingAgent(Thread, ABC):
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800},
+                                respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
                 # self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.MODEL_SCALE, {'model_size': 1}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.MODEL_SCALE, {'model_size': 1},
+                                respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 

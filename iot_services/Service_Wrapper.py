@@ -83,7 +83,7 @@ class ServiceWrapper:
 
     # @app.route("/change_config", methods=['PUT'])
     def quality_scaling(self):
-        quality = int(request.args.get('quality'))
+        quality = round(float(request.args.get('quality')))
         s_conf = self.service.service_conf
         s_conf['quality'] = quality
 
@@ -93,7 +93,7 @@ class ServiceWrapper:
 
     # @app.route("/change_config", methods=['PUT'])
     def model_scaling(self):
-        model_size = int(request.args.get('model_size'))
+        model_size = round(float(request.args.get('model_size')))
         s_conf = self.service.service_conf
         s_conf['model_size'] = model_size
 
@@ -103,15 +103,15 @@ class ServiceWrapper:
 
     # @app.route("/vertical_scaling", methods=['PUT'])
     def resource_scaling(self):
-        cpu_cores = int(request.args.get('cores'))
+        cpu_cores = round(float(request.args.get('cores')), 2)
         self.scale_cores(cpu_cores)
         return ""
 
-    def scale_cores(self, cores):
-        # 1) Change the number of threads of the application
-        self.service.vertical_scaling(cores)
-        # 2) Change the number of cores available for docker
-        self.docker_client.update_cpu(CONTAINER_REF, cores)
+    def scale_cores(self, fractional_cores):
+        # 1) Change the number of threads of the application; cannot start fractional # of threads
+        self.service.vertical_scaling(int(fractional_cores))
+        # 2) Change the number of cores available for docker; can scale continuously
+        self.docker_client.update_cpu(CONTAINER_REF, fractional_cores)
 
 
 if __name__ == '__main__':

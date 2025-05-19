@@ -181,4 +181,4 @@ def draw_3d_plot(df, var, deps, poly, model):
 if __name__ == "__main__":
     logger.setLevel(logging.INFO)
 
-    rrm = RRM(show_figures=False)
+    rrm = RRM(show_figures=True)

@@ -27,7 +27,7 @@ class RRM_Global_Agent(ScalingAgent):
 
         # self.rrm = RRM()
 
-    def orchestrate_services_optimally(self, services_m):
+    def orchestrate_services_optimally(self, services_m: list[ServiceID]):
         service_contexts = []
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
@@ -35,7 +35,13 @@ class RRM_Global_Agent(ScalingAgent):
             # if self.log_experience is not None:
             #     self.build_state_and_log(service_state, service_m, assigned_clients)
 
-        solve_global(service_contexts, MAX_CORES)
+        assignments = solve_global(service_contexts, MAX_CORES)
+        print(assignments)
+
+        for i, service_m in enumerate(services_m):  # For all monitored services
+            all_ES = self.es_registry.get_supported_ES_for_service(service_m.service_type)
+            for target_ES in all_ES:
+                self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)

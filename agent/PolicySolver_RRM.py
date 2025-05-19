@@ -68,7 +68,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
         slo_f_all_clients += scaled_reward
 
     slo_f = slo_f_all_clients / len(slos_all_clients)
-    print(f"Calculated SLO-F for {full_state}: {slo_f}")
+    # print(f"Calculated SLO-F for {full_state}: {slo_f}")
     return -slo_f  # because we want to maximize
 
 
@@ -127,9 +127,13 @@ def solve_global(service_contexts_m, max_cores):
         raise RuntimeWarning("Policy solver encountered an error: " + result.message)
 
     # TODO: need to place into correct structure
-    # es_param_ass = {}
-    # for index, var_name in enumerate([inner for param in parameter_bounds.values() for inner in param.keys()]):
-    #     es_param_ass[var_name] = int(result.x[index]) # Might need higher precision for resources later
-    print(result.x)
+    assignments = []
+    offset = 0
+    for _, parameter_bounds, _, _ in service_contexts_m:
+        param_names = [k for group in parameter_bounds.values() for k in group]
+        num_params = len(param_names)
+        x_i = result.x[offset:offset + num_params]
+        assignments.append(dict(zip(param_names, x_i)))
+        offset += num_params
 
-    return result.x
+    return assignments
