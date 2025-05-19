@@ -8,7 +8,7 @@ from scipy.optimize import minimize
 from agent.LGBN import calculate_missing_vars
 
 
-# TODO: Somehow I have a problem with negative throughput and completion rate
+# TODO: Next problem is that I should change to quadratic relations and incorporate this to the solver
 def soft_clip(x, x0=0.0, x1=1.0):
     t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
     return t ** 3 * (t * (6 * t - 15) + 10)
@@ -44,7 +44,12 @@ def composite_obj(x, parameter_bounds, linear_relations: Dict[str, LinearGaussia
                 slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))
 
             slo_f_single_client += soft_clip(slo_f_single_slo) * weight
-        slo_f_all_clients += (slo_f_single_client / max_slo_f_single_client)
+
+        scaled_reward = slo_f_single_client / max_slo_f_single_client
+        if variables['throughput'] < 1.0:
+            scaled_reward *= 0.1 # Heavily penalize if no output
+
+        slo_f_all_clients += scaled_reward
 
     slo_f = slo_f_all_clients / len(slos_all_clients)
     print(f"Calculated SLO-F for {variables}: {slo_f}")

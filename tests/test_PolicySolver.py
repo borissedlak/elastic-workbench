@@ -36,13 +36,14 @@ class TestPolicySolver(TestCase):
         self.assertAlmostEqual(1.0, -calculated_slo_f, delta=0.015)
 
     def test_solve_cv_minimal(self):
-        parameter_bounds = {EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}},
-                            EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}}}
-        linear_relation = {'throughput': self.cpd_cv}
-        clients_slos_loose = [{'throughput': SLO(var='throughput', larger=True, thresh=50, weight=1.0)}]
-        clients_slos_tight = [{'throughput': SLO(var='throughput', larger=True, thresh=500, weight=1.0)}]
 
-        print(solve(parameter_bounds, linear_relation, clients_slos_loose, 10))
+        parameter_bounds_cv = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                               EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}}}
+        clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
+                            'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
+                            'model_size': SLO(var='model_size', larger=True, thresh=2, weight=0.7)}]
+
+        print(solve(parameter_bounds_cv, {'throughput': self.cpd_cv}, clients_slos_cv, 10))
 
     def test_solve_qr(self):
         parameter_bounds = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
