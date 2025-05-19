@@ -13,6 +13,7 @@ from scipy import stats
 
 from agent import agent_utils
 from agent.ES_Registry import ServiceType
+from agent.RRM import calculate_missing_vars
 from utils import print_execution_time
 
 
@@ -64,19 +65,6 @@ class LGBN:
 
             linear_relations[cpd.variable] = cpd
         return linear_relations
-
-
-def calculate_missing_vars(partial_state, total_rps: int):
-    full_state = partial_state.copy()
-
-    if "throughput" not in partial_state.keys():
-        raise RuntimeWarning("Should be included!!")
-
-    if "completion_rate" not in partial_state.keys():
-        completion_r_expected = partial_state['throughput'] / total_rps if total_rps > 0 else 1.0
-        full_state = full_state | {"completion_rate": completion_r_expected}
-
-    return full_state
 
 
 def preprocess_data(df):

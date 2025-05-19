@@ -39,15 +39,8 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
 
     # ---------- Part 1: LGBN Relations ----------
 
-    # for key, item in linear_relations.items():
-    #     variables[key] = item.beta[0]
-    #     for i in range(1, len(item.beta)):
-    #         variables[key] = variables[key] + (variables[item.evidence[i - 1]] * item.beta[i])
-
     dependent_variables = rrm.get_all_dependent_vars_ass(service_type, independent_variables)
     full_state = independent_variables | dependent_variables
-
-    # TODO: Move the underlying function somewhere else from LGBN
     full_state |= calculate_missing_vars(full_state, total_rps)
 
     # ---------- Part 2: Client SLOs ----------
@@ -111,23 +104,23 @@ def constraint_total_cores(x, services, max_total_cores):
     return max_total_cores - total_cores_ass  # must be 0
 
 
-def solve_global(service_context_m, max_cores):
-    constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_context_m, max_cores)}]
+def solve_global(service_contexts_m, max_cores):
+    constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
     x0 = []
-    for _, parameter_bounds, _, _ in service_context_m:
+    for _, parameter_bounds, _, _ in service_contexts_m:
         for ES_desc in parameter_bounds.values():
             ES_var = list(ES_desc.keys())[0]
             flat_bounds.append((ES_desc[ES_var]["min"], ES_desc[ES_var]["max"]))
 
             if ES_var == 'cores':
-                x0.append(max_cores / len(service_context_m))
+                x0.append(max_cores / len(service_contexts_m))
             else:
                 x0.append((ES_desc[ES_var]["min"] + ES_desc[ES_var]["max"]) / 2)
 
     result = minimize(composite_obj_global, x0, method='SLSQP', constraints=constraints,
-                      bounds=flat_bounds, args=service_context_m)
+                      bounds=flat_bounds, args=service_contexts_m)
 
     # print(result)
     if not result.success:

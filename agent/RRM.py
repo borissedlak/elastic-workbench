@@ -44,8 +44,8 @@ class RRM:
         poly, model = self.models[service_type][dep_var]
 
         filtered_sorted_state = {k: sample_state[k] for k in sorted(independent_variables) if k in sample_state}
-        X_single = np.array([list(filtered_sorted_state.values())])  # Shape np.array([[4, 400]])
-        X_poly_single = poly.transform(X_single)
+        X_single_df = pd.DataFrame([filtered_sorted_state], columns=sorted(filtered_sorted_state.keys()))
+        X_poly_single = poly.transform(X_single_df)
         y_pred_single = model.predict(X_poly_single)
         return y_pred_single[0]
 
@@ -125,6 +125,17 @@ def get_dependent_variable_mapping(service_type: ServiceType):
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
+def calculate_missing_vars(partial_state, total_rps: int):
+    full_state = partial_state.copy()
+
+    if "throughput" not in partial_state.keys():
+        raise RuntimeWarning("Should be included!!")
+
+    if "completion_rate" not in partial_state.keys():
+        completion_r_expected = partial_state['throughput'] / total_rps if total_rps > 0 else 1.0
+        full_state = full_state | {"completion_rate": completion_r_expected}
+
+    return full_state
 
 def draw_3d_plot(df, var, deps, poly, model):
     if len(deps) != 2:

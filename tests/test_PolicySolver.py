@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-from pgmpy.factors.continuous import LinearGaussianCPD
-
 from agent.ES_Registry import EsType, ServiceType
 from agent.PolicySolver_RRM import solve, local_obj, solve_global
 from agent.SLO_Registry import SLO
@@ -36,7 +34,6 @@ class TestPolicySolver(TestCase):
         self.assertAlmostEqual(1.0, -calculated_slo_f, delta=0.015)
 
     def test_solve_cv_minimal(self):
-
         parameter_bounds_cv = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
                                EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}}}
         clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
@@ -68,7 +65,7 @@ class TestPolicySolver(TestCase):
 
         parameter_bounds_cv = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
                                EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}}}
-        clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=30, weight=1.0),
+        clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=10, weight=0.6),
                             # 'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
                             'model_size': SLO(var='model_size', larger=True, thresh=2, weight=0.2)}]
         service_context.append((ServiceType.CV, parameter_bounds_cv, clients_slos_cv, 100))
