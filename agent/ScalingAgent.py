@@ -10,7 +10,7 @@ from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
-from agent.LGBN import calculate_missing_vars
+from agent.obsolete.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
 from agent.agent_utils import log_agent_experience, Full_State
 

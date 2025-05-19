@@ -3,7 +3,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
 import utils
-from agent import LGBN
+from agent.obsolete import LGBN
 from agent.ES_Registry import ServiceType
 
 df = LGBN.preprocess_data(LGBN.collect_all_metric_files())

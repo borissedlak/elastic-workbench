@@ -5,10 +5,9 @@ import random
 from typing import Dict
 
 import utils
-from agent import PolicySolver
 from agent.ES_Registry import ServiceID, ServiceType, EsType
-from agent.LGBN import LGBN
 from agent.ScalingAgent import ScalingAgent
+from agent.obsolete.LGBN import LGBN
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -92,7 +91,8 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    agent = LGBN_Local_Agent(services_monitored=[qr_local, cv_local], prom_server=ps, evaluation_cycle=EVALUATION_CYCLE_DELAY)
+    agent = LGBN_Local_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
+                             evaluation_cycle=EVALUATION_CYCLE_DELAY)
 
     agent.reset_services_states()
     agent.start()

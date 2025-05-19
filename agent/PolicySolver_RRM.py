@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from agent.ES_Registry import ServiceType
-from agent.LGBN import calculate_missing_vars
+from agent.obsolete.LGBN import calculate_missing_vars
 from agent.RRM import RRM
 
 

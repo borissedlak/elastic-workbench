@@ -5,7 +5,7 @@ import numpy as np
 from pgmpy.factors.continuous import LinearGaussianCPD
 from scipy.optimize import minimize
 
-from agent.LGBN import calculate_missing_vars
+from agent.obsolete.LGBN import calculate_missing_vars
 
 
 def soft_clip(x, x0=0.0, x1=1.0):
