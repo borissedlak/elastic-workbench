@@ -5,7 +5,7 @@ import gymnasium
 
 import utils
 from agent.ES_Registry import ServiceType
-from agent.obsolete.LGBN import LGBN
+from agent.LGBN import LGBN
 from agent.SLO_Registry import calculate_slo_fulfillment, SLO, to_avg_SLO_F
 from agent.agent_utils import Full_State
 

@@ -1,4 +1,3 @@
-import ast
 from typing import Dict
 
 import numpy as np
@@ -9,11 +8,9 @@ from pgmpy.base import DAG
 from pgmpy.estimators import AIC, HillClimbSearch
 from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
-from scipy import stats
 
-from agent import agent_utils
 from agent.ES_Registry import ServiceType
-from agent.RRM import calculate_missing_vars
+from agent.RRM import calculate_missing_vars, collect_all_metric_files, preprocess_data
 from utils import print_execution_time
 
 
@@ -43,7 +40,6 @@ class LGBN:
             sample_val = np.random.normal(mu, sigma, 1)[0]
             samples = samples | {v: int(sample_val)}
 
-        # TODO: Move somewhere else
         if sanitize:
             for var, min, max in [("avg_p_latency", 1, 999999)]:
                 if var in samples.keys():
@@ -64,41 +60,6 @@ class LGBN:
 
             linear_relations[cpd.variable] = cpd
         return linear_relations
-
-
-def preprocess_data(df):
-    df_filtered = agent_utils.filter_rows_during_cooldown(df.copy())
-    df_filtered = df_filtered[df_filtered['avg_p_latency'] >= 0]  # Filter out rows where we had no processing
-    z_scores = np.abs(stats.zscore(df_filtered['avg_p_latency']))
-    df_filtered = df_filtered[z_scores < 1.5]  # 3 is a common threshold for extreme outliers
-    df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
-
-    # Convert and expand service config dict
-    df_filtered['s_config'] = df_filtered['s_config'].apply(lambda x: ast.literal_eval(x))
-    metadata_expanded = pd.json_normalize(df_filtered['s_config'])
-
-    combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
-    del combined_df_expanded['timestamp']
-
-    print(f"Training data contains service types {df_filtered['service_type'].unique()}")
-
-    return combined_df_expanded
-
-
-# TODO: This should also fetch files from remote hosts
-def collect_all_metric_files():
-    metrics_local = get_local_metric_file()
-    metrics_contents = [metrics_local]
-    combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
-    return combined_df
-
-
-def get_local_metric_file(path="../share/metrics/metrics.csv"):
-    try:
-        df = pd.read_csv(path)
-        return "local", df
-    except Exception as e:
-        print(f"Failed to read {path}: {e}")
 
 
 @print_execution_time  # Roughly 1 to 1.5s

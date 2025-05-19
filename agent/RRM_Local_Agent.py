@@ -8,7 +8,6 @@ import utils
 from agent.ES_Registry import ServiceID, ServiceType, EsType
 from agent.PolicySolver_RRM import solve
 from agent.ScalingAgent import ScalingAgent
-from agent.obsolete.LGBN import LGBN
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -27,8 +26,6 @@ class LGBN_Local_Agent(ScalingAgent):
                  log_experience=None):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
-
-        self.lgbn = LGBN()
 
     def orchestrate_services_optimally(self, services_m):
         shuffled_services = self.services_monitored.copy()
