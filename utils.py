@@ -118,17 +118,3 @@ def write_metrics_to_csv(lines):
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
     return sum(i for i in client_arrivals.values())
 
-# def calculate_cpu_percentage(stats):
-#     cpu_delta: int = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
-#     system_delta: int = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
-#     number_of_cores: int = 16
-#     cpu_percent: float = (cpu_delta / system_delta) * number_of_cores * 100
-#
-#     return int(cpu_percent)
-
-# def calculate_avg_latency_ms(start_time: datetime.datetime, num_items_processed):
-#     if num_items_processed == 0:
-#         return 0
-#
-#     elapsed_time_ms = int((datetime.datetime.now() - start_time).total_seconds() * 1000)
-#     return elapsed_time_ms / num_items_processed

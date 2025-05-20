@@ -1,17 +1,11 @@
 import random
 
-import numpy as np
 from scipy.optimize import minimize
 
 from agent.ES_Registry import ServiceType
 from agent.LGBN import calculate_missing_vars
 from agent.RRM import RRM
-
-
-def soft_clip(x, x0=0.0, x1=1.0):
-    t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
-    return t ** 3 * (t * (6 * t - 15) + 10)
-
+from agent.SLO_Registry import calculate_slo_fulfillment
 
 rrm = RRM(show_figures=False)
 
@@ -47,24 +41,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
 
     slo_f_all_clients = 0
     for slos_single_client in slos_all_clients:
-
-        slo_f_single_client = 0
-        max_slo_f_single_client = sum([s.weight for s in slos_single_client.values()])
-
-        for slo in slos_single_client.values():
-            var, larger, thresh, weight = slo
-            value = full_state[var]
-            if larger:
-                slo_f_single_slo = (value / float(thresh))
-            else:
-                slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))
-
-            slo_f_single_client += soft_clip(slo_f_single_slo) * weight
-
-        scaled_reward = slo_f_single_client / max_slo_f_single_client
-        if full_state['throughput'] < 1.0:
-            scaled_reward *= 0.1  # Heavily penalize if no output
-
+        scaled_reward = calculate_slo_fulfillment(full_state, slos_single_client)
         slo_f_all_clients += scaled_reward
 
     slo_f = slo_f_all_clients / len(slos_all_clients)
@@ -106,7 +83,7 @@ def constraint_total_cores(x, services, max_total_cores):
 
 def solve_global(service_contexts_m, max_cores):
     global rrm
-    rrm.init_models() # Might not be needed every time we solve the assignment
+    rrm.init_models()  # Might not be needed every time we solve the assignment
 
     constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
@@ -129,7 +106,6 @@ def solve_global(service_contexts_m, max_cores):
     if not result.success:
         raise RuntimeWarning("Policy solver encountered an error: " + result.message)
 
-    # TODO: need to place into correct structure
     assignments = []
     offset = 0
     for _, parameter_bounds, _, _ in service_contexts_m:

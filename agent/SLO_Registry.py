@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import Dict, Any, List, Tuple, NamedTuple
 
 import numpy as np
 
 from agent.ES_Registry import ServiceType
+
+logger = logging.getLogger("multiscale")
 
 
 class SLO(NamedTuple):
@@ -13,28 +16,42 @@ class SLO(NamedTuple):
     weight: float
 
 
+def soft_clip(x, x0=0.0, x1=1.0) -> float:
+    t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
+    return float(t ** 3 * (t * (6 * t - 15) + 10))
+
+
+def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
+    # return sum(value for _, value in slof) / float(len(slof))
+    slo_f_single_client = sum(value for _, value in slof)
+
+    max_slo_f_single_client = sum([s.weight for s in slos.values()])
+    scaled_reward = slo_f_single_client / max_slo_f_single_client
+
+    return scaled_reward
+
+
 # TODO: Calculate overall streaming latency and place into state
-#  Ideally I do this in a function that can also be reused for the expected SLO_F
+#  I might also add a flag to use either the soft clip or the hard np.clip
 def calculate_slo_fulfillment(state: Dict[str, Any], slos: Dict[str, SLO]) -> List[Tuple[str, float]]:
-    fuzzy_slof = []
+    slo_trace = []
+    # slo_f_single_client = 0.0
 
-    for state_var, value in state.items():
-        if state_var in slos:
-            var, larger, thresh, weight = slos[state_var]
+    for slo in slos.values():
+        var, larger, thresh, weight = slo
+        value = state[var]
+        if larger:
+            slo_f_single_slo = (value / float(thresh))
+        else:
+            slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
 
-            if larger:
-                slo_f = (value / float(thresh))
-            else:
-                slo_f = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
+        slo_f_single_slo = float(soft_clip(slo_f_single_slo) * weight)
+        if 'throughput' in state and state['throughput'] < 1.0:
+            slo_f_single_slo *= 0.1  # Heavily penalize if no output
 
-            slo_f = float(np.clip(slo_f, 0.0, 1.0)) * float(weight)
-            fuzzy_slof.append((state_var, slo_f))
+        slo_trace.append((var, slo_f_single_slo))
 
-    return fuzzy_slof
-
-
-def to_avg_SLO_F(slof: List[Tuple[str, float]]) -> float:
-    return sum(value for _, value in slof) / float(len(slof))
+    return slo_trace
 
 
 class SLO_Registry:

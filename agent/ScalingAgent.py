@@ -11,8 +11,8 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
-from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment
-from agent.agent_utils import log_agent_experience, Full_State
+from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment, to_normalized_SLO_F
+from agent.agent_utils import log_service_state, Full_State
 
 logger = logging.getLogger("multiscale")
 
@@ -65,7 +65,6 @@ class ScalingAgent(Thread, ABC):
 
         all_client_SLO_F = {}
         for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
-
             client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
             if client_SLOs == {}:
                 logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
@@ -97,10 +96,6 @@ class ScalingAgent(Thread, ABC):
     @abstractmethod
     def orchestrate_services_optimally(self, services_m):
         pass
-
-    # @abstractmethod
-    # def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
-    #     pass
 
     def get_free_cores(self):
         cores_ass = self.get_core_assignment(self.services_monitored)
@@ -151,4 +146,21 @@ class ScalingAgent(Thread, ABC):
         state_pw = Full_State(service_state[extra_var], quality_t, service_state['throughput'],
                               tp_t, service_state['cores'], free_cores)
 
-        log_agent_experience(state_pw, self.log_experience)
+        log_service_state(state_pw, self.log_experience)
+
+    def evaluate_slos_and_log(self, service_state, service_m, assigned_clients):
+
+        (self.get_clients_SLO_F(service_m, service_state, assigned_clients))
+
+        pass
+        # all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
+        # free_cores = self.get_free_cores()
+        #
+        # # TODO: A bit too cheep here.....
+        # extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
+        #
+        # quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
+        # state_pw = Full_State(service_state[extra_var], quality_t, service_state['throughput'],
+        #                       tp_t, service_state['cores'], free_cores)
+        #
+        # log_service_state(state_pw, self.log_experience)

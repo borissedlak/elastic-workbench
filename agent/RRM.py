@@ -1,5 +1,6 @@
 import ast
 import logging
+import os
 from typing import Dict, Any
 
 import numpy as np
@@ -14,6 +15,7 @@ from agent import agent_utils
 from agent.ES_Registry import ServiceType
 
 logger = logging.getLogger("multiscale")
+ROOT = os.path.dirname(__file__)
 
 
 class RRM:
@@ -79,7 +81,7 @@ def collect_all_metric_files():
     return combined_df
 
 
-def get_local_metric_file(path="../share/metrics/metrics.csv"):
+def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
     try:
         df = pd.read_csv(path)
         return "local", df
@@ -119,6 +121,7 @@ def train_rrn_models(df, show_result=False):
 
     return service_models
 
+
 def get_dependent_variable_mapping(service_type: ServiceType):
     if service_type == ServiceType.QR:
         return {'throughput': sorted(['cores', 'quality'])}
@@ -126,6 +129,7 @@ def get_dependent_variable_mapping(service_type: ServiceType):
         return {'throughput': sorted(['cores', 'model_size'])}
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
+
 
 def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
@@ -138,6 +142,7 @@ def calculate_missing_vars(partial_state, total_rps: int):
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
+
 
 def draw_3d_plot(df, var, deps, poly, model):
     if len(deps) != 2:

@@ -47,7 +47,7 @@ class RRM_Global_Agent(ScalingAgent):
 
         service_state = self.resolve_service_state(service_m, assigned_clients)
         if self.log_experience is not None:
-            self.build_state_and_log(service_state, service_m, assigned_clients)
+            self.evaluate_slos_and_log(service_state, service_m, assigned_clients)
 
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)

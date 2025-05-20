@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 
 import utils
 from agent.ES_Registry import ServiceID, ServiceType
-from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry, to_avg_SLO_F
+from agent.RRM_Global_Agent import RRM_Global_Agent
+from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry, to_normalized_SLO_F
 from agent.agent_utils import delete_experience_file
 from iwai.DQN_Agent import DQN_Agent
 from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
@@ -21,7 +22,7 @@ EXPERIMENT_DURATION = 200
 ps = "http://172.20.0.2:9090"
 
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-# cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
 EVALUATION_FREQUENCY = 4
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
@@ -53,6 +54,25 @@ def eval_DQN_agent():
         agent = DQN_Agent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=EVALUATION_FREQUENCY, dqn=dqn,
                           slo_registry_path="./config/slo_config.json", es_registry_path="./config/es_registry.json",
                           log_experience=rep)
+        agent.reset_services_states()
+        time.sleep(2)
+
+        agent.start()
+        time.sleep(EXPERIMENT_DURATION)
+        agent.terminate_gracefully()
+        print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
+
+
+def eval_RRM_agent():
+    delete_experience_file()
+
+    print(f"Starting experiment for Agent")
+
+    for rep in range(1, EXPERIMENT_REPETITIONS + 1):
+        agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
+                                 evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path="./config/slo_config.json",
+                                 es_registry_path="./config/es_registry.json",
+                                 log_experience=rep)
         agent.reset_services_states()
         time.sleep(2)
 
@@ -111,7 +131,7 @@ def calculate_mean_std(slof_file):
     # Step 2: Reindex each part
     for j in range(1, EXPERIMENT_REPETITIONS + 1):
         states = df[df['rep'] == j].to_dict(orient='records')
-        slo_f_run = [to_avg_SLO_F(calculate_slo_fulfillment(s, client_SLOs)) for s in states]
+        slo_f_run = [to_normalized_SLO_F(calculate_slo_fulfillment(s, client_SLOs)) for s in states]
         slo_fs_index.append(slo_f_run)
 
     array = np.array(slo_fs_index)
@@ -123,5 +143,6 @@ def calculate_mean_std(slof_file):
 
 if __name__ == '__main__':
     # train_q_network()
-    eval_DQN_agent()
+    # eval_DQN_agent()
+    eval_RRM_agent()
     visualize_data(["agent_experience.csv"], "./plots/slo_f.png")

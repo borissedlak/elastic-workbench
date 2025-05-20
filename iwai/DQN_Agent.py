@@ -79,10 +79,10 @@ class DQN_Agent(ScalingAgent):
 
         if 1 <= action_pw <= 2:
             delta_quality = -100 if action_pw == 1 else 100
-            return EsType.QUALITY_SCALE, {'quality': int(state_pw.quality + delta_quality)}
+            return [EsType.QUALITY_SCALE], {'quality': int(state_pw.quality + delta_quality)}
         if 3 <= action_pw <= 4:
             delta_cores = -1 if action_pw == 3 else 1
-            return EsType.RESOURCE_SCALE, {'cores': int(state_pw.cores + delta_cores)}
+            return [EsType.RESOURCE_SCALE], {'cores': int(state_pw.cores + delta_cores)}
 
         return None, None
 

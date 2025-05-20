@@ -79,7 +79,7 @@ class Full_State(NamedTuple):
         #     self.cores, self.free_cores > 0]
 
 
-def log_agent_experience(state: Full_State, prefix):
+def log_service_state(state: Full_State, prefix):
     # Define the directory and file name
     directory = "./"
     file_name = "agent_experience.csv"

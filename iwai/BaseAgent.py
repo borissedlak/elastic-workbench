@@ -5,7 +5,7 @@ import time
 import utils
 from DockerClient import DockerInfo
 from agent.ScalingAgent_v2 import ScalingAgent
-from agent.agent_utils import log_agent_experience
+from agent.agent_utils import log_service_state
 from slo_config import calculate_slo_reward, PW_MAX_CORES, Full_State
 
 DOCKER_SOCKET = utils.get_env_param('DOCKER_SOCKET', "unix:///var/run/docker.sock")
@@ -34,7 +34,7 @@ class BaseAgent(ScalingAgent):
             state_pw = self.get_state_PW()
             logger.debug(f"Current state before change is {state_pw}")
             logger.debug(f"Current SLO-F before change is {calculate_slo_reward(state_pw.for_tensor())}")
-            log_agent_experience(state_pw, self.log) if self.log else None
+            log_service_state(state_pw, self.log) if self.log else None
 
             action_pw = self.choose_action(state_pw)
             self.act_on_env(action_pw, state_pw)
