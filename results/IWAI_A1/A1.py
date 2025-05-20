@@ -1,16 +1,16 @@
 import logging
-import sys
 import time
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from pandas import DataFrame
 
 import utils
 from agent.ES_Registry import ServiceID, ServiceType
 from agent.RRM_Global_Agent import RRM_Global_Agent
-from agent.SLO_Registry import calculate_slo_fulfillment, SLO_Registry, to_normalized_SLO_F
-from agent.agent_utils import delete_experience_file
+from agent.SLO_Registry import SLO_Registry
+from agent.agent_utils import delete_file_if_exists
 from iwai.DQN_Agent import DQN_Agent
 from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
 
@@ -18,7 +18,7 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 200
+EXPERIMENT_DURATION = 60
 
 ps = "http://172.20.0.2:9090"
 
@@ -31,7 +31,7 @@ MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 slo_registry = SLO_Registry("./config/slo_config.json")
 client_SLOs = slo_registry.get_SLOs_for_client("C_1", qr_local.service_type)
 
-logging.getLogger('multiscale').setLevel(logging.WARNING)
+logging.getLogger('multiscale').setLevel(logging.INFO)
 
 
 def train_q_network():
@@ -46,7 +46,7 @@ def train_q_network():
 
 # TODO: Generalize for different agent types
 def eval_DQN_agent():
-    delete_experience_file()
+    delete_file_if_exists()
 
     print(f"Starting experiment for Agent")
     dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, nn_folder=nn_folder)
@@ -65,8 +65,8 @@ def eval_DQN_agent():
 
 
 def eval_RRM_agent():
-    # TODO: Should also remove metrics file initially for RRM solver
-    # delete_experience_file()
+    delete_file_if_exists("./agent_experience.csv")
+    delete_file_if_exists("../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for Agent")
 
@@ -84,20 +84,34 @@ def eval_RRM_agent():
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
+def color_for_s(service_type):
+    if service_type == "elastic-workbench-qr-detector-1":
+        return 'red'
+    elif service_type == "elastic-workbench-cv-analyzer-1":
+        return 'green'
+    else:
+        raise Exception(f"Unknown service_type: {service_type}")
+
+
 def visualize_data(slof_files, output_file):
-    m_meth, std_meth = calculate_mean_std(slof_files[0])
-    # m_base, _ = calculate_mean_std(slof_files[1])
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
+    df = pd.read_csv(slof_files[0])
 
     # TODO: Maybe I can switch to timesteps on the x axis? Also is more intuitive to read
-    x = np.arange(len(m_meth))
-    lower_bound = np.array(m_meth) - np.array(std_meth)
-    upper_bound = np.array(m_meth) + np.array(std_meth)
+    x = np.arange(40)  # len(m_meth))
 
     plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
-    plt.plot(x, m_meth, label='Mean SLO Fulfillment', color='red', linewidth=2)
-    plt.fill_between(x, lower_bound, upper_bound, color='red', alpha=0.2)  # , label='Standard Deviation')
+
+    for service in df['service'].unique():
+        df_filtered = df[df['service'] == service]
+        m_meth, std_meth = calculate_mean_std(df_filtered)
+        lower_bound = np.array(m_meth) - np.array(std_meth)
+        upper_bound = np.array(m_meth) + np.array(std_meth)
+        plt.plot(x, m_meth, label=service, color=color_for_s(service), linewidth=2)  # label = 'Mean SLO Fulfillment'
+        plt.fill_between(x, lower_bound, upper_bound, color=color_for_s(service),
+                         alpha=0.2)  # , label='Standard Deviation')
+
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
@@ -123,8 +137,7 @@ def get_changed_lines(slof_file):
     return df['change']
 
 
-def calculate_mean_std(slof_file):
-    df = pd.read_csv(slof_file)
+def calculate_mean_std(df: DataFrame):
     del df['timestamp']
 
     # parts = np.array_split(df, EXPERIMENT_REPETITIONS)
@@ -132,9 +145,9 @@ def calculate_mean_std(slof_file):
 
     # Step 2: Reindex each part
     for j in range(1, EXPERIMENT_REPETITIONS + 1):
-        states = df[df['rep'] == j].to_dict(orient='records')
-        slo_f_run = [to_normalized_SLO_F(calculate_slo_fulfillment(s, client_SLOs)) for s in states]
-        slo_fs_index.append(slo_f_run)
+        slo_f_run = df[df['rep'] == j]['slo_f']
+        # slo_f_run = [r['slo_f'] for r in rows]
+        slo_fs_index.append(slo_f_run.to_list())
 
     array = np.array(slo_fs_index)
     mean_over_time = np.mean(array, axis=0)

@@ -19,16 +19,16 @@ ROOT = os.path.dirname(__file__)
 
 
 class RRM:
-    def __init__(self, show_figures=False):
+    def __init__(self, show_figures=False, lazy_loading=False):
         self.show_figures = show_figures
-        self.models: Dict[ServiceType, Dict] = self.init_models()
+        self.models: Dict[ServiceType, Dict] = None
 
     @utils.print_execution_time
     def init_models(self):
         df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
-        return train_rrn_models(df_cleared, self.show_figures)
+        self.models = train_rrn_models(df_cleared, self.show_figures)
 
     def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
         dependent_variables = list(get_dependent_variable_mapping(service_type).keys())

@@ -37,7 +37,7 @@
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 100,
+          "thresh": 20,
           "weight": 1.0
         },
         {

@@ -78,6 +78,7 @@ class Full_State(NamedTuple):
         # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
+
 def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
     # Define the directory and file name
     directory = "./"
@@ -95,6 +96,7 @@ def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
 
         writer.writerow([prefix, datetime.datetime.now(), service.container_id, slo_f, state])
 
+
 def log_service_state(state: Full_State, prefix):
     # Define the directory and file name
     directory = "./"
@@ -109,14 +111,16 @@ def log_service_state(state: Full_State, prefix):
 
         if not file_exists or os.path.getsize(file_path) == 0:
             writer.writerow(
-                ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores", "free_cores"])
+                ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores",
+                 "free_cores"])
 
         writer.writerow([prefix, datetime.datetime.now()] + list(state))
 
-def delete_experience_file():
-    directory = "./"
-    file_name = "agent_experience.csv"
-    file_path = os.path.join(directory, file_name)
+
+def delete_file_if_exists(file_path="./agent_experience.csv"):
+    # directory = "./"
+    # file_name = file
+    file_path = os.path.join(file_path)
 
     if os.path.exists(file_path):
         os.remove(file_path)
