@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 
 import numpy as np
@@ -64,7 +65,8 @@ def eval_DQN_agent():
 
 
 def eval_RRM_agent():
-    delete_experience_file()
+    # TODO: Should also remove metrics file initially for RRM solver
+    # delete_experience_file()
 
     print(f"Starting experiment for Agent")
 
@@ -142,6 +144,13 @@ def calculate_mean_std(slof_file):
 
 
 if __name__ == '__main__':
+    # delete_experience_file()
+    # agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
+    #                          evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path="./config/slo_config.json",
+    #                          es_registry_path="./config/es_registry.json")
+    # agent.reset_services_states()
+    # sys.exit()
+
     # train_q_network()
     # eval_DQN_agent()
     eval_RRM_agent()

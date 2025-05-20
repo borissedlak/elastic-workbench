@@ -11,8 +11,8 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
-from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment, to_normalized_SLO_F
-from agent.agent_utils import log_service_state, Full_State
+from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment, to_normalized_SLO_F, calculate_SLO_F_clients
+from agent.agent_utils import log_service_state, Full_State, log_slo_fulfillment
 
 logger = logging.getLogger("multiscale")
 
@@ -61,20 +61,20 @@ class ScalingAgent(Thread, ABC):
             self.orchestrate_services_optimally(self.services_monitored)
             time.sleep(self.evaluation_cycle)
 
-    def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
-
-        all_client_SLO_F = {}
-        for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
-            client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
-            if client_SLOs == {}:
-                logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
-                continue
-
-            client_SLO_F_emp = calculate_slo_fulfillment(service_state, client_SLOs)
-            all_client_SLO_F[client_id] = client_SLO_F_emp
-
-        # print("Actual SLO-F", all_client_SLO_F)
-        return all_client_SLO_F
+    # def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
+    #
+    #     all_client_SLO_F = {}
+    #     for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
+    #         client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
+    #         if client_SLOs == {}:
+    #             logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
+    #             continue
+    #
+    #         client_SLO_F_emp = calculate_slo_fulfillment(service_state, client_SLOs)
+    #         all_client_SLO_F[client_id] = client_SLO_F_emp
+    #
+    #     # print("Actual SLO-F", all_client_SLO_F)
+    #     return all_client_SLO_F
 
     # TODO: Remove this host fix as soon as possible
     def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown=True):
@@ -148,19 +148,7 @@ class ScalingAgent(Thread, ABC):
 
         log_service_state(state_pw, self.log_experience)
 
-    def evaluate_slos_and_log(self, service_state, service_m, assigned_clients):
+    def evaluate_slos_and_log(self, service_m, service_state, slos_all_clients):
 
-        (self.get_clients_SLO_F(service_m, service_state, assigned_clients))
-
-        pass
-        # all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
-        # free_cores = self.get_free_cores()
-        #
-        # # TODO: A bit too cheep here.....
-        # extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
-        #
-        # quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
-        # state_pw = Full_State(service_state[extra_var], quality_t, service_state['throughput'],
-        #                       tp_t, service_state['cores'], free_cores)
-        #
-        # log_service_state(state_pw, self.log_experience)
+        slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)
+        log_slo_fulfillment(service_m, slo_f, self.log_experience, service_state)

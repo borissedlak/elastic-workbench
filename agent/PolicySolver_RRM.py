@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 from agent.ES_Registry import ServiceType
 from agent.LGBN import calculate_missing_vars
 from agent.RRM import RRM
-from agent.SLO_Registry import calculate_slo_fulfillment
+from agent.SLO_Registry import calculate_SLO_F_clients
 
 rrm = RRM(show_figures=False)
 
@@ -39,12 +39,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
 
     # ---------- Part 2: Client SLOs ----------
 
-    slo_f_all_clients = 0
-    for slos_single_client in slos_all_clients:
-        scaled_reward = calculate_slo_fulfillment(full_state, slos_single_client)
-        slo_f_all_clients += scaled_reward
-
-    slo_f = slo_f_all_clients / len(slos_all_clients)
+    slo_f = calculate_SLO_F_clients(full_state, slos_all_clients)
     # print(f"Calculated SLO-F for {full_state}: {slo_f}")
     return -slo_f  # because we want to maximize
 

@@ -20,6 +20,15 @@ def soft_clip(x, x0=0.0, x1=1.0) -> float:
     t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
     return float(t ** 3 * (t * (6 * t - 15) + 10))
 
+# TODO: Write tests for this and the normalized method
+def calculate_SLO_F_clients(full_state, slos_all_clients):
+    slo_f_all_clients = 0.0
+    for slos_single_client in slos_all_clients:
+        slo_f_list = calculate_slo_fulfillment(full_state, slos_single_client)
+        normalized_reward = to_normalized_SLO_F(slo_f_list, slos_single_client)
+        slo_f_all_clients += normalized_reward
+
+    return slo_f_all_clients / len(slos_all_clients)
 
 def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
     # return sum(value for _, value in slof) / float(len(slof))
@@ -33,20 +42,20 @@ def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> 
 
 # TODO: Calculate overall streaming latency and place into state
 #  I might also add a flag to use either the soft clip or the hard np.clip
-def calculate_slo_fulfillment(state: Dict[str, Any], slos: Dict[str, SLO]) -> List[Tuple[str, float]]:
+def calculate_slo_fulfillment(full_state: Dict[str, Any], slos: Dict[str, SLO]) -> List[Tuple[str, float]]:
     slo_trace = []
     # slo_f_single_client = 0.0
 
     for slo in slos.values():
         var, larger, thresh, weight = slo
-        value = state[var]
+        value = full_state[var]
         if larger:
             slo_f_single_slo = (value / float(thresh))
         else:
             slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
 
         slo_f_single_slo = float(soft_clip(slo_f_single_slo) * weight)
-        if 'throughput' in state and state['throughput'] < 1.0:
+        if 'throughput' in full_state and full_state['throughput'] < 1.0:
             slo_f_single_slo *= 0.1  # Heavily penalize if no output
 
         slo_trace.append((var, slo_f_single_slo))

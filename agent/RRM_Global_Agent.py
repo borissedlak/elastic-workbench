@@ -32,26 +32,25 @@ class RRM_Global_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-        if np.random.rand() > 0.15: # TODO: Start high and converge to a minimum of 0.05 (?)
+        if np.random.rand() > 0.15:  # TODO: Start high and converge to a minimum of 0.05 (?)
             assignments = solve_global(service_contexts, MAX_CORES)
             assignments = apply_gaussian_noise_to_asses(assignments)
             self.orchestrate_all_ES_deterministic(services_m, assignments)
         else:
             logger.info("Agent is exploring.....")
-            self.orchestrate_all_ES_randomly(services_m)
-
-
+            self.orchestrate_all_services_randomly(services_m)
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
         service_state = self.resolve_service_state(service_m, assigned_clients)
-        if self.log_experience is not None:
-            self.evaluate_slos_and_log(service_state, service_m, assigned_clients)
-
         ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
+
+        if self.log_experience is not None:
+            self.evaluate_slos_and_log(service_m, service_state, all_client_slos)
+
         return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
 
     def orchestrate_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
@@ -61,12 +60,13 @@ class RRM_Global_Agent(ScalingAgent):
             for target_ES in all_ES:
                 self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
 
-    def orchestrate_all_ES_randomly(self, services_m: list[ServiceID]):
+    def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
             rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
             self.execute_ES(service_m.host, service_m, rand_ES, rand_params)
 
-def apply_gaussian_noise_to_asses(assignment, noise = 0.08):
+
+def apply_gaussian_noise_to_asses(assignment, noise=0.08):
     for ass_group in assignment:
         for var in ass_group:
             value = ass_group[var]

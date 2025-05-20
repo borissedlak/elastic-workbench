@@ -78,6 +78,22 @@ class Full_State(NamedTuple):
         # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
+def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
+    # Define the directory and file name
+    directory = "./"
+    file_name = "agent_experience.csv"
+    file_path = os.path.join(directory, file_name)
+
+    file_exists = os.path.isfile(file_path)
+
+    # Open the file in append mode
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        if not file_exists or os.path.getsize(file_path) == 0:
+            writer.writerow(["rep", "timestamp", "service", "slo_f", "state"])
+
+        writer.writerow([prefix, datetime.datetime.now(), service.container_id, slo_f, state])
 
 def log_service_state(state: Full_State, prefix):
     # Define the directory and file name
