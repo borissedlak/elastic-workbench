@@ -8,6 +8,8 @@ from typing import NamedTuple
 
 import pandas as pd
 
+import utils
+
 logger = logging.getLogger('multiscale')
 
 
@@ -78,7 +80,7 @@ class Full_State(NamedTuple):
         # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
-
+@utils.print_execution_time
 def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
     # Define the directory and file name
     directory = "./"
@@ -115,6 +117,12 @@ def log_service_state(state: Full_State, prefix):
                  "free_cores"])
 
         writer.writerow([prefix, datetime.datetime.now()] + list(state))
+
+def wait_for_remaining_interval(interval_length: int, start_time: float):
+    interval_ms = 1000 * interval_length
+    time_elapsed = int((time.perf_counter() - start_time) * 1000)
+    if time_elapsed < interval_ms:
+        time.sleep((interval_ms - time_elapsed) / 1000)
 
 
 def delete_file_if_exists(file_path="./agent_experience.csv"):

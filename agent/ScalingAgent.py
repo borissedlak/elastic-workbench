@@ -11,8 +11,8 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
-from agent.SLO_Registry import SLO_Registry, calculate_slo_fulfillment, to_normalized_SLO_F, calculate_SLO_F_clients
-from agent.agent_utils import log_service_state, Full_State, log_slo_fulfillment
+from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
+from agent.agent_utils import log_service_state, Full_State, log_slo_fulfillment, wait_for_remaining_interval
 
 logger = logging.getLogger("multiscale")
 
@@ -58,23 +58,10 @@ class ScalingAgent(Thread, ABC):
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
         while self._running:
+            start_time = time.perf_counter()
             self.orchestrate_services_optimally(self.services_monitored)
-            time.sleep(self.evaluation_cycle)
 
-    # def get_clients_SLO_F(self, service_m: ServiceID, service_state, assigned_clients):
-    #
-    #     all_client_SLO_F = {}
-    #     for client_id, client_rps in assigned_clients.items():  # Check the SLO-F of their clients
-    #         client_SLOs = self.slo_registry.get_SLOs_for_client(client_id, service_m.service_type)
-    #         if client_SLOs == {}:
-    #             logger.warning(f"Cannot find SLOs for service {service_m}, client {client_id}")
-    #             continue
-    #
-    #         client_SLO_F_emp = calculate_slo_fulfillment(service_state, client_SLOs)
-    #         all_client_SLO_F[client_id] = client_SLO_F_emp
-    #
-    #     # print("Actual SLO-F", all_client_SLO_F)
-    #     return all_client_SLO_F
+            wait_for_remaining_interval(self.evaluation_cycle, start_time)
 
     # TODO: Remove this host fix as soon as possible
     def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown=True):

@@ -1,3 +1,4 @@
+import threading
 import requests
 
 
@@ -5,31 +6,14 @@ class HttpClient:
     def __init__(self):
         self.PORT = 8080
         self.SESSION = requests.Session()
-        self.http_connection = None
-        # self.CHANGE_THREADS_ROUTE = "/change_threads"
-        # self.CHANGE_CONFIG_ROUTE = "/change_config"
 
-        # print(f"Opening HTTP Connection on port {self.PORT}")
+    def _call_ES_endpoint(self, host, route, parameter_ass):
+        try:
+            response = self.SESSION.put(f"http://{host}:{self.PORT}{route}", params=parameter_ass)
+            response.raise_for_status()  # Raise an exception for non-2xx status codes
+        except requests.RequestException as e:
+            print("Request failed:", e)
 
     def call_ES_endpoint(self, host, route, parameter_ass):
-        # query_params = {}
-        # for param in parameter_ass:
-        #     query_params[param] = param
-
-        response = self.SESSION.put(f"http://{host}:{self.PORT}{route}", params=parameter_ass)
-        # print(response.content)
-        response.raise_for_status()  # Raise an exception for non-2xx status codes
-
-    # def change_threads(self, target_route, number):
-    #     query_params = {"thread_number": number}
-    #     response = self.SESSION.put(f"http://{target_route}:{self.PORT}{self.CHANGE_THREADS_ROUTE}",
-    #                                 params=query_params)
-    #     # print(response.content)
-    #     response.raise_for_status()  # Raise an exception for non-2xx status codes
-    #
-    # def change_config(self, target_route, config):
-    #     query_params = {"service_description": str(config)}
-    #     response = self.SESSION.put(f"http://{target_route}:{self.PORT}{self.CHANGE_CONFIG_ROUTE}",
-    #                                 params=query_params)
-    #     # print(response.content)
-    #     response.raise_for_status()  # Raise an exception for non-2xx status codes
+        thread = threading.Thread(target=self._call_ES_endpoint, args=(host, route, parameter_ass))
+        thread.start()

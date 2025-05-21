@@ -27,6 +27,7 @@ class RRM_Global_Agent(ScalingAgent):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
 
+    @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
         service_contexts = []
         for service_m in services_m:  # For all monitored services
@@ -49,10 +50,12 @@ class RRM_Global_Agent(ScalingAgent):
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         if self.log_experience is not None:
+            # print("log slos")
             self.evaluate_slos_and_log(service_m, service_state, all_client_slos)
 
         return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
 
+    @utils.print_execution_time
     def orchestrate_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
         # TODO: Ideally, this needs a mechanisms that avoids oscillating or changing the instance if it stays the same
         for i, service_m in enumerate(services_m):  # For all monitored services
@@ -63,7 +66,7 @@ class RRM_Global_Agent(ScalingAgent):
     def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
             rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-            self.execute_ES(service_m.host, service_m, rand_ES, rand_params)
+            self.execute_ES(service_m.host, service_m, rand_ES, rand_params, respect_cooldown=False)
 
 
 def apply_gaussian_noise_to_asses(assignment, noise=0.08):

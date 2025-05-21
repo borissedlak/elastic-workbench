@@ -18,14 +18,14 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 60
+EXPERIMENT_DURATION = 100
 
 ps = "http://172.20.0.2:9090"
 
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
 cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
-EVALUATION_FREQUENCY = 4
+EVALUATION_FREQUENCY = 10
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 slo_registry = SLO_Registry("./config/slo_config.json")
@@ -98,7 +98,7 @@ def visualize_data(slof_files, output_file):
     df = pd.read_csv(slof_files[0])
 
     # TODO: Maybe I can switch to timesteps on the x axis? Also is more intuitive to read
-    x = np.arange(40)  # len(m_meth))
+    x = np.arange(11)  # len(m_meth))
 
     plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
@@ -120,7 +120,6 @@ def visualize_data(slof_files, output_file):
 
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('SLO Fulfillment')
-    # plt.title('Mean SLO Fulfillment')
     plt.legend()
     plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
     plt.show()
