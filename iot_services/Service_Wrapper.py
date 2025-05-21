@@ -14,7 +14,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
-DEFAULT_CORES = utils.get_env_param("DEFAULT_CORES", 2)
+DEFAULT_CORES = float(utils.get_env_param("DEFAULT_CORES", 2.0))
 DEFAULT_CLIENTS = utils.get_env_param("DEFAULT_CLIENTS", None)
 SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
 

@@ -97,7 +97,6 @@ class ScalingAgent(Thread, ABC):
         max_available_c = free_cores + cores_ass[service.container_id]
         return max_available_c
 
-    # @utils.print_execution_time
     def get_core_assignment(self, service_list: list[ServiceID]) -> Dict[str, int]:
         cores_per_service = {}
 
@@ -111,7 +110,7 @@ class ScalingAgent(Thread, ABC):
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 800},
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 720},
                                 respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)

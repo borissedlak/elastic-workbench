@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import pandas as pd
+from fontTools.unicodedata import block
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
@@ -86,6 +87,7 @@ def eval_RRM_agent():
         export_experience_buffer(agent.experience_buffer)
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
+    pass
 
 def color_for_s(service_type):
     if service_type == "elastic-workbench-qr-detector-1":

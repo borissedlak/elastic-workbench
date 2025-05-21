@@ -69,6 +69,8 @@ class RRM_Global_Agent(ScalingAgent):
             for target_ES in all_ES:
                 self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
 
+    # TODO: The exploration is a bit too boring, it always favors the first and gives similar distributions
+    #  However, I should not focus too much on this for the IWAI, but for the WIP extension
     def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
 

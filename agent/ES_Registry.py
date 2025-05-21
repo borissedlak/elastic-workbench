@@ -4,7 +4,6 @@ import random
 from enum import Enum
 from typing import NamedTuple, List, Dict, Tuple
 
-from HttpClient import HttpClient
 from agent import agent_utils
 
 logger = logging.getLogger("multiscale")
@@ -34,12 +33,9 @@ class ServiceID(NamedTuple):
 
 
 class ES_Registry:
-    # TODO: This is super buggy because the order is important for the variables in the Policy Solver!!
-    # _ES_activate_default = {'elastic-workbench-qr-detector': ['quality_scaling', 'resource_scaling'],
-    #                         'elastic-workbench-cv-analyzer': ['resource_scaling', 'model_scaling']}
 
     def __init__(self, es_registry_path):
-        self.http_client = HttpClient()
+        # self.http_client = HttpClient()
 
         with open(es_registry_path, 'r') as f:
             self.es_api = json.load(f)
