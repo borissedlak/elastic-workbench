@@ -2,6 +2,7 @@ import logging
 import cv2
 import numpy as np
 import torch
+from ultralytics import YOLO
 
 import utils
 from video_utils import draw_detections
@@ -12,8 +13,9 @@ logger = logging.getLogger("multiscale")
 class YOLOv10:
     def __init__(self, path: str, conf_threshold: float = 0.2):
         self.conf_threshold = conf_threshold
-        self.model = torch.jit.load(path, map_location="cpu")
-        self.model.eval()  # Set the model to evaluation mode
+        self.model = YOLO(f"yolov10n.pt")  # load a pretrained model
+        # self.model = torch.jit.load(path, map_location="cpu")
+        # self.model.eval()  # Set the model to evaluation mode
 
         # Get model info
         self.get_input_details()
@@ -52,8 +54,8 @@ class YOLOv10:
 
     def inference(self, input_tensor: torch.Tensor):
         # Perform inference using PyTorch
-        with torch.no_grad():
-            outputs = self.model(input_tensor)  # Assuming the model returns raw outputs
+        # with torch.no_grad():
+        outputs = self.model(input_tensor)  # Assuming the model returns raw outputs
         return outputs
 
     def process_output(self, output):
@@ -82,8 +84,8 @@ class YOLOv10:
 
     def get_input_details(self):
         # Define input dimensions (based on model architecture)
-        self.input_height = 640  # Replace with model-specific height if needed
-        self.input_width = 640  # Replace with model-specific width if needed
+        self.input_height = 320  # Replace with model-specific height if needed
+        self.input_width = 320  # Replace with model-specific width if needed
 
 
 if __name__ == '__main__':
@@ -98,7 +100,7 @@ if __name__ == '__main__':
     class_ids, boxes, confidences = detector(img)
 
     # Draw detections
-    combined_img = draw_detections(img, boxes, confidences, class_ids)
-    cv2.namedWindow("Output", cv2.WINDOW_NORMAL)
-    cv2.imshow("Output", combined_img)
-    cv2.waitKey(0)
+    # combined_img = draw_detections(img, boxes, confidences, class_ids)
+    # cv2.namedWindow("Output", cv2.WINDOW_NORMAL)
+    # cv2.imshow("Output", combined_img)
+    # cv2.waitKey(0)

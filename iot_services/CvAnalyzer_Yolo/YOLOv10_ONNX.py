@@ -76,8 +76,8 @@ class YOLOv10:
         self.input_names = [model_inputs[i].name for i in range(len(model_inputs))]
 
         input_shape = model_inputs[0].shape
-        self.input_height = input_shape[2] if type(input_shape[2]) == int else 640
-        self.input_width = input_shape[3] if type(input_shape[3]) == int else 640
+        self.input_height = 720 # input_shape[2] if type(input_shape[2]) == int else 640
+        self.input_width = 720 # input_shape[3] if type(input_shape[3]) == int else 640
 
     def get_output_details(self):
         model_outputs = self.session.get_outputs()
@@ -86,7 +86,7 @@ class YOLOv10:
 
 if __name__ == '__main__':
 
-    model_path = "./models/yolov10x.onnx"
+    model_path = "./models/yolov10n.onnx"
 
     # Initialize YOLOv10 object detector
     detector = YOLOv10(model_path)
