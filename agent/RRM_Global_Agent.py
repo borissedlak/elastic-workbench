@@ -24,13 +24,13 @@ class RRM_Global_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
-                 log_experience=None):
+                 log_experience=None, max_explore = 10):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
         # self.epsilon = 1.0
         # self.epsilon_decay = 0.85
         self.explore_count = 0
-        self.max_explore = 6
+        self.max_explore = max_explore
 
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
@@ -56,9 +56,8 @@ class RRM_Global_Agent(ScalingAgent):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
-        # TODO: The fractions of the cores are not logged
         if self.log_experience is not None:
-            self.evaluate_slos_and_log(service_m, service_state, all_client_slos)
+            self.evaluate_slos_and_buffer(service_m, service_state, all_client_slos)
 
         return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
 

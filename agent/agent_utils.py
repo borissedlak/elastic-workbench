@@ -8,8 +8,6 @@ from typing import NamedTuple
 
 import pandas as pd
 
-import utils
-
 logger = logging.getLogger('multiscale')
 
 
@@ -80,23 +78,29 @@ class Full_State(NamedTuple):
         # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
+
 # @utils.print_execution_time
-def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
-    # Define the directory and file name
+def export_experience_buffer(rows: tuple):
     directory = "./"
     file_name = "agent_experience.csv"
     file_path = os.path.join(directory, file_name)
 
     file_exists = os.path.isfile(file_path)
+    is_empty = not file_exists or os.path.getsize(file_path) == 0
 
-    # Open the file in append mode
+    data = []
+
+    if is_empty:
+        data.append(["rep", "timestamp", "service", "slo_f", "state"])
+
+    data.extend([
+        [prefix, timestamp, service.container_id, slo_f, service_state]
+        for service, timestamp, slo_f, prefix, service_state in rows
+    ])
+
     with open(file_path, mode='a', newline='') as file:
         writer = csv.writer(file)
-
-        if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["rep", "timestamp", "service", "slo_f", "state"])
-
-        writer.writerow([prefix, datetime.datetime.now(), service.container_id, slo_f, state])
+        writer.writerows(data)
 
 
 def log_service_state(state: Full_State, prefix):
@@ -117,6 +121,7 @@ def log_service_state(state: Full_State, prefix):
                  "free_cores"])
 
         writer.writerow([prefix, datetime.datetime.now()] + list(state))
+
 
 def wait_for_remaining_interval(interval_length: int, start_time: float):
     interval_ms = 1000 * interval_length

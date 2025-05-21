@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -12,7 +13,7 @@ from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
-from agent.agent_utils import log_service_state, Full_State, log_slo_fulfillment, wait_for_remaining_interval
+from agent.agent_utils import log_service_state, Full_State, wait_for_remaining_interval
 
 logger = logging.getLogger("multiscale")
 
@@ -37,6 +38,7 @@ class ScalingAgent(Thread, ABC):
         self.reddis_client = RedisClient()
         self.slo_registry = SLO_Registry(slo_registry_path)
         self.es_registry = ES_Registry(es_registry_path)
+        self.experience_buffer = []
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         """
@@ -135,7 +137,6 @@ class ScalingAgent(Thread, ABC):
 
         log_service_state(state_pw, self.log_experience)
 
-    def evaluate_slos_and_log(self, service_m, service_state, slos_all_clients):
-
+    def evaluate_slos_and_buffer(self, service_m, service_state, slos_all_clients):
         slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)
-        log_slo_fulfillment(service_m, slo_f, self.log_experience, service_state)
+        self.experience_buffer.append((service_m, datetime.datetime.now(), slo_f, self.log_experience, service_state))

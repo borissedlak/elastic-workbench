@@ -11,7 +11,7 @@ import utils
 from agent.ES_Registry import ServiceID, ServiceType
 from agent.RRM_Global_Agent import RRM_Global_Agent
 from agent.SLO_Registry import SLO_Registry
-from agent.agent_utils import delete_file_if_exists
+from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from iwai.DQN_Agent import DQN_Agent
 from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
 
@@ -20,6 +20,7 @@ plt.rcParams.update({'font.size': 12})
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 80
+MAX_EXPLORE = 9
 
 ps = "http://172.20.0.2:9090"
 
@@ -75,13 +76,14 @@ def eval_RRM_agent():
         agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
                                  evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path="./config/slo_config.json",
                                  es_registry_path="./config/es_registry.json",
-                                 log_experience=rep)
+                                 log_experience=rep, max_explore=MAX_EXPLORE)
         agent.reset_services_states()
         time.sleep(5)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
         agent.terminate_gracefully()
+        export_experience_buffer(agent.experience_buffer)
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
@@ -113,7 +115,7 @@ def visualize_data(slof_files, output_file):
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
-    # plt.xlim(-0.1, 49.1)
+    plt.xlim(0.0, len(df.index) / (EXPERIMENT_REPETITIONS * 2) - 1)
     plt.ylim(0.0, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
