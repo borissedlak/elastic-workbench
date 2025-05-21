@@ -48,6 +48,42 @@ def check_model(model_path: str):
     download_model(url, model_path)
 
 
+def next_multiple_of_32(x: int) -> int:
+    """Return the next multiple of 32 greater than or equal to x."""
+    return ((x + 31) // 32) * 32
+
+
+def resize_img_to_32_bins(image: np.ndarray) -> np.ndarray:
+    """
+    Resize the input image so that its height and width are the next multiple of 32.
+
+    Args:
+        image: A NumPy array representing the image, typically from cv2.imread().
+
+    Returns:
+        Resized image as a NumPy array.
+    """
+    h, w = image.shape[:2]
+    new_h = next_multiple_of_32(h)
+    new_w = next_multiple_of_32(w)
+    resized = cv2.resize(image, (new_w, new_h))
+    return resized
+
+
+def prepare_yolo_input(image: np.ndarray) -> np.ndarray:
+    image = resize_img_to_32_bins(image)
+
+    h, w = image.shape[:2]
+    if h % 32 != 0 or w % 32 != 0:
+        raise ValueError(f"Invalid input size: {h, w}. Height and width must be divisible by 32.")
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = image.astype(np.float32) / 255.0  # Normalize to [0,1]
+    image = np.transpose(image, (2, 0, 1))  # HWC to CHW
+    image = np.expand_dims(image, axis=0)  # Add batch dimension
+    return image
+
+
 # @utils.print_execution_time
 def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3):
     det_img = image.copy()

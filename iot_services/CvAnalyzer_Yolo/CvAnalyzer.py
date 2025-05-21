@@ -1,19 +1,18 @@
 import concurrent.futures
-import datetime
 import logging
 import os
-import threading
 import time
 from typing import Any
 
+import cv2
 import numpy as np
 
 import utils
 from agent.ES_Registry import ServiceType
-from iot_services.VideoReader import VideoReader
-from iot_services.CvAnalyzer_Yolo.YOLOv10_Torch import YOLOv10
+from iot_services.CvAnalyzer_Yolo.YOLOv10_ONNX import YOLOv10
 from iot_services.IoTService import IoTService
-from video_utils import yolo_model_sizes
+from iot_services.VideoReader import VideoReader
+from video_utils import yolo_model_sizes, draw_detections
 
 logger = logging.getLogger("multiscale")
 
@@ -29,27 +28,31 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
-        self.detectors = {}
+        self.detector: YOLOv10 = None
         self.metric_buffer = []
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
         # logger.info(f"OpenCV optimized:{cv2.useOptimized()}")
         # logger.info(f"Available providers:{onnxruntime.get_available_providers()}")
         # logger.info(f"Visible cores:{os.cpu_count()}")
-        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.torchscript"
-        for i in range(0, self.cores_reserved):
-            self.detectors[i] = YOLOv10(model_path, conf_threshold=0.3)
+        model_path = ROOT + f"/models/yolov10{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
+        self.detector = YOLOv10(model_path, conf_threshold=0.3)
 
-    def process_one_iteration(self, config_params, frame) -> (Any, int):
+    def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
 
-        detector_index = int(threading.current_thread().name.split("_")[1])
-        class_ids, boxes, confidences = self.detectors[detector_index](frame)
-        # combined_img = draw_detections(frame, boxes, confidences, class_ids)
+        target_height = int(self.service_conf['quality'])
+        original_width, original_height = frame.shape[1], frame.shape[0]
+        ratio = original_height / target_height
+        resized_frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
+
+        # detector_index = int(threading.current_thread().name.split("_")[1])
+        class_ids, boxes, confidences = self.detector(resized_frame)
+        combined_img = draw_detections(resized_frame, boxes, confidences, class_ids)
 
         # Resulting image and total processing time
         duration = (time.perf_counter() - start) * 1000
-        return frame, duration
+        return combined_img, duration
 
     def process_loop(self):
         self.reinitialize_models()  # Place here so that it reloads when model size is changed
@@ -58,8 +61,7 @@ class CvAnalyzer(IoTService):
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
-                future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
-                               for frame in buffer}
+                future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
                 processed_item_counter = 0
                 processed_item_durations = []

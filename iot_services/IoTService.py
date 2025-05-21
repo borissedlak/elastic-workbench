@@ -9,13 +9,13 @@ import numpy as np
 from prometheus_client import start_http_server, Gauge
 
 import utils
-from DockerClient import DockerClient
 from RedisClient import RedisClient
 from agent.ES_Registry import EsType, ES_Registry, ServiceID, ServiceType
 
 logger = logging.getLogger("multiscale")
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
+CONTAINER_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
@@ -26,7 +26,7 @@ class IoTService(ABC):
         self._terminated = True
         self._running = False
         self.service_conf = {}
-        self.cores_reserved:float = 2.0
+        self.cores_reserved: float = 2.0
         self.es_registry = ES_Registry("./config/es_registry.json")
         self.store_to_csv = store_to_csv
 
@@ -35,8 +35,8 @@ class IoTService(ABC):
         self.client_arrivals: Dict[str, int] = {}
 
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
-        self.docker_client = DockerClient()
-        self.container_ip = self.docker_client.get_container_ip(self.docker_container_ref)
+        # self.docker_client = DockerClient()
+        self.container_ip = CONTAINER_IP  # self.docker_client.get_container_ip(self.docker_container_ref)
         self.flag_metric_cooldown = 0
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
@@ -74,7 +74,7 @@ class IoTService(ABC):
             metric_buffer.clear()
 
     @abstractmethod
-    def process_one_iteration(self, params, frame) -> None:
+    def process_one_iteration(self, frame) -> None:
         pass
 
     def start_process(self):

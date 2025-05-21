@@ -27,10 +27,10 @@ class QrDetector(IoTService):
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
 
-    def process_one_iteration(self, config_params, frame) -> (Any, int):
+    def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
 
-        target_height = int(config_params['quality'])
+        target_height = int(self.service_conf['quality'])
         original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height
         frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
@@ -45,11 +45,10 @@ class QrDetector(IoTService):
     def process_loop(self):
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, round(self.cores_reserved))) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=utils.cores_to_threads(self.cores_reserved)) as tpex:
                 start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
-                future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
-                               for frame in buffer}
+                future_dict = {tpex.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
                 processed_item_counter = 0
                 processed_item_durations = []
@@ -58,7 +57,7 @@ class QrDetector(IoTService):
                     processed_item_counter += 1
 
                     if self.has_processing_timeout(start_time):
-                        executor.shutdown(wait=False, cancel_futures=True)
+                        tpex.shutdown(wait=False, cancel_futures=True)
                         break
 
             # This is only executed once after the batch is processed

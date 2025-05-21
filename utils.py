@@ -118,3 +118,6 @@ def write_metrics_to_csv(lines):
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
     return sum(i for i in client_arrivals.values())
 
+
+def cores_to_threads(cores_reserved):
+    return max(1, round(cores_reserved))

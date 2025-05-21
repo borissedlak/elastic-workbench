@@ -24,7 +24,7 @@ def init_service(s_type):
         from iot_services.QrDetector.QrDetector import QrDetector
         return QrDetector()
     if s_type == "CV":
-        from iot_services.CvAnalyzer.CvAnalyzer import CvAnalyzer
+        from iot_services.CvAnalyzer_Yolo.CvAnalyzer import CvAnalyzer
         return CvAnalyzer()
     else:
         raise RuntimeError("Must pass type!")

@@ -13,6 +13,7 @@ services:
       - PYTHONUNBUFFERED=0 # Always flushes out
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
+      - CONTAINER_IP=172.20.0.5
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
@@ -39,6 +40,7 @@ services:
       - PYTHONUNBUFFERED=0 # Always flushes out
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
+      - CONTAINER_IP=172.20.0.10
       - DEFAULT_CLIENTS=C_3:100
       - TZ=Europe/Vienna
     volumes:
