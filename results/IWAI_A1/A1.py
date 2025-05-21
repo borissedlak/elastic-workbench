@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 
 import numpy as np
@@ -18,7 +19,7 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 5
-EXPERIMENT_DURATION = 60
+EXPERIMENT_DURATION = 80
 
 ps = "http://172.20.0.2:9090"
 
@@ -96,8 +97,6 @@ def color_for_s(service_type):
 def visualize_data(slof_files, output_file):
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
     df = pd.read_csv(slof_files[0])
-
-    # TODO: Maybe I can switch to timesteps on the x axis? Also is more intuitive to read
     x = np.arange(len(df.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
 
     plt.figure(figsize=(6.0, 3.8))
@@ -166,3 +165,4 @@ if __name__ == '__main__':
     # eval_DQN_agent()
     eval_RRM_agent()
     visualize_data(["agent_experience.csv"], "./plots/slo_f.png")
+    sys.exit()

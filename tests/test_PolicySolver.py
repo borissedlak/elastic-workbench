@@ -70,4 +70,4 @@ class TestPolicySolver(TestCase):
                             'model_size': SLO(var='model_size', larger=True, thresh=2, weight=0.2)}]
         service_context.append((ServiceType.CV, parameter_bounds_cv, clients_slos_cv, 100))
 
-        solve_global(service_context, max_cores)
+        print(solve_global(service_context, max_cores))

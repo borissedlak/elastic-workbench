@@ -16,9 +16,11 @@ class SLO(NamedTuple):
     weight: float
 
 
-def soft_clip(x, x0=0.0, x1=1.0) -> float:
+def smoothstep(x, x0=0.0, x1=1.0) -> float:
+    # return np.clip(x, x0, x1)
     t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
-    return float(t ** 3 * (t * (6 * t - 15) + 10))
+    return float(t * t * (3 - 2 * t))
+
 
 # TODO: Write tests for this and the normalized method
 def calculate_SLO_F_clients(full_state, slos_all_clients):
@@ -29,6 +31,7 @@ def calculate_SLO_F_clients(full_state, slos_all_clients):
         slo_f_all_clients += normalized_reward
 
     return slo_f_all_clients / len(slos_all_clients)
+
 
 def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
     # return sum(value for _, value in slof) / float(len(slof))
@@ -54,7 +57,7 @@ def calculate_slo_fulfillment(full_state: Dict[str, Any], slos: Dict[str, SLO]) 
         else:
             slo_f_single_slo = 1 - ((value - float(thresh)) / float(thresh))  # SLO-F is 0 after 2 * t
 
-        slo_f_single_slo = float(soft_clip(slo_f_single_slo) * weight)
+        slo_f_single_slo = float(smoothstep(slo_f_single_slo) * weight)
         if 'throughput' in full_state and full_state['throughput'] < 1.0:
             slo_f_single_slo *= 0.1  # Heavily penalize if no output
 

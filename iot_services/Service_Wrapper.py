@@ -104,9 +104,9 @@ class ServiceWrapper:
         self.scale_cores(cpu_cores)
         return ""
 
-    def scale_cores(self, fractional_cores):
+    def scale_cores(self, fractional_cores: float):
         # 1) Change the number of threads of the application; cannot start fractional # of threads
-        self.service.vertical_scaling(max(1, int(fractional_cores)))
+        self.service.vertical_scaling(fractional_cores)
         # 2) Change the number of cores available for docker; can scale continuously
         self.docker_client.update_cpu(CONTAINER_REF, fractional_cores)
 

@@ -189,3 +189,4 @@ if __name__ == "__main__":
     logger.setLevel(logging.INFO)
 
     rrm = RRM(show_figures=True)
+    rrm.init_models()

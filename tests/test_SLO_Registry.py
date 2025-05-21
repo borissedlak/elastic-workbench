@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from agent.ES_Registry import ServiceType
-from agent.SLO_Registry import SLO_Registry, SLO, calculate_slo_fulfillment, to_normalized_SLO_F, soft_clip
+from agent.SLO_Registry import SLO_Registry, SLO, calculate_slo_fulfillment, to_normalized_SLO_F, smoothstep
 
 
 class TestSLO_Registry(TestCase):
@@ -34,7 +34,7 @@ class TestSLO_Registry(TestCase):
         self.assertDictEqual(t_slos_c_3_cv, self.slos_c_3_cv)
 
     def test_calculate_slo_fulfillment_qr(self):
-        t_slo_f_qr_1 = [("quality", soft_clip(0.875)), ("avg_p_latency", soft_clip(0.8)), ("completion_rate", soft_clip(0.8))]
+        t_slo_f_qr_1 = [("quality", smoothstep(0.875)), ("avg_p_latency", smoothstep(0.8)), ("completion_rate", smoothstep(0.8))]
         slo_f_qr_1 = calculate_slo_fulfillment(self.service_state_qr, self.slos_c_1_qr)
         t_slo_f_qr_2 = [("quality", 1.0), ("avg_p_latency", 1.0), ("completion_rate", 1.0)]
         slo_f_qr_2 = calculate_slo_fulfillment(self.service_state_qr_2, self.slos_c_1_qr)
@@ -43,9 +43,9 @@ class TestSLO_Registry(TestCase):
         self.assertCountEqual(t_slo_f_qr_2, slo_f_qr_2)
 
     def test_calculate_slo_fulfillment_cv(self):
-        t_slo_f_cv_1 = [("model_size", 1.0), ("avg_p_latency", 0.5), ("completion_rate", soft_clip(0.8))]
+        t_slo_f_cv_1 = [("model_size", 1.0), ("avg_p_latency", 0.5), ("completion_rate", smoothstep(0.8))]
         slo_f_cv_1 = calculate_slo_fulfillment(self.service_state_cv, self.slos_c_3_cv)
-        t_slo_f_cv_2 = [("model_size", soft_clip(0.5)), ("avg_p_latency", 1.0), ("completion_rate", 1.0)]
+        t_slo_f_cv_2 = [("model_size", smoothstep(0.5)), ("avg_p_latency", 1.0), ("completion_rate", 1.0)]
         slo_f_cv_2 = calculate_slo_fulfillment(self.service_state_cv_2, self.slos_c_3_cv)
 
         self.assertCountEqual(t_slo_f_cv_1, slo_f_cv_1)

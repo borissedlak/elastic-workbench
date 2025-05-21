@@ -1,6 +1,5 @@
 import datetime
 import logging
-import math
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -27,7 +26,7 @@ class IoTService(ABC):
         self._terminated = True
         self._running = False
         self.service_conf = {}
-        self.cores_reserved = 2
+        self.cores_reserved:float = 2.0
         self.es_registry = ES_Registry("./config/es_registry.json")
         self.store_to_csv = store_to_csv
 
@@ -104,7 +103,7 @@ class IoTService(ABC):
     def reinitialize_models(self):
         pass
 
-    def vertical_scaling(self, c_cores):
+    def vertical_scaling(self, c_cores: float):
         self.terminate()
         # Wait until it is really terminated and then start new
         while not self._terminated:

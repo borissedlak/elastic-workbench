@@ -29,7 +29,8 @@ class RRM_Global_Agent(ScalingAgent):
                          log_experience)
         # self.epsilon = 1.0
         # self.epsilon_decay = 0.85
-        self.rounds = 0
+        self.explore_count = 0
+        self.max_explore = 6
 
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
@@ -37,9 +38,9 @@ class RRM_Global_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-        if self.rounds < 10:
+        if self.explore_count < self.max_explore:
             logger.info("Agent is exploring.....")
-            self.rounds += 1
+            self.explore_count += 1
             # self.epsilon *= self.epsilon_decay
             self.orchestrate_all_services_randomly(services_m)
         else:
@@ -55,6 +56,7 @@ class RRM_Global_Agent(ScalingAgent):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
+        # TODO: The fractions of the cores are not logged
         if self.log_experience is not None:
             self.evaluate_slos_and_log(service_m, service_state, all_client_slos)
 
@@ -70,13 +72,14 @@ class RRM_Global_Agent(ScalingAgent):
 
     def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
+
             all_ES_supported = self.es_registry.get_supported_ES_for_service(service_m.service_type)
             for es in all_ES_supported:
-                # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-                parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type).get(es,
-                                                                                                                   {})
-                random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
+                max_available_cores = self.get_max_available_cores(service_m)
+                param_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type,
+                                                                                   max_available_cores).get(es, {})
 
+                random_params = agent_utils.get_random_parameter_assignments(param_bounds)
                 self.execute_ES(service_m.host, service_m, es, random_params, respect_cooldown=False)
 
 
@@ -84,7 +87,7 @@ def apply_gaussian_noise_to_asses(assignment, noise=0.08):
     for ass_group in assignment:
         for var in ass_group:
             value = ass_group[var]
-            std_dev = noise * abs(value)  # 5% of the value as standard deviation
+            std_dev = noise * abs(value)  # 8% of the value as standard deviation
             ass_group[var] += np.random.normal(0, std_dev)
 
     return assignment
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
-                             evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="RRM Agent")
+                             evaluation_cycle=EVALUATION_CYCLE_DELAY)#, log_experience="RRM Agent"
 
     agent.reset_services_states()
     agent.start()

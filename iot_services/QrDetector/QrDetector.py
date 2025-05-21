@@ -45,7 +45,7 @@ class QrDetector(IoTService):
     def process_loop(self):
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.cores_reserved) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, round(self.cores_reserved))) as executor:
                 start_time = time.perf_counter()
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, self.service_conf, frame): frame
