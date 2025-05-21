@@ -17,15 +17,15 @@ from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 100
+EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_DURATION = 60
 
 ps = "http://172.20.0.2:9090"
 
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
 cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
-EVALUATION_FREQUENCY = 10
+EVALUATION_FREQUENCY = 5
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 slo_registry = SLO_Registry("./config/slo_config.json")
@@ -76,7 +76,7 @@ def eval_RRM_agent():
                                  es_registry_path="./config/es_registry.json",
                                  log_experience=rep)
         agent.reset_services_states()
-        time.sleep(2)
+        time.sleep(5)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
@@ -98,19 +98,18 @@ def visualize_data(slof_files, output_file):
     df = pd.read_csv(slof_files[0])
 
     # TODO: Maybe I can switch to timesteps on the x axis? Also is more intuitive to read
-    x = np.arange(11)  # len(m_meth))
+    x = np.arange(len(df.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
 
     plt.figure(figsize=(6.0, 3.8))
     # plt.plot(x, m_base, label='Baseline', color='red', linewidth=1)
 
     for service in df['service'].unique():
         df_filtered = df[df['service'] == service]
-        m_meth, std_meth = calculate_mean_std(df_filtered)
-        lower_bound = np.array(m_meth) - np.array(std_meth)
-        upper_bound = np.array(m_meth) + np.array(std_meth)
-        plt.plot(x, m_meth, label=service, color=color_for_s(service), linewidth=2)  # label = 'Mean SLO Fulfillment'
-        plt.fill_between(x, lower_bound, upper_bound, color=color_for_s(service),
-                         alpha=0.2)  # , label='Standard Deviation')
+        s_mean, s_std = calculate_mean_std(df_filtered)
+        lower_bound = np.array(s_mean) - np.array(s_std)
+        upper_bound = np.array(s_mean) + np.array(s_std)
+        plt.plot(x, s_mean, label=service, color=color_for_s(service), linewidth=2)  # label = ''
+        plt.fill_between(x, lower_bound, upper_bound, color=color_for_s(service), alpha=0.2)
 
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")

@@ -13,13 +13,7 @@
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 100,
-          "weight": 1.0
-        },
-        {
-          "var": "completion_rate",
-          "larger": true,
-          "thresh": 1.0,
+          "thresh": 70,
           "weight": 1.0
         }
       ]
@@ -37,13 +31,7 @@
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 20,
-          "weight": 1.0
-        },
-        {
-          "var": "completion_rate",
-          "larger": true,
-          "thresh": 1.0,
+          "thresh": 30,
           "weight": 1.0
         }
       ]

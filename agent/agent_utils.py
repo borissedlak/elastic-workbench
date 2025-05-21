@@ -80,7 +80,7 @@ class Full_State(NamedTuple):
         # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
         #     self.cores, self.free_cores > 0]
 
-@utils.print_execution_time
+# @utils.print_execution_time
 def log_slo_fulfillment(service, slo_f: float, prefix: str, state):
     # Define the directory and file name
     directory = "./"

@@ -5,6 +5,7 @@ from typing import Dict, Tuple, Any
 import numpy as np
 
 import utils
+from agent import agent_utils
 from agent.ES_Registry import ServiceID, ServiceType, EsType
 from agent.PolicySolver_RRM import solve_global
 from agent.ScalingAgent import ScalingAgent
@@ -26,6 +27,9 @@ class RRM_Global_Agent(ScalingAgent):
                  log_experience=None):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
+        # self.epsilon = 1.0
+        # self.epsilon_decay = 0.85
+        self.rounds = 0
 
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
@@ -33,13 +37,15 @@ class RRM_Global_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-        if np.random.rand() > 0.15:  # TODO: Start high and converge to a minimum of 0.05 (?)
+        if self.rounds < 10:
+            logger.info("Agent is exploring.....")
+            self.rounds += 1
+            # self.epsilon *= self.epsilon_decay
+            self.orchestrate_all_services_randomly(services_m)
+        else:
             assignments = solve_global(service_contexts, MAX_CORES)
             assignments = apply_gaussian_noise_to_asses(assignments)
             self.orchestrate_all_ES_deterministic(services_m, assignments)
-        else:
-            logger.info("Agent is exploring.....")
-            self.orchestrate_all_services_randomly(services_m)
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
@@ -50,12 +56,11 @@ class RRM_Global_Agent(ScalingAgent):
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         if self.log_experience is not None:
-            # print("log slos")
             self.evaluate_slos_and_log(service_m, service_state, all_client_slos)
 
         return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
 
-    @utils.print_execution_time
+    # @utils.print_execution_time
     def orchestrate_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
         # TODO: Ideally, this needs a mechanisms that avoids oscillating or changing the instance if it stays the same
         for i, service_m in enumerate(services_m):  # For all monitored services
@@ -65,8 +70,14 @@ class RRM_Global_Agent(ScalingAgent):
 
     def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
-            rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-            self.execute_ES(service_m.host, service_m, rand_ES, rand_params, respect_cooldown=False)
+            all_ES_supported = self.es_registry.get_supported_ES_for_service(service_m.service_type)
+            for es in all_ES_supported:
+                # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
+                parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type).get(es,
+                                                                                                                   {})
+                random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
+
+                self.execute_ES(service_m.host, service_m, es, random_params, respect_cooldown=False)
 
 
 def apply_gaussian_noise_to_asses(assignment, noise=0.08):
