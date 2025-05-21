@@ -11,14 +11,13 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always same in container
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
-      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+      - ./share:/src/share # Linux
+      #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
     ports:
       - "8080:8080" # Only needed on Windows
@@ -38,15 +37,14 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=0 # Always flushes out
-      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
       - DEFAULT_CLIENTS=C_3:100
       - TZ=Europe/Vienna
     volumes:
-      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+      - ./share:/src/share # Linux
 #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
-      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
     ports:
       - "8081:8080" # Only needed on Windows
     depends_on:
@@ -55,24 +53,24 @@ services:
       - prometheus
 
 
-#  qr-detector-2:
-#    image: elastic-workbench-qr-detector:latest
-#    container_name: elastic-workbench-qr-detector-2
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.6
-#    environment:
-#      - FLASK_ENV=development
-#      - PYTHONUNBUFFERED=0 # Always flushes out
-#      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
-#      - CONTAINER_REF=elastic-workbench-qr-detector-2
-#      - REDIS_INSTANCE=172.20.0.4
-#      - DEFAULT_CLIENTS=C_3:60
-#      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
-#    volumes:
-#      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-##      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
-#      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
+  #  qr-detector-2:
+  #    image: elastic-workbench-qr-detector:latest
+  #    container_name: elastic-workbench-qr-detector-2
+  #    networks:
+  #      docker_network:
+  #        ipv4_address: 172.20.0.6
+  #    environment:
+  #      - FLASK_ENV=development
+  #      - PYTHONUNBUFFERED=0 # Always flushes out
+  #      - DOCKER_SOCKET=unix:///var/run/docker.sock # Always in Container
+  #      - CONTAINER_REF=elastic-workbench-qr-detector-2
+  #      - REDIS_INSTANCE=172.20.0.4
+  #      - DEFAULT_CLIENTS=C_3:60
+  #      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+  #    volumes:
+  #      - /home/boris/development/elastic-workbench/share:/src/share # Linux
+  ##      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+  #      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
     image: prom/prometheus
@@ -83,7 +81,7 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-      - /home/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Linux
 #      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -102,23 +100,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=adminadmin
     depends_on:
       - prometheus
-
-
-#  cadvisor:
-#    image: gcr.io/cadvisor/cadvisor
-#    container_name: cadvisor
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.4
-#    volumes:
-#      - /:/rootfs:ro
-#      - /var/run:/var/run:ro
-#      - /sys:/sys:ro
-#      - /var/lib/docker/:/var/lib/docker:ro
-#    ports:
-#      - "8090:8080"
-#    restart: always
-#    privileged: true
 
   redis:
     image: redis:latest
