@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 
@@ -15,19 +16,20 @@ from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from iwai.DQN_Agent import DQN_Agent
 from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
 
+ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 1
-EXPERIMENT_DURATION = 300
-MAX_EXPLORE = 3
+EXPERIMENT_REPETITIONS = 3
+EXPERIMENT_DURATION = 90
+MAX_EXPLORE = 0
 
 ps = "http://172.20.0.2:9090"
 
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
 cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
-EVALUATION_FREQUENCY = 5
+EVALUATION_FREQUENCY = 15
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 slo_registry = SLO_Registry("./config/slo_config.json")
@@ -165,6 +167,6 @@ if __name__ == '__main__':
 
     # train_q_network()
     # eval_DQN_agent()
-    eval_RRM_agent()
-    visualize_data(["agent_experience.csv"], "./plots/slo_f.png")
+    # eval_RRM_agent()
+    visualize_data(["agent_experience.csv"], ROOT +"/plots/slo_f.png")
     sys.exit()
