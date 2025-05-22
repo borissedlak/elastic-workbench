@@ -10,7 +10,6 @@ services:
         ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
-      - PYTHONUNBUFFERED=0 # Always flushes out
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
       - CONTAINER_IP=172.20.0.5
@@ -18,7 +17,6 @@ services:
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - ./share:/src/share # Linux
-      #      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
     ports:
       - "8080:8080" # Only needed on Windows
@@ -37,7 +35,6 @@ services:
         ipv4_address: 172.20.0.10
     environment:
       - FLASK_ENV=development
-      - PYTHONUNBUFFERED=0 # Always flushes out
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
       - CONTAINER_IP=172.20.0.10
@@ -45,7 +42,6 @@ services:
       - TZ=Europe/Vienna
     volumes:
       - ./share:/src/share # Linux
-#      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
       - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
     ports:
       - "8081:8080" # Only needed on Windows
@@ -70,8 +66,7 @@ services:
   #      - DEFAULT_CLIENTS=C_3:60
   #      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
   #    volumes:
-  #      - /home/boris/development/elastic-workbench/share:/src/share # Linux
-  ##      - /c/users/boris/development/elastic-workbench/share:/src/share # Windows
+  #      - ./share:/src/share # Linux
   #      - /var/run/docker.sock:/var/run/docker.sock # Need to map the host socket into the container so that the client can access it
 
   prometheus:
@@ -84,7 +79,6 @@ services:
       - "9090:9090" # Prometheus UI
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml # Linux
-#      - /c/users/boris/development/elastic-workbench/prometheus.yml:/etc/prometheus/prometheus.yml # Windows
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

@@ -13,9 +13,9 @@ logger = logging.getLogger("multiscale")
 class YOLOv10:
     def __init__(self, path: str, conf_threshold: float = 0.2):
         self.conf_threshold = conf_threshold
-        self.model = YOLO(f"yolov10n.pt")  # load a pretrained model
-        # self.model = torch.jit.load(path, map_location="cpu")
-        # self.model.eval()  # Set the model to evaluation mode
+        # self.model = YOLO(f"yolov10n.pt")  # load a pretrained model
+        self.model = torch.jit.load(path, map_location="cpu")
+        self.model.eval()  # Set the model to evaluation mode
 
         # Get model info
         self.get_input_details()

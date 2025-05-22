@@ -22,7 +22,7 @@ class QrDetector(IoTService):
 
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 800}
+        self.service_conf = {'quality': 720}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
