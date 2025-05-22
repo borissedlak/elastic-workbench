@@ -25,7 +25,7 @@
         {
           "var": "quality",
           "larger": true,
-          "thresh": 512,
+          "thresh": 320,
           "weight": 0.2
         },
         {

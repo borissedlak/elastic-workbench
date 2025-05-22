@@ -1,7 +1,7 @@
 {
   "elastic-workbench-qr-detector": {
     "quality_scaling": {
-      "cooldown": 1500,
+      "cooldown": 2000,
       "endpoint": "/quality_scaling",
       "parameters": {
         "quality": {
@@ -23,7 +23,7 @@
   },
   "elastic-workbench-cv-analyzer": {
     "model_scaling": {
-      "cooldown": 3000,
+      "cooldown": 2000,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {
@@ -33,17 +33,17 @@
       }
     },
     "quality_scaling": {
-      "cooldown": 1500,
+      "cooldown": 2000,
       "endpoint": "/quality_scaling",
       "parameters": {
         "quality": {
           "min": 128,
-          "max": 512
+          "max": 320
         }
       }
     },
     "resource_scaling": {
-      "cooldown": 1000,
+      "cooldown": 2000,
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {

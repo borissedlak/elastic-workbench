@@ -20,7 +20,7 @@ ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_REPETITIONS = 3
 EXPERIMENT_DURATION = 100
 MAX_EXPLORE = 15
 
@@ -142,7 +142,6 @@ def get_changed_lines(slof_file):
 def calculate_mean_std(df: DataFrame):
     del df['timestamp']
 
-    # parts = np.array_split(df, EXPERIMENT_REPETITIONS)
     slo_fs_index = []
 
     # Step 2: Reindex each part
@@ -167,6 +166,6 @@ if __name__ == '__main__':
 
     # train_q_network()
     # eval_DQN_agent()
-    eval_RRM_agent()
+    # eval_RRM_agent()
     visualize_data(["agent_experience.csv"], ROOT +"/plots/slo_f.png")
     sys.exit()
