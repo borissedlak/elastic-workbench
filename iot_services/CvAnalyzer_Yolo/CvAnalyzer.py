@@ -24,7 +24,7 @@ ROOT = os.path.dirname(__file__)
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__(store_to_csv)
-        self.service_conf = {'quality': 720, 'model_size': 1}
+        self.service_conf = {'quality': 720, 'model_size': 3}
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 

@@ -18,10 +18,10 @@ class YOLOv8:
         return self.detect_objects(image)
 
     def detect_objects(self, image: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        start = time.perf_counter()
+        # start = time.perf_counter()
         input_tensor = video_utils.prepare_yolo_input(image)
         outputs = self.session.run(None, {self.input_name: input_tensor})
-        print(f"Inference time: {(time.perf_counter() - start) * 1000:.2f} ms")
+        # print(f"Inference time: {(time.perf_counter() - start) * 1000:.2f} ms")
         return self.process_output(outputs[0], image.shape)
 
     def process_output(self, output: np.ndarray, original_shape) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
