@@ -19,7 +19,7 @@ ROOT = os.path.dirname(__file__)
 
 
 class RRM:
-    def __init__(self, show_figures=False, lazy_loading=False):
+    def __init__(self, show_figures=False):
         self.show_figures = show_figures
         self.models: Dict[ServiceType, Dict] = None
 
@@ -126,7 +126,7 @@ def get_dependent_variable_mapping(service_type: ServiceType):
     if service_type == ServiceType.QR:
         return {'throughput': sorted(['cores', 'quality'])}
     elif service_type == ServiceType.CV:
-        return {'throughput': sorted(['cores', 'model_size'])}
+        return {'throughput': sorted(['cores', 'model_size', 'quality'])}
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
@@ -146,7 +146,8 @@ def calculate_missing_vars(partial_state, total_rps: int):
 
 def draw_3d_plot(df, var, deps, poly, model):
     if len(deps) != 2:
-        raise RuntimeError(f"Not supported!!")
+        logger.info(f"3D plot not supported for more than 3 dimensions!!")
+        return
 
     # Create a meshgrid as before
     x1_range = np.linspace(df[deps[0]].min(), df[deps[0]].max(), 50)
@@ -186,7 +187,15 @@ def draw_3d_plot(df, var, deps, poly, model):
 
 
 if __name__ == "__main__":
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
+
+    # Add a console handler if not already added
+    if not logger.handlers:
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
 
     rrm = RRM(show_figures=True)
     rrm.init_models()
