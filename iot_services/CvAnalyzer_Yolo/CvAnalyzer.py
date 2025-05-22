@@ -71,15 +71,15 @@ class CvAnalyzer(IoTService):
                         return_when=concurrent.futures.FIRST_COMPLETED
                     )
 
-                    if self.has_processing_timeout(start_time):
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        break
-
                     for future in done:
                         result = future.result()
                         processed_item_durations.append(np.abs(result[1]))
                         processed_item_counter += 1
                         del future_dict[future] # Remove completed futures
+
+                    if self.has_processing_timeout(start_time):
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
 
                         # Optionally display or process result
                         # cv2.imshow("Detected Objects", result[0])

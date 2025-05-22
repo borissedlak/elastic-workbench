@@ -62,15 +62,15 @@ class QrDetector(IoTService):
                         return_when=concurrent.futures.FIRST_COMPLETED
                     )
 
-                    if self.has_processing_timeout(start_time):
-                        tpex.shutdown(wait=False, cancel_futures=True)
-                        break
-
                     for future in done:
                         result = future.result()
                         processed_item_durations.append(np.abs(result[1]))
                         processed_item_counter += 1
                         del future_dict[future] # Remove completed futures
+
+                    if self.has_processing_timeout(start_time):
+                        tpex.shutdown(wait=False, cancel_futures=True)
+                        break
 
                 # for future in concurrent.futures.as_completed(future_dict):
                 #     processed_item_durations.append(future.result()[1])
