@@ -62,18 +62,29 @@ class CvAnalyzer(IoTService):
 
                 processed_item_counter = 0
                 processed_item_durations = []
-                for future in concurrent.futures.as_completed(future_dict):
-                    processed_item_durations.append(np.abs(future.result()[1]))
-                    processed_item_counter += 1
 
-                    # cv2.imshow("Detected Objects", future.result()[0])
-                    # # Press key q to stop
-                    # if cv2.waitKey(1) & 0xFF == ord('q'):
-                    #     self.terminate()
+                while future_dict:
+                    # Poll with a short timeout to allow frequent timeout checks
+                    done, _ = concurrent.futures.wait(
+                        future_dict,
+                        timeout=0.05,  # 50ms polling interval
+                        return_when=concurrent.futures.FIRST_COMPLETED
+                    )
 
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
+
+                    for future in done:
+                        result = future.result()
+                        processed_item_durations.append(np.abs(result[1]))
+                        processed_item_counter += 1
+                        del future_dict[future] # Remove completed futures
+
+                        # Optionally display or process result
+                        # cv2.imshow("Detected Objects", result[0])
+                        # if cv2.waitKey(1) & 0xFF == ord('q'):
+                        #     self.terminate()
 
             # This is only executed once after the batch is processed
             self.export_processing_metrics(processed_item_counter, processed_item_durations)

@@ -41,10 +41,8 @@ class IoTService(ABC):
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
-        self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item',
-                                        ['service_type', 'container_id', 'metric_id'])
-        self.prom_quality = Gauge('quality', 'Current configured quality',
-                                  ['service_type', 'container_id', 'metric_id'])
+        self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item', ['service_type', 'container_id', 'metric_id'])
+        self.prom_quality = Gauge('quality', 'Current configured quality', ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
 

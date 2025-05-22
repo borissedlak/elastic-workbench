@@ -7,19 +7,13 @@
         {
           "var": "quality",
           "larger": true,
-          "thresh": 800,
+          "thresh": 1000,
           "weight": 0.5
         },
         {
           "var": "throughput",
           "larger": true,
           "thresh": 100,
-          "weight": 1.0
-        },
-        {
-          "var": "completion_rate",
-          "larger": true,
-          "thresh": 1.0,
           "weight": 1.0
         }
       ]
@@ -29,21 +23,21 @@
       "service_type": "elastic-workbench-cv-analyzer",
       "SLOs": [
         {
+          "var": "quality",
+          "larger": true,
+          "thresh": 300,
+          "weight": 0.2
+        },
+        {
           "var": "model_size",
           "larger": true,
-          "thresh": 2.0,
-          "weight": 0.5
+          "thresh": 5.0,
+          "weight": 0.2
         },
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 20,
-          "weight": 1.0
-        },
-        {
-          "var": "completion_rate",
-          "larger": true,
-          "thresh": 1.0,
+          "thresh": 5,
           "weight": 1.0
         }
       ]

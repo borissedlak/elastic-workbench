@@ -18,9 +18,9 @@ from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 5
-EXPERIMENT_DURATION = 80
-MAX_EXPLORE = 9
+EXPERIMENT_REPETITIONS = 1
+EXPERIMENT_DURATION = 150
+MAX_EXPLORE = 10
 
 ps = "http://172.20.0.2:9090"
 

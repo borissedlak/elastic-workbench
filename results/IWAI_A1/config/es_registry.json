@@ -36,7 +36,7 @@
       "cooldown": 1500,
       "endpoint": "/quality_scaling",
       "parameters": {
-        "cores": {
+        "quality": {
           "min": 360,
           "max": 1080
         }

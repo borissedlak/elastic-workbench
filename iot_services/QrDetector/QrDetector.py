@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 import cv2
+import numpy as np
 from pyzbar.pyzbar import decode
 
 import utils
@@ -52,13 +53,32 @@ class QrDetector(IoTService):
 
                 processed_item_counter = 0
                 processed_item_durations = []
-                for future in concurrent.futures.as_completed(future_dict):
-                    processed_item_durations.append(future.result()[1])
-                    processed_item_counter += 1
+
+                while future_dict:
+                    # Poll with a short timeout to allow frequent timeout checks
+                    done, _ = concurrent.futures.wait(
+                        future_dict,
+                        timeout=0.05,  # 50ms polling interval
+                        return_when=concurrent.futures.FIRST_COMPLETED
+                    )
 
                     if self.has_processing_timeout(start_time):
                         tpex.shutdown(wait=False, cancel_futures=True)
                         break
+
+                    for future in done:
+                        result = future.result()
+                        processed_item_durations.append(np.abs(result[1]))
+                        processed_item_counter += 1
+                        del future_dict[future] # Remove completed futures
+
+                # for future in concurrent.futures.as_completed(future_dict):
+                #     processed_item_durations.append(future.result()[1])
+                #     processed_item_counter += 1
+                #
+                #     if self.has_processing_timeout(start_time):
+                #         tpex.shutdown(wait=False, cancel_futures=True)
+                #         break
 
             # This is only executed once after the batch is processed
             self.export_processing_metrics(processed_item_counter, processed_item_durations)

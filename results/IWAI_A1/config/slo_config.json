@@ -23,15 +23,21 @@
       "service_type": "elastic-workbench-cv-analyzer",
       "SLOs": [
         {
+          "var": "quality",
+          "larger": true,
+          "thresh": 300,
+          "weight": 0.2
+        },
+        {
           "var": "model_size",
           "larger": true,
-          "thresh": 2.0,
-          "weight": 0.5
+          "thresh": 5.0,
+          "weight": 0.2
         },
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 30,
+          "thresh": 5,
           "weight": 1.0
         }
       ]
