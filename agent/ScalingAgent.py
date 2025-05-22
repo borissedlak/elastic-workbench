@@ -54,9 +54,8 @@ class ScalingAgent(Thread, ABC):
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
         parameter_ass = self.prom_client.get_metrics(["quality", "cores", "model_size"], service_id)
 
-        if metric_values == {} and parameter_ass == {}:
-            return {}
-        elif parameter_ass == {}:
+        if parameter_ass == {} or metric_values == {}:
+            logger.warning(f"No metrics found for service {service_id}") # Remove if never happens
             return self.last_known_state
 
         missing_vars = calculate_missing_vars(metric_values, utils.to_absolut_rps(assigned_clients))

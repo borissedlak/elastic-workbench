@@ -20,16 +20,16 @@ ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 90
-MAX_EXPLORE = 0
+EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_DURATION = 100
+MAX_EXPLORE = 15
 
 ps = "http://172.20.0.2:9090"
 
 qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
 cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
-EVALUATION_FREQUENCY = 15
+EVALUATION_FREQUENCY = 5
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
 slo_registry = SLO_Registry("./config/slo_config.json")
@@ -70,7 +70,7 @@ def eval_DQN_agent():
 
 def eval_RRM_agent():
     delete_file_if_exists("./agent_experience.csv")
-    # delete_file_if_exists("../../share/metrics/metrics.csv")
+    delete_file_if_exists("../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for Agent")
 
@@ -80,7 +80,7 @@ def eval_RRM_agent():
                                  es_registry_path="./config/es_registry.json",
                                  log_experience=rep, max_explore=MAX_EXPLORE)
         agent.reset_services_states()
-        time.sleep(5)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
+        time.sleep(4)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
@@ -167,6 +167,6 @@ if __name__ == '__main__':
 
     # train_q_network()
     # eval_DQN_agent()
-    # eval_RRM_agent()
+    eval_RRM_agent()
     visualize_data(["agent_experience.csv"], ROOT +"/plots/slo_f.png")
     sys.exit()

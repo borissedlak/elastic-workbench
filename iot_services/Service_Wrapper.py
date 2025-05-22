@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 from flask import Flask, request
 
 import utils
@@ -91,7 +92,8 @@ class ServiceWrapper:
         return ""
 
     def model_scaling(self):
-        model_size = round(float(request.args.get('model_size')))
+        # TODO: For all strategies here, I should clip them to the ES parameter bounds
+        model_size = np.clip(round(float(request.args.get('model_size'))), 1, 5)
         s_conf = self.service.service_conf.copy()
         s_conf['model_size'] = model_size
 

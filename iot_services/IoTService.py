@@ -58,12 +58,9 @@ class IoTService(ABC):
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="quality").set(self.service_conf['quality'])
 
-        logger.info(f"Set quality with config {self.service_conf}")
-
         if self.service_type == ServiceType.CV:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
-        # elif self.service_type in [ServiceType.QR, ServiceType.QR_DEPRECATED]:
 
 
         if self.store_to_csv:

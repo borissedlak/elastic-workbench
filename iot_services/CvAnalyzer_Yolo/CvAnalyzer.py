@@ -1,7 +1,6 @@
 import concurrent.futures
 import logging
 import os
-import threading
 import time
 from typing import Any
 
@@ -20,7 +19,6 @@ logger = logging.getLogger("multiscale")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 ROOT = os.path.dirname(__file__)
 
-next_detector: YOLOv8 = None
 
 # WRITE: Show the impact of resources on throughput and that this is heavily penalized
 class CvAnalyzer(IoTService):
@@ -30,30 +28,17 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
-        self.detector: YOLOv8 = None
-        self.next_detector: YOLOv8 = None
-        self.load_model()
+        self.detectors: dict[int, YOLOv8] = {}
+        self.load_models()
         self.metric_buffer = []
 
-    def change_config(self, new_config):
-        model_size_changed = new_config['model_size'] != self.service_conf['model_size']
-        logger.info(f"{new_config['model_size']}, {self.service_conf['model_size']}")
-        self.service_conf = new_config
-
-        if model_size_changed:
-            self.reinitialize_models()
-
-        logger.info(f"{self.service_type} changed to {new_config}")
-
-    def load_model(self):
-        logger.info(f"Loading Detector with Yolov8{yolo_model_sizes[self.service_conf['model_size']]}")
-        model_path = ROOT + f"/models/yolov8{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
-        new_detector = YOLOv8(model_path, conf_threshold=0.3)
-        self.next_detector = new_detector  # Assignment happens only after loading
-
-    @utils.print_execution_time
-    def reinitialize_models(self):
-        threading.Thread(target=self.load_model, daemon=True).start()
+    # @utils.print_execution_time
+    def load_models(self):
+        for i in range(1, 6):
+            # logger.info(f"Loading Detector with Yolov8{yolo_model_sizes[self.service_conf['model_size']]}")
+            model_path = ROOT + f"/models/yolov8{yolo_model_sizes[i]}.onnx"
+            detector = YOLOv8(model_path, conf_threshold=0.3)
+            self.detectors[i] = detector
 
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
@@ -64,7 +49,7 @@ class CvAnalyzer(IoTService):
         resized_frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
 
         # detector_index = int(threading.current_thread().name.split("_")[1])
-        class_ids, boxes, confidences = self.detector(resized_frame)
+        class_ids, boxes, confidences = self.detectors[self.service_conf['model_size']](resized_frame)
         combined_img = draw_detections(resized_frame, boxes, confidences, class_ids)
 
         # Resulting image and total processing time
@@ -73,11 +58,6 @@ class CvAnalyzer(IoTService):
 
     def process_loop(self):
         while self._running:
-
-            # TODO: This also did not fix the issue....
-            if self.detector is None:
-                self.detector = self.next_detector
-                self.next_detector = None
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             start_time = time.perf_counter()
