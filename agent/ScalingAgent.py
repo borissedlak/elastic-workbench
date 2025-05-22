@@ -39,6 +39,9 @@ class ScalingAgent(Thread, ABC):
         self.slo_registry = SLO_Registry(slo_registry_path)
         self.es_registry = ES_Registry(es_registry_path)
         self.experience_buffer = []
+        # This is needed because the Prom becomes unavailable (i.e., deletes metrics) while we load a new model
+        # It's also not possible to load the model in a new Process because the onnxruntime cannot be pickled
+        self.last_known_state = {}
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         """
@@ -53,9 +56,14 @@ class ScalingAgent(Thread, ABC):
 
         if metric_values == {} and parameter_ass == {}:
             return {}
+        elif parameter_ass == {}:
+            return self.last_known_state
 
         missing_vars = calculate_missing_vars(metric_values, utils.to_absolut_rps(assigned_clients))
-        return metric_values | parameter_ass | missing_vars
+        full_state = metric_values | parameter_ass | missing_vars
+
+        self.last_known_state = full_state
+        return full_state
 
     # WRITE: Add a high-level algorithm of this to the paper
     def run(self):

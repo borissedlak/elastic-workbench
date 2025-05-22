@@ -58,6 +58,8 @@ class IoTService(ABC):
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="quality").set(self.service_conf['quality'])
 
+        logger.info(f"Set quality with config {self.service_conf}")
+
         if self.service_type == ServiceType.CV:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
@@ -96,21 +98,10 @@ class IoTService(ABC):
 
     def change_config(self, config):
         self.service_conf = config
-        self.reinitialize_models()
         logger.info(f"{self.service_type} changed to {config}")
 
-    def reinitialize_models(self):
-        pass
-
     def vertical_scaling(self, c_cores: float):
-        self.terminate()
-        # Wait until it is really terminated and then start new
-        while not self._terminated:
-            time.sleep(0.01)
-
         self.cores_reserved = c_cores
-        self.start_process()
-
         logger.info(f"{self.service_type} set to {c_cores} cores")
         self.set_flag_and_cooldown(EsType.RESOURCE_SCALE)
 

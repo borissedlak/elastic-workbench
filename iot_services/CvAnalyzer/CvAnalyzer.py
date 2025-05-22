@@ -80,8 +80,8 @@ class CvAnalyzer(IoTService):
         logger.info(f"{self.service_type.value} stopped")
 
     # Since this has a static threadpool, no need to restart. Depending on the 3rd service I might move the method
-    def vertical_scaling(self, c_cores):
-        self.cores_reserved = c_cores
+    # def vertical_scaling(self, c_cores):
+    #     self.cores_reserved = c_cores
 
 
 if __name__ == '__main__':

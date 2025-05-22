@@ -23,7 +23,7 @@
   },
   "elastic-workbench-cv-analyzer": {
     "model_scaling": {
-      "cooldown": 1500,
+      "cooldown": 3000,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {

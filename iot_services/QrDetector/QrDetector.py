@@ -69,6 +69,7 @@ class QrDetector(IoTService):
                         del future_dict[future] # Remove completed futures
 
                     if self.has_processing_timeout(start_time):
+                        # TODO: This faces the same problem as in CV, that this is till blocking after > 1s
                         tpex.shutdown(wait=False, cancel_futures=True)
                         break
 

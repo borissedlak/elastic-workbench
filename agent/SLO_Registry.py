@@ -47,7 +47,6 @@ def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> 
 #  I might also add a flag to use either the soft clip or the hard np.clip
 def calculate_slo_fulfillment(full_state: Dict[str, Any], slos: Dict[str, SLO]) -> List[Tuple[str, float]]:
     slo_trace = []
-    # slo_f_single_client = 0.0
 
     for slo in slos.values():
         var, larger, thresh, weight = slo

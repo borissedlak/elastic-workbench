@@ -1,6 +1,7 @@
 import concurrent.futures
 import logging
 import os
+import threading
 import time
 from typing import Any
 
@@ -19,6 +20,7 @@ logger = logging.getLogger("multiscale")
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 ROOT = os.path.dirname(__file__)
 
+next_detector: YOLOv8 = None
 
 # WRITE: Show the impact of resources on throughput and that this is heavily penalized
 class CvAnalyzer(IoTService):
@@ -29,12 +31,29 @@ class CvAnalyzer(IoTService):
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
         self.detector: YOLOv8 = None
-        self.reinitialize_models()
+        self.next_detector: YOLOv8 = None
+        self.load_model()
         self.metric_buffer = []
 
-    def reinitialize_models(self):  # Assumes that service_conf changed in the background
+    def change_config(self, new_config):
+        model_size_changed = new_config['model_size'] != self.service_conf['model_size']
+        logger.info(f"{new_config['model_size']}, {self.service_conf['model_size']}")
+        self.service_conf = new_config
+
+        if model_size_changed:
+            self.reinitialize_models()
+
+        logger.info(f"{self.service_type} changed to {new_config}")
+
+    def load_model(self):
+        logger.info(f"Loading Detector with Yolov8{yolo_model_sizes[self.service_conf['model_size']]}")
         model_path = ROOT + f"/models/yolov8{yolo_model_sizes[self.service_conf['model_size']]}.onnx"
-        self.detector = YOLOv8(model_path, conf_threshold=0.3)
+        new_detector = YOLOv8(model_path, conf_threshold=0.3)
+        self.next_detector = new_detector  # Assignment happens only after loading
+
+    @utils.print_execution_time
+    def reinitialize_models(self):
+        threading.Thread(target=self.load_model, daemon=True).start()
 
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
@@ -53,9 +72,13 @@ class CvAnalyzer(IoTService):
         return combined_img, duration
 
     def process_loop(self):
-        # self.reinitialize_models()  # Place here so that it reloads when model size is changed
-
         while self._running:
+
+            # TODO: This also did not fix the issue....
+            if self.detector is None:
+                self.detector = self.next_detector
+                self.next_detector = None
+
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             start_time = time.perf_counter()
             processed_item_counter = 0
@@ -68,7 +91,7 @@ class CvAnalyzer(IoTService):
                 while future_dict:
                     done, _ = concurrent.futures.wait(
                         future_dict,
-                        timeout=0.05,
+                        timeout=0.015,
                         return_when=concurrent.futures.FIRST_COMPLETED
                     )
 

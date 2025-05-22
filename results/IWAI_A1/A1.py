@@ -19,7 +19,7 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 1
-EXPERIMENT_DURATION = 30
+EXPERIMENT_DURATION = 300
 MAX_EXPLORE = 3
 
 ps = "http://172.20.0.2:9090"

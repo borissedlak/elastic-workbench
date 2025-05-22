@@ -1,3 +1,5 @@
+import time
+
 from prometheus_api_client import PrometheusConnect
 
 import utils
@@ -8,7 +10,6 @@ class PrometheusClient:
     def __init__(self, url):
         self.client = PrometheusConnect(url=url, disable_ssl=True)
 
-    # TODO: Not AVG still not working
     # @utils.print_execution_time  # only around 3ms
     def get_metrics(self, metric_names: list[str], service_id: ServiceID = None, period=None, avg=True):
         avg_str = "avg_over_time" if avg else ""
@@ -26,5 +27,8 @@ class PrometheusClient:
 if __name__ == "__main__":
     client = PrometheusClient("http://localhost:9090")
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    print("Metric assignments:", client.get_metrics(["cores", "throughput"], period="10s", service_id=qr_local))
-    # print("Parameter assignments:", client.get_metrics("|".join(MB['parameter']), instance="172.18.0.4"))
+    cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+
+    for i in range(1,100000):
+        print("Metric assignments:", client.get_metrics(["quality"], service_id=cv_local))
+        time.sleep(0.25)

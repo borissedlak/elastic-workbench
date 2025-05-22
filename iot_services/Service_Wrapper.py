@@ -83,7 +83,7 @@ class ServiceWrapper:
 
     def quality_scaling(self):
         quality = round(float(request.args.get('quality')))
-        s_conf = self.service.service_conf
+        s_conf = self.service.service_conf.copy()
         s_conf['quality'] = quality
 
         self.service.change_config(s_conf)
@@ -92,7 +92,7 @@ class ServiceWrapper:
 
     def model_scaling(self):
         model_size = round(float(request.args.get('model_size')))
-        s_conf = self.service.service_conf
+        s_conf = self.service.service_conf.copy()
         s_conf['model_size'] = model_size
 
         self.service.change_config(s_conf)
