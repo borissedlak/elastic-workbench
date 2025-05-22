@@ -19,8 +19,8 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 1
-EXPERIMENT_DURATION = 150
-MAX_EXPLORE = 10
+EXPERIMENT_DURATION = 30
+MAX_EXPLORE = 3
 
 ps = "http://172.20.0.2:9090"
 
@@ -68,7 +68,7 @@ def eval_DQN_agent():
 
 def eval_RRM_agent():
     delete_file_if_exists("./agent_experience.csv")
-    delete_file_if_exists("../../share/metrics/metrics.csv")
+    # delete_file_if_exists("../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for Agent")
 
@@ -146,7 +146,6 @@ def calculate_mean_std(df: DataFrame):
     # Step 2: Reindex each part
     for j in range(1, EXPERIMENT_REPETITIONS + 1):
         slo_f_run = df[df['rep'] == j]['slo_f']
-        # slo_f_run = [r['slo_f'] for r in rows]
         slo_fs_index.append(slo_f_run.to_list())
 
     array = np.array(slo_fs_index)

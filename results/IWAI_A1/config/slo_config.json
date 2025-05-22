@@ -13,7 +13,7 @@
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 100,
+          "thresh": 30,
           "weight": 1.0
         }
       ]
@@ -25,7 +25,7 @@
         {
           "var": "quality",
           "larger": true,
-          "thresh": 300,
+          "thresh": 512,
           "weight": 0.2
         },
         {

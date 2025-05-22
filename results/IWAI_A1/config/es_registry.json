@@ -37,8 +37,8 @@
       "endpoint": "/quality_scaling",
       "parameters": {
         "quality": {
-          "min": 360,
-          "max": 1080
+          "min": 128,
+          "max": 512
         }
       }
     },

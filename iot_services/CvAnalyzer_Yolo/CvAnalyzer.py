@@ -24,11 +24,12 @@ ROOT = os.path.dirname(__file__)
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__(store_to_csv)
-        self.service_conf = {'quality': 720, 'model_size': 3}
+        self.service_conf = {'quality': 256, 'model_size': 3}
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
         self.detector: YOLOv8 = None
+        self.reinitialize_models()
         self.metric_buffer = []
 
     def reinitialize_models(self):  # Assumes that service_conf changed in the background
@@ -52,22 +53,22 @@ class CvAnalyzer(IoTService):
         return combined_img, duration
 
     def process_loop(self):
-        self.reinitialize_models()  # Place here so that it reloads when model size is changed
+        # self.reinitialize_models()  # Place here so that it reloads when model size is changed
 
         while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                start_time = time.perf_counter()
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            start_time = time.perf_counter()
+            processed_item_counter = 0
+            processed_item_durations = []
+
+            try:
                 buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
                 future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
-                processed_item_counter = 0
-                processed_item_durations = []
-
                 while future_dict:
-                    # Poll with a short timeout to allow frequent timeout checks
                     done, _ = concurrent.futures.wait(
                         future_dict,
-                        timeout=0.05,  # 50ms polling interval
+                        timeout=0.05,
                         return_when=concurrent.futures.FIRST_COMPLETED
                     )
 
@@ -75,22 +76,21 @@ class CvAnalyzer(IoTService):
                         result = future.result()
                         processed_item_durations.append(np.abs(result[1]))
                         processed_item_counter += 1
-                        del future_dict[future] # Remove completed futures
-
-                    if self.has_processing_timeout(start_time):
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        break
+                        del future_dict[future]
 
                         # Optionally display or process result
                         # cv2.imshow("Detected Objects", result[0])
                         # if cv2.waitKey(1) & 0xFF == ord('q'):
                         #     self.terminate()
 
-            # This is only executed once after the batch is processed
-            self.export_processing_metrics(processed_item_counter, processed_item_durations)
-
-            if self.simulate_arrival_interval:
-                self.simulate_interval(start_time)
+                    if self.has_processing_timeout(start_time):
+                        # LL: When I run the shutdown in a "with Executor" section, it's still blocking
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
+            finally:
+                self.export_processing_metrics(processed_item_counter, processed_item_durations)
+                if self.simulate_arrival_interval:
+                    self.simulate_interval(start_time)
 
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")
