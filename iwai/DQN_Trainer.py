@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 from collections import deque
 
@@ -202,8 +203,9 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
+    ROOT = os.path.dirname(__file__)
     logging.getLogger("multiscale").setLevel(logging.INFO)
-    df_t = pd.read_csv("../share/metrics/metrics.csv")
+    df_t = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
 
     # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
     # qr_env_t.reload_lgbn_model(df_t)

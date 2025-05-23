@@ -1,4 +1,5 @@
 import logging
+import os
 from random import randint
 
 import gymnasium
@@ -12,6 +13,7 @@ from agent.agent_utils import Full_State_DQN
 
 logger = logging.getLogger("multiscale")
 
+ROOT = os.path.dirname(__file__)
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 INVALID_ACTION_PUNISHMENT = -2
 
@@ -21,8 +23,8 @@ class LGBN_Training_Env(gymnasium.Env):
         self.state: Full_State_DQN = None
         self.lgbn: LGBN = None
         self.service_type: ServiceType = service_type
-        self.es_registry = ES_Registry("../config/es_registry.json")
-        self.slo_registry = SLO_Registry("../config/slo_config.json")
+        self.es_registry = ES_Registry(ROOT + "/../config/es_registry.json")
+        self.slo_registry = SLO_Registry(ROOT + "/../config/slo_config.json")
 
         self.step_quality = step_quality
         self.step_cores = step_cores
