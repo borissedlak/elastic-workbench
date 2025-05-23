@@ -1,5 +1,4 @@
 import logging
-import os
 import random
 from collections import deque
 
@@ -10,7 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from matplotlib import pyplot as plt
-from numpy.linalg import LinAlgError
 
 import utils
 from agent.ES_Registry import ServiceType
@@ -25,7 +23,7 @@ if not torch.cuda.is_available():
     torch.set_num_threads(1)
 torch.autograd.set_detect_anomaly(True)
 
-STATE_DIM = 8
+STATE_DIM = 9
 ACTION_DIM_QR = 5
 ACTION_DIM_CV = 7
 
@@ -91,8 +89,8 @@ class DQN:
         score_list = []
         episode_position = 0
         finished_episodes = 0
-        EPISODE_LENGTH = 50
-        NO_EPISODE = 1000
+        EPISODE_LENGTH = 30
+        NO_EPISODE = 400
 
         # self.epsilon = np.clip(self.epsilon, 0, self.training_length_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")

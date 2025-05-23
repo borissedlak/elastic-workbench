@@ -4,8 +4,9 @@ import logging
 import os
 import random
 import time
-from typing import NamedTuple
+from typing import NamedTuple, Dict
 
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger('multiscale')
@@ -60,6 +61,11 @@ def to_partial(full_state):
     return partial_state
 
 
+def normalize_in_bounds(vector, min_val, max_val):
+    normalized = (vector - min_val) / (max_val - min_val)
+    return np.clip(normalized, min_val, max_val)
+
+
 class Full_State_DQN(NamedTuple):
     quality: int
     quality_thresh: int
@@ -69,15 +75,23 @@ class Full_State_DQN(NamedTuple):
     model_size_thresh: int
     cores: int
     free_cores: int
+    bounds: Dict[str, Dict]
 
+    # TODO: Normalize sensory states
     def for_tensor(self):
-        # return [self.quality, self.throughput, self.model_size, self.quality / self.quality_thresh,
-        #         self.throughput / self.tp_thresh, self.model_size / self.model_size_thresh,
-        #         self.cores, self.free_cores > 0]
+        return [
+            self.quality <= self.bounds['quality']['min'],
+            self.quality >= self.bounds['quality']['max'],
+            self.model_size <= self.bounds['model_size']['min'],
+            self.model_size >= self.bounds['model_size']['max'],
+            self.cores <= self.bounds['cores']['min'],
+            self.free_cores > 0,
+            self.quality / self.quality_thresh,
+            self.model_size / self.model_size_thresh,
+            self.throughput / self.tp_thresh]
 
-
-        return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh, self.model_size,
-                self.model_size_thresh, self.cores, self.cores > self.free_cores]
+        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh, self.model_size,
+        #         self.model_size_thresh, self.cores, self.cores > self.free_cores]
 
         # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
         #     self.cores, self.free_cores > 0]
@@ -138,7 +152,6 @@ def wait_for_remaining_interval(interval_length: int, start_time: float):
 
 
 def delete_file_if_exists(file_path="./agent_experience.csv"):
-
     file_path = os.path.join(file_path)
 
     if os.path.exists(file_path):

@@ -107,7 +107,7 @@ class LGBN_Training_Env(gymnasium.Env):
         tp_thresh = self.client_slos['throughput'].thresh
 
         self.state = Full_State_DQN(quality, quality_thresh, throughput, tp_thresh, model_size, model_size_thresh,
-                                    ass_cores, free_cores)
+                                    ass_cores, free_cores, self.boundaries)
         return self.state, {}
 
     def reload_lgbn_model(self, df):
