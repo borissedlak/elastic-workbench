@@ -26,7 +26,8 @@ if not torch.cuda.is_available():
 torch.autograd.set_detect_anomaly(True)
 
 STATE_DIM = 6
-ACTION_DIM = 5
+ACTION_DIM_QR = 5
+ACTION_DIM_CV = 7
 
 
 class DQN:
@@ -37,7 +38,8 @@ class DQN:
         self.lr = 0.01
         self.gamma = 0.98
         self.tau = 0.01  # 0.01
-        self.epsilon = 1.0
+        self.epsilon_default = 1.0
+        self.epsilon = self.epsilon_default
         self.epsilon_decay = 0.98  # 0.98
         self.epsilon_min = 0.001
         self.buffer_size = 100000
@@ -82,6 +84,7 @@ class DQN:
     def train_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
 
         # try:
+        self.epsilon = self.epsilon_default
         training_env.reset()
             # self.currently_training = True
         # except LinAlgError as e:
@@ -92,8 +95,8 @@ class DQN:
         score_list = []
         episode_position = 0
         finished_episodes = 0
-        EPISODE_LENGTH = 100
-        NO_EPISODE = 100
+        EPISODE_LENGTH = 50
+        NO_EPISODE = 500
 
         # self.epsilon = np.clip(self.epsilon, 0, self.training_length_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
@@ -102,8 +105,8 @@ class DQN:
             initial_state = training_env.state
             action = self.choose_action(np.array(training_env.state.for_tensor()))
             next_state, reward, done, _, _ = training_env.step(action)
-            # print(f"State transition {initial_state}, {action} --> {next_state}")
-            # print(f"Reward {reward}")
+            print(f"State transition {initial_state}, {action} --> {next_state}")
+            print(f"Reward {reward}")
 
             self.memory.put((initial_state.for_tensor(), action, reward, next_state.for_tensor(), done))
             episode_score += reward
@@ -131,7 +134,6 @@ class DQN:
         # self.last_time_trained = datetime.now()
         # self.currently_training = False
         # self.training_length_coeff = np.clip(self.training_length_coeff - 0.2, 0.15, 1.0)
-        self.epsilon = 1.0
 
     # @utils.print_execution_time
     def train_batch(self):
@@ -154,7 +156,7 @@ class DQN:
 
     # @utils.print_execution_time
     def store_dqn_as_file(self, suffix=None):
-        torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"" + suffix if suffix else ""}.pt")
+        torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"_" + suffix if suffix else ""}.pt")
 
 
 class QNetwork(nn.Module):
@@ -207,9 +209,12 @@ class ReplayBuffer:
 
 if __name__ == '__main__':
     logging.getLogger("multiscale").setLevel(logging.INFO)
+    df_t = pd.read_csv("../share/metrics/metrics.csv")
 
-    df_t = pd.read_csv("../share/metrics/LGBN.csv")
-    qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
-    qr_env_t.reload_lgbn_model(df_t)
+    # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
+    # qr_env_t.reload_lgbn_model(df_t)
+    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(qr_env_t, "QR")
 
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(qr_env_t, "QR")
+    cv_env_t = LGBN_Training_Env(ServiceType.CV, step_quality=32)
+    cv_env_t.reload_lgbn_model(df_t)
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, force_restart=True).train_dqn_from_env(cv_env_t, "CV")

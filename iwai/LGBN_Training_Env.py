@@ -13,7 +13,7 @@ from agent.agent_utils import Full_State_DQN
 logger = logging.getLogger("multiscale")
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
-
+INVALID_ACTION_PUNISHMENT = -2
 
 class LGBN_Training_Env(gymnasium.Env):
     def __init__(self, service_type, step_quality, step_cores=1, step_model_size=1):
@@ -46,7 +46,7 @@ class LGBN_Training_Env(gymnasium.Env):
             new_quality = self.state.quality + delta_quality
 
             if new_quality < self.boundaries['quality']['min'] or new_quality > self.boundaries['quality']['max']:
-                behavioral_punishment = - 50
+                behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 done = True
             else:
                 new_state['quality'] = new_quality
@@ -56,14 +56,24 @@ class LGBN_Training_Env(gymnasium.Env):
             new_core = self.state.cores + delta_cores
 
             if new_core < 0:  # Wants to go lower than 0 core
-                behavioral_punishment = - 50
+                behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 done = True
             elif delta_cores > self.state.free_cores:  # Want to consume resources that are not free
-                behavioral_punishment = - 50
+                behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 done = True
             else:
                 new_state['cores'] = self.state.cores + delta_cores
                 new_state['free_cores'] = new_state['free_cores'] - delta_cores
+
+        elif 5 <= action <= 6:
+            delta_model = -self.step_model_size if action == 5 else self.step_model_size
+            new_model_s = self.state.model_size + delta_model
+
+            if new_model_s < self.boundaries['model_size']['min'] or new_model_s > self.boundaries['model_size']['max']:
+                behavioral_punishment = INVALID_ACTION_PUNISHMENT
+                done = True
+            else:
+                new_state['model_size'] = new_model_s
 
         new_state['throughput'] = self.sample_from_lgbn(new_state['quality'], new_state['cores'], new_state['model_size'])['throughput']
         self.state = Full_State_DQN(**new_state)

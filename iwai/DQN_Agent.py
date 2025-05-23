@@ -9,7 +9,7 @@ import utils
 from agent.ES_Registry import ServiceID, ServiceType, EsType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
 from agent.agent_utils import Full_State_DQN
-from iwai.DQN_Trainer import DQN, ACTION_DIM
+from iwai.DQN_Trainer import DQN, ACTION_DIM_QR
 from iwai.DQN_Trainer import STATE_DIM
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
@@ -29,7 +29,7 @@ class DQN_Agent(ScalingAgent):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
 
-        self.dqn = dqn if dqn is not None else DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM)
+        self.dqn = dqn if dqn is not None else DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
 
     def orchestrate_services_optimally(self, services_m):
         shuffled_services = self.services_monitored.copy()

@@ -66,7 +66,7 @@ def preprocess_data(df):
     metadata_expanded = pd.json_normalize(df_filtered['s_config'])
 
     combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
-    del combined_df_expanded['timestamp']
+    # del combined_df_expanded['timestamp']
 
     logger.info(f"Training data contains service types {df_filtered['service_type'].unique()}")
 

@@ -13,7 +13,7 @@ from agent.RRM_Global_Agent import RRM_Global_Agent
 from agent.SLO_Registry import SLO_Registry
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from iwai.DQN_Agent import DQN_Agent
-from iwai.DQN_Trainer import ACTION_DIM, DQN, STATE_DIM
+from iwai.DQN_Trainer import ACTION_DIM_QR, DQN, STATE_DIM
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -43,7 +43,7 @@ def train_q_network():
     file_path = "LGBN.csv"
     df = pd.read_csv(file_path)
 
-    dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True, nn_folder=nn_folder)
+    dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, force_restart=True, nn_folder=nn_folder)
     dqn.train_dqn_from_env(df)
 
     print(f"Finished Q-Network Training")
@@ -54,7 +54,7 @@ def eval_DQN_agent():
     delete_file_if_exists()
 
     print(f"Starting experiment for Agent")
-    dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, nn_folder=nn_folder)
+    dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=nn_folder)
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
         agent = DQN_Agent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=EVALUATION_FREQUENCY, dqn=dqn,
