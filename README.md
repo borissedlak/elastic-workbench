@@ -33,6 +33,32 @@ start the experiments, which evaluate one scaling agent type after the other
 PYTHONPATH=. python3 results/IWAI_A1/A1.py
 ```
 
+# Structure of Services
+
+### Main Class
+
+In the folder [iot_services](iot_services), there are three different implementations of one base class: [IoTService.py](iot_services%2FIoTService.py).
+This class features central functions, e.g., starting & stopping the service, changing the service configuration, or exporting the processing metrics to 
+Prometheus and the [metrics.csv](share%2Fmetrics%2Fmetrics.csv). This of course assumes that the instance of Prometheus is running, in this case, the
+metrics can also be displayed in the Grafana dashboard started alongside. 
+
+### Service Instantiations
+
+The project contains the following 3 services:
+1. [QrDetector.py](iot_services%2FQrDetector%2FQrDetector.py) scans an input video for QR codes; it can adjust the quality (i.e., video resolution) and resources (i.e., cores)
+2. [CvAnalyzer.py](iot_services%2FCvAnalyzer_Yolo%2FCvAnalyzer.py) runs video inference on an input videos; it can adjust the quality (i.e., video resolution), model size, and resources (i.e., cores)
+3. [PcVisualizer.py](iot_services%2FPcVisualizer%2FPcVisualizer.py) should render a point cloud object; still not finished though
+
+### Service Wrapper API
+
+To interact with the services and call the functions of the base class, each service is wrapped in a Rest API. Please have a look at
+[Service_Wrapper.py](iot_services%2FService_Wrapper.py) to see the different routes that are available. 
+
+### Docker Containerization
+
+The main reason that Services need to be dockerized is to split the resources between them. If a service is scaled vertically (i.e., ``/resource_scaling?cores=4``), the services both adjust
+the time that the Service can be scheduled on the CPU, as well as on the service instance. For example, the [QrDetector.py](iot_services%2FQrDetector%2FQrDetector.py) starts more processing
+threads according to the currently configured resources. 
 
 # Structure of Agents
 
