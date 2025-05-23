@@ -40,7 +40,6 @@ class LGBN_Training_Env(gymnasium.Env):
         if action == 0:
             behavioral_punishment = +0.1  # Encourage the client not to oscillate
 
-        # Do nothing at 0
         if 1 <= action <= 2:
             delta_quality = -self.step_quality if action == 1 else self.step_quality
             new_quality = self.state.quality + delta_quality
@@ -117,10 +116,11 @@ class LGBN_Training_Env(gymnasium.Env):
 
 
 if __name__ == "__main__":
-    env = LGBN_Training_Env(ServiceType.QR, step_quality=100, step_cores=1, step_model_size=1)
+    env = LGBN_Training_Env(ServiceType.CV, step_quality=32, step_cores=1, step_model_size=1)
 
     df_t = pd.read_csv("../share/metrics/metrics.csv")
     env.reload_lgbn_model(df_t)
     env.reset()
+    env.state = Full_State_DQN(1000, 100, 0, 100, 5, 5, 1, 7)
     for i in range(1,100):
-        print(env.step(2))
+        print(env.step(0))

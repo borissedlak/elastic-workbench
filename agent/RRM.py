@@ -6,7 +6,6 @@ from typing import Dict, Any
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 

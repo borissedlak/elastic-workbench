@@ -25,14 +25,14 @@ if not torch.cuda.is_available():
     torch.set_num_threads(1)
 torch.autograd.set_detect_anomaly(True)
 
-STATE_DIM = 6
+STATE_DIM = 8
 ACTION_DIM_QR = 5
 ACTION_DIM_CV = 7
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16, nn_folder="../share/networks",
-                 suffix=None):
+    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16,
+                 nn_folder="../share/networks", suffix=None):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -45,19 +45,15 @@ class DQN:
         self.buffer_size = 100000
         self.batch_size = 200
         self.memory = ReplayBuffer(self.buffer_size)
-        # self.training_length_coeff = 1.0
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
 
-        if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
-            self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
-            # self.training_length_coeff = 0.5
-            logger.info("Loaded existing Q network on startup")
+        # if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
+        #     self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
+        #     logger.info("Loaded existing Q network on startup")
 
         self.Q_target.load_state_dict(self.Q.state_dict())
-        # self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
-        # self.currently_training = False
         self.nn_folder = nn_folder
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
@@ -96,7 +92,7 @@ class DQN:
         episode_position = 0
         finished_episodes = 0
         EPISODE_LENGTH = 50
-        NO_EPISODE = 500
+        NO_EPISODE = 1000
 
         # self.epsilon = np.clip(self.epsilon, 0, self.training_length_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")

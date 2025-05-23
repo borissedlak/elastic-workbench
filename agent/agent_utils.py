@@ -71,8 +71,13 @@ class Full_State_DQN(NamedTuple):
     free_cores: int
 
     def for_tensor(self):
-        return [self.quality / self.quality_thresh, self.throughput / self.tp_thresh, self.cores,
-                self.quality > 300, self.quality < 1100, self.free_cores > 0]
+        # return [self.quality, self.throughput, self.model_size, self.quality / self.quality_thresh,
+        #         self.throughput / self.tp_thresh, self.model_size / self.model_size_thresh,
+        #         self.cores, self.free_cores > 0]
+
+
+        return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh, self.model_size,
+                self.model_size_thresh, self.cores, self.cores > self.free_cores]
 
         # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
         #     self.cores, self.free_cores > 0]
@@ -133,8 +138,7 @@ def wait_for_remaining_interval(interval_length: int, start_time: float):
 
 
 def delete_file_if_exists(file_path="./agent_experience.csv"):
-    # directory = "./"
-    # file_name = file
+
     file_path = os.path.join(file_path)
 
     if os.path.exists(file_path):
