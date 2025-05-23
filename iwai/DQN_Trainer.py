@@ -15,6 +15,7 @@ import utils
 from agent.ES_Registry import ServiceType
 from iwai.LGBN_Training_Env import LGBN_Training_Env
 
+ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,7 +32,7 @@ ACTION_DIM_CV = 7
 
 class DQN:
     def __init__(self, state_dim, action_dim, force_restart=False, neurons=16,
-                 nn_folder="../share/networks", suffix=None):
+                 nn_folder=ROOT + "/../share/networks", suffix=None):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -203,7 +204,6 @@ class ReplayBuffer:
 
 
 if __name__ == '__main__':
-    ROOT = os.path.dirname(__file__)
     logging.getLogger("multiscale").setLevel(logging.INFO)
     df_t = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
 
