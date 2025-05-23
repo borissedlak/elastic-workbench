@@ -7,12 +7,12 @@ This project demonstrated the capability of different agents to solve a complex 
 
 ### Setup basic requirements
 
-Create a new virtual environment and install dependencies
+Create a new virtual environment and install dependencies. It was developed and tested with Python3.12
 
 ```bash
-python3.12 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
-python3.12 -m pip install -r ./requirements.txt
+python3 -m pip install -r ./requirements.txt
 ```
 
 ## Start Experiments
@@ -30,11 +30,16 @@ docker compose up -d
 start the experiments, which evaluate one scaling agent type after the other
 
 ```bash
-PYTHONPATH=. python3.12 results/IWAI_A1/A1.py
+PYTHONPATH=. python3 results/IWAI_A1/A1.py
 ```
 
-@Daniel, you can also directly start the pdmyp agent
+# Structure of Agents
+
+The base class for all agents is `Scaling_Agent.py`, it features multiple functions that are generally useful.
+This includes:
+
+* 
 
 ```bash
-PYTHONPATH=. python3.12 ./iwai/pymdp_Agent.py
+PYTHONPATH=. python3 ./iwai/AIF_Agent.py
 ```

@@ -11,7 +11,6 @@ logger = logging.getLogger("multiscale")
 
 class ServiceType(Enum):
     QR = "elastic-workbench-qr-detector"
-    # QR_DEPRECATED = "QR_DEPRECATED"
     CV = "elastic-workbench-cv-analyzer"
     UNKNOWN = "unknown"
 

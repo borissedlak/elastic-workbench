@@ -31,8 +31,7 @@ ACTION_DIM_CV = 7
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim, force_restart=False, neurons=16,
-                 nn_folder=ROOT + "/../share/networks", suffix=None):
+    def __init__(self, state_dim, action_dim, neurons=16, nn_folder=ROOT + "/../share/networks"):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -48,10 +47,6 @@ class DQN:
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
-
-        # if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
-        #     self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
-        #     logger.info("Loaded existing Q network on startup")
 
         self.Q_target.load_state_dict(self.Q.state_dict())
         self.nn_folder = nn_folder
@@ -79,13 +74,8 @@ class DQN:
     @utils.print_execution_time
     def train_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
 
-        # try:
         self.epsilon = self.epsilon_default
         training_env.reset()
-            # self.currently_training = True
-        # except LinAlgError as e:
-        #     logger.warning(f"Could not initialize ENV due to {e.args[0]}, waiting for more samples")
-        #     return
 
         episode_score = 0.0
         score_list = []
@@ -127,9 +117,6 @@ class DQN:
             plt.show()
 
         self.store_dqn_as_file(suffix=suffix)
-        # self.last_time_trained = datetime.now()
-        # self.currently_training = False
-        # self.training_length_coeff = np.clip(self.training_length_coeff - 0.2, 0.15, 1.0)
 
     # @utils.print_execution_time
     def train_batch(self):
@@ -209,8 +196,8 @@ if __name__ == '__main__':
 
     # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
     # qr_env_t.reload_lgbn_model(df_t)
-    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(qr_env_t, "QR")
+    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM).train_dqn_from_env(qr_env_t, "QR")
 
     cv_env_t = LGBN_Training_Env(ServiceType.CV, step_quality=32)
     cv_env_t.reload_lgbn_model(df_t)
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, force_restart=True).train_dqn_from_env(cv_env_t, "CV")
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_dqn_from_env(cv_env_t, "CV")

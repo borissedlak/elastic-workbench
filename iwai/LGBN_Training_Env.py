@@ -123,6 +123,8 @@ if __name__ == "__main__":
     df_t = pd.read_csv("../share/metrics/metrics.csv")
     env.reload_lgbn_model(df_t)
     env.reset()
-    env.state = Full_State_DQN(1000, 100, 0, 100, 5, 5, 1, 7)
+
+    boundaries = env.es_registry.get_boundaries_minimalistic(ServiceType.CV, MAX_CORES)
+    env.state = Full_State_DQN(1000, 100, 0, 100, 5, 5, 1, 7, boundaries)
     for i in range(1,100):
         print(env.step(0))
