@@ -60,11 +60,13 @@ def to_partial(full_state):
     return partial_state
 
 
-class Full_State(NamedTuple):
+class Full_State_DQN(NamedTuple):
     quality: int
     quality_thresh: int
     throughput: int
     tp_thresh: int
+    model_size: int
+    model_size_thresh: int
     cores: int
     free_cores: int
 
@@ -103,7 +105,7 @@ def export_experience_buffer(rows: tuple):
         writer.writerows(data)
 
 
-def log_service_state(state: Full_State, prefix):
+def log_service_state(state: Full_State_DQN, prefix):
     # Define the directory and file name
     directory = "./"
     file_name = "agent_experience.csv"

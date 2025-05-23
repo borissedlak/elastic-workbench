@@ -38,7 +38,7 @@ services:
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
       - CONTAINER_IP=172.20.0.10
-      - DEFAULT_CLIENTS=C_3:100
+      - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna
     volumes:
       - ./share:/src/share # Linux

@@ -34,7 +34,6 @@ def calculate_SLO_F_clients(full_state, slos_all_clients):
 
 
 def to_normalized_SLO_F(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
-    # return sum(value for _, value in slof) / float(len(slof))
     slo_f_single_client = sum(value for _, value in slof)
 
     max_slo_f_single_client = sum([s.weight for s in slos.values()])

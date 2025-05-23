@@ -8,7 +8,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-import utils
 from agent.ES_Registry import ServiceID, ServiceType
 from agent.RRM_Global_Agent import RRM_Global_Agent
 from agent.SLO_Registry import SLO_Registry
@@ -30,10 +29,12 @@ qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detecto
 cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
 
 EVALUATION_FREQUENCY = 5
-MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
-slo_registry = SLO_Registry("./config/slo_config.json")
-client_SLOs = slo_registry.get_SLOs_for_client("C_1", qr_local.service_type)
+slo_path = "../../config/slo_config.json"
+es_path = "../../config/es_registry.json"
+
+# slo_registry = SLO_Registry(slo_path)
+# client_SLOs = slo_registry.get_SLOs_for_client("C_1", qr_local.service_type)
 
 logging.getLogger('multiscale').setLevel(logging.INFO)
 
@@ -57,8 +58,7 @@ def eval_DQN_agent():
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
         agent = DQN_Agent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=EVALUATION_FREQUENCY, dqn=dqn,
-                          slo_registry_path="./config/slo_config.json", es_registry_path="./config/es_registry.json",
-                          log_experience=rep)
+                          slo_registry_path=slo_path, es_registry_path=es_path, log_experience=rep)
         agent.reset_services_states()
         time.sleep(2)
 
@@ -76,9 +76,8 @@ def eval_RRM_agent():
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
         agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
-                                 evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path="./config/slo_config.json",
-                                 es_registry_path="./config/es_registry.json",
-                                 log_experience=rep, max_explore=MAX_EXPLORE)
+                                 evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path=slo_path,
+                                 es_registry_path=es_path, log_experience=rep, max_explore=MAX_EXPLORE)
         agent.reset_services_states()
         time.sleep(4)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
@@ -88,7 +87,6 @@ def eval_RRM_agent():
         export_experience_buffer(agent.experience_buffer)
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
-    pass
 
 def color_for_s(service_type):
     if service_type == "elastic-workbench-qr-detector-1":
@@ -157,15 +155,8 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    # delete_experience_file()
-    # agent = RRM_Global_Agent(services_monitored=[qr_local, cv_local], prom_server=ps,
-    #                          evaluation_cycle=EVALUATION_FREQUENCY, slo_registry_path="./config/slo_config.json",
-    #                          es_registry_path="./config/es_registry.json")
-    # agent.reset_services_states()
-    # sys.exit()
-
     # train_q_network()
     # eval_DQN_agent()
     # eval_RRM_agent()
-    visualize_data(["agent_experience.csv"], ROOT +"/plots/slo_f.png")
+    visualize_data(["agent_experience.csv"], ROOT + "/plots/slo_f.png")
     sys.exit()

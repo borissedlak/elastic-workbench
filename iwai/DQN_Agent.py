@@ -1,6 +1,5 @@
 import logging
 import os
-import platform
 import random
 from typing import Dict
 
@@ -9,7 +8,7 @@ import numpy as np
 import utils
 from agent.ES_Registry import ServiceID, ServiceType, EsType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
-from agent.agent_utils import Full_State
+from agent.agent_utils import Full_State_DQN
 from iwai.DQN_Trainer import DQN, ACTION_DIM
 from iwai.DQN_Trainer import STATE_DIM
 
@@ -32,8 +31,6 @@ class DQN_Agent(ScalingAgent):
 
         self.dqn = dqn if dqn is not None else DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM)
 
-
-    # TODO: Adjust to new agent structure for DQN
     def orchestrate_services_optimally(self, services_m):
         shuffled_services = self.services_monitored.copy()
         random.shuffle(shuffled_services)  # Shuffling the clients avoids that one can always pick cores first
@@ -48,22 +45,13 @@ class DQN_Agent(ScalingAgent):
                 logger.warning(f"Cannot find state for service {service_m}")
                 continue
 
-            logger.info(f"Current state for <{service_m.host},{service_m.container_id}>: {service_state}")
-            all_client_SLO_F = self.get_clients_SLO_F(service_m, service_state, assigned_clients)
-            print(all_client_SLO_F)
-
-            host_fix = "localhost" if platform.system() == "Windows" else service_m.host
-
-            # TODO: This will cause the service to oscillate.....
             ES_list, all_elastic_params_ass = self.get_optimal_local_ES(service_m, service_state, assigned_clients)
             if ES_list is None:
                 logger.info("Agent decided to do nothing")
             else:
                 for target_ES in ES_list:
-                    self.execute_ES(host_fix, service_m, target_ES, all_elastic_params_ass, respect_cooldown=False)
-
-            # rand_ES, rand_params = self.es_registry.get_random_ES_and_params(service_m.service_type)
-            # self.execute_ES(host_fix, service_m.service_type, rand_ES, rand_params)
+                    self.execute_ES(service_m.host, service_m, target_ES, all_elastic_params_ass,
+                                    respect_cooldown=False)
 
             if self.log_experience is not None:
                 self.build_state_and_log(service_state, service_m, assigned_clients)
@@ -73,8 +61,8 @@ class DQN_Agent(ScalingAgent):
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
 
         quality_t, throughput_t = all_client_slos[0]['quality'].thresh, all_client_slos[0]['throughput'].thresh
-        state_pw = Full_State(service_state['quality'], quality_t, service_state['throughput'], throughput_t,
-                              service_state['cores'], free_cores)
+        state_pw = Full_State_DQN(service_state['quality'], quality_t, service_state['throughput'], throughput_t,
+                                  service_state['cores'], free_cores)
         action_pw = self.dqn.choose_action(np.array(state_pw.for_tensor()), rand=0.0)
 
         if 1 <= action_pw <= 2:

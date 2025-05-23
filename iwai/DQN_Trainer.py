@@ -2,7 +2,6 @@ import logging
 import os
 import random
 from collections import deque
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -14,7 +13,8 @@ from matplotlib import pyplot as plt
 from numpy.linalg import LinAlgError
 
 import utils
-from iwai.LGBN_Env import LGBN_Env
+from agent.ES_Registry import ServiceType
+from iwai.LGBN_Training_Env import LGBN_Training_Env
 
 logger = logging.getLogger("multiscale")
 
@@ -43,20 +43,19 @@ class DQN:
         self.buffer_size = 100000
         self.batch_size = 200
         self.memory = ReplayBuffer(self.buffer_size)
-        self.training_lenght_coeff = 1.0
+        # self.training_length_coeff = 1.0
 
         self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
         self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
 
         if not force_restart and os.path.exists(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt"):
             self.Q.load_state_dict(torch.load(nn_folder + f"/Q{"" + suffix if suffix else ""}.pt", weights_only=True))
-            self.training_lenght_coeff = 0.5
+            # self.training_length_coeff = 0.5
             logger.info("Loaded existing Q network on startup")
 
         self.Q_target.load_state_dict(self.Q.state_dict())
         # self.last_time_trained = datetime(1970, 1, 1, 0, 0, 0)
         # self.currently_training = False
-        self.env = LGBN_Env()
         self.nn_folder = nn_folder
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
@@ -80,15 +79,14 @@ class DQN:
         return target
 
     @utils.print_execution_time
-    def train_dqn_from_env(self, df, suffix=None):
+    def train_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
 
-        self.env.reload_lgbn_model(df)
-        try:
-            self.env.reset()
-            self.currently_training = True
-        except LinAlgError as e:
-            logger.warning(f"Could not initialize ENV due to {e.args[0]}, waiting for more samples")
-            return
+        # try:
+        training_env.reset()
+            # self.currently_training = True
+        # except LinAlgError as e:
+        #     logger.warning(f"Could not initialize ENV due to {e.args[0]}, waiting for more samples")
+        #     return
 
         episode_score = 0.0
         score_list = []
@@ -97,13 +95,13 @@ class DQN:
         EPISODE_LENGTH = 100
         NO_EPISODE = 100
 
-        self.epsilon = np.clip(self.epsilon, 0, self.training_lenght_coeff)
+        # self.epsilon = np.clip(self.epsilon, 0, self.training_length_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
-        while finished_episodes < (NO_EPISODE * self.training_lenght_coeff):
+        while finished_episodes < NO_EPISODE:
 
-            initial_state = self.env.state
-            action = self.choose_action(np.array(self.env.state.for_tensor()))
-            next_state, reward, done, _, _ = self.env.step(action)
+            initial_state = training_env.state
+            action = self.choose_action(np.array(training_env.state.for_tensor()))
+            next_state, reward, done, _, _ = training_env.step(action)
             # print(f"State transition {initial_state}, {action} --> {next_state}")
             # print(f"Reward {reward}")
 
@@ -116,7 +114,7 @@ class DQN:
             episode_position += 1
 
             if episode_position >= EPISODE_LENGTH or done:
-                self.env.reset()
+                training_env.reset()
                 self.epsilon *= self.epsilon_decay
                 score_list.append(episode_score)
 
@@ -130,9 +128,9 @@ class DQN:
             plt.show()
 
         self.store_dqn_as_file(suffix=suffix)
-        self.last_time_trained = datetime.now()
-        self.currently_training = False
-        self.training_lenght_coeff = np.clip(self.training_lenght_coeff - 0.2, 0.15, 1.0)
+        # self.last_time_trained = datetime.now()
+        # self.currently_training = False
+        # self.training_length_coeff = np.clip(self.training_length_coeff - 0.2, 0.15, 1.0)
         self.epsilon = 1.0
 
     # @utils.print_execution_time
@@ -211,4 +209,7 @@ if __name__ == '__main__':
     logging.getLogger("multiscale").setLevel(logging.INFO)
 
     df_t = pd.read_csv("../share/metrics/LGBN.csv")
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(df_t)
+    qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
+    qr_env_t.reload_lgbn_model(df_t)
+
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM, force_restart=True).train_dqn_from_env(qr_env_t, "QR")

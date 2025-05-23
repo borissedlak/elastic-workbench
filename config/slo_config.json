@@ -19,7 +19,7 @@
       ]
     },
     {
-      "client_id": "C_3",
+      "client_id": "C_1",
       "service_type": "elastic-workbench-cv-analyzer",
       "SLOs": [
         {

@@ -13,7 +13,7 @@ from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
-from agent.agent_utils import log_service_state, Full_State, wait_for_remaining_interval
+from agent.agent_utils import log_service_state, Full_State_DQN, wait_for_remaining_interval
 
 logger = logging.getLogger("multiscale")
 
@@ -136,8 +136,8 @@ class ScalingAgent(Thread, ABC):
         extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
 
         quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
-        state_pw = Full_State(service_state[extra_var], quality_t, service_state['throughput'],
-                              tp_t, service_state['cores'], free_cores)
+        state_pw = Full_State_DQN(service_state[extra_var], quality_t, service_state['throughput'],
+                                  tp_t, service_state['cores'], free_cores)
 
         log_service_state(state_pw, self.log_experience)
 

@@ -11,7 +11,7 @@ logger = logging.getLogger("multiscale")
 
 class ServiceType(Enum):
     QR = "elastic-workbench-qr-detector"
-    QR_DEPRECATED = "QR_DEPRECATED"
+    # QR_DEPRECATED = "QR_DEPRECATED"
     CV = "elastic-workbench-cv-analyzer"
     UNKNOWN = "unknown"
 
@@ -79,6 +79,16 @@ class ES_Registry:
             parameter_bounds[es_type] = params
 
         return parameter_bounds
+
+    def get_boundaries_minimalistic(self, service_type, max_cores) -> Dict[str, Dict]:
+        boundaries = {}
+
+        param_bounds = self.get_parameter_bounds_for_active_ES(service_type, max_cores)
+        for es_type in param_bounds.values():
+            param_bound = list(es_type.items())[0]
+            boundaries[param_bound[0]] = param_bound[1]
+
+        return boundaries
 
     def get_ES_cooldown(self, service_type: ServiceType, es_type: EsType) -> int:
         if es_type == EsType.STARTUP:

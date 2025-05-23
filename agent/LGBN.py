@@ -22,11 +22,8 @@ class LGBN:
 
     def init_models(self, df):
         if df is None:  # Remove this df when not needed anymore
-            df_combined = collect_all_metric_files()
-            df_cleared = preprocess_data(df_combined)
-        else:
-            df_cleared = df
-
+            df = collect_all_metric_files()
+        df_cleared = preprocess_data(df)
         return train_lgbn_model(df_cleared, self.show_figures, self.structural_training)
 
     # @utils.print_execution_time
@@ -102,9 +99,9 @@ def get_edges_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
         return [('quality', 'throughput'), ('cores', 'throughput')]
     elif service_type == ServiceType.CV:
-        return [('cores', 'throughput'), ('model_size', 'throughput')]
-    elif service_type == ServiceType.QR_DEPRECATED:
-        return [('quality', 'throughput'), ('cores', 'throughput')]
+        return [('cores', 'throughput'), ('model_size', 'throughput'), ('quality', 'throughput')]
+    # elif service_type == ServiceType.QR_DEPRECATED:
+    #     return [('quality', 'throughput'), ('cores', 'throughput')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
