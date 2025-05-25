@@ -95,11 +95,11 @@ def visualize_data(agent_types: list[str], output_file: str):
         for service in df['service'].unique():
             df_filtered = df[df['service'] == service]
             s_mean, s_std = calculate_mean_std(df_filtered)
-            # lower_bound = np.array(s_mean) - np.array(s_std)
-            # upper_bound = np.array(s_mean) + np.array(s_std)
+            lower_bound = np.array(s_mean) - np.array(s_std)
+            upper_bound = np.array(s_mean) + np.array(s_std)
             plt.plot(x, s_mean, label=service+ f", {agent}", color=color_dict[service], linewidth=2,
                      linestyle=line_style_dict[agent])  # label = ''
-            # plt.fill_between(x, lower_bound, upper_bound, color=color_for_s(service), alpha=0.2)
+            # plt.fill_between(x, lower_bound, upper_bound, color=color_dict[service], alpha=0.2)
 
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
