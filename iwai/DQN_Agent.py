@@ -26,9 +26,7 @@ class DQN_Agent(ScalingAgent):
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
                  log_experience=None):
-        """
-        Scaling Agent that uses two separate DQNs for QR and CV services.
-        """
+
         super().__init__(prom_server, services_monitored, evaluation_cycle,
                          slo_registry_path, es_registry_path, log_experience)
 
@@ -56,13 +54,13 @@ class DQN_Agent(ScalingAgent):
             else:
                 self.execute_ES(service_m.host, service_m, es, elastic_params_ass, respect_cooldown=False)
 
-            if self.log_experience is not None:
-                self.build_state_and_log(service_state, service_m, assigned_clients)
-
     def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]) -> tuple[EsType, Dict]:
         free_cores = self.get_free_cores()
         boundaries = self.es_registry.get_boundaries_minimalistic(service.service_type, MAX_CORES)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service.service_type, assigned_clients)
+
+        if self.log_experience is not None:
+            self.evaluate_slos_and_buffer(service, service_state, all_client_slos)
 
         model_size, model_size_t = 1, 1
         if 'model_size' in service_state or 'model_size' in all_client_slos[0]:

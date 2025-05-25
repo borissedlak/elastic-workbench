@@ -13,7 +13,7 @@ from agent.RRM_Global_Agent import RRM_Global_Agent
 from agent.SLO_Registry import SLO_Registry
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from iwai.DQN_Agent import DQN_Agent
-from iwai.DQN_Trainer import ACTION_DIM_QR, DQN, STATE_DIM
+from iwai.DQN_Trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -33,12 +33,9 @@ EVALUATION_FREQUENCY = 5
 slo_path = "../../config/slo_config.json"
 es_path = "../../config/es_registry.json"
 
-# slo_registry = SLO_Registry(slo_path)
-# client_SLOs = slo_registry.get_SLOs_for_client("C_1", qr_local.service_type)
-
 logging.getLogger('multiscale').setLevel(logging.INFO)
 
-
+# TODO: Do with new structure
 def train_q_network():
     file_path = "LGBN.csv"
     df = pd.read_csv(file_path)
@@ -51,20 +48,31 @@ def train_q_network():
 
 # TODO: Generalize for different agent types
 def eval_DQN_agent():
-    delete_file_if_exists()
+    # delete_file_if_exists()
 
     print(f"Starting experiment for Agent")
-    dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=nn_folder)
+
+    # Load the trained DQNs
+    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
+    dqn_qr.load("Q_QR_joint.pt")
+
+    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    dqn_cv.load("Q_CV_joint.pt")
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
-        agent = DQN_Agent(services_monitored=[qr_local], prom_server=ps, evaluation_cycle=EVALUATION_FREQUENCY, dqn=dqn,
-                          slo_registry_path=slo_path, es_registry_path=es_path, log_experience=rep)
+        # Start the agent with both services
+        agent = DQN_Agent(prom_server=ps,
+                  services_monitored=[qr_local, cv_local],
+                  dqn_for_services=[dqn_qr, dqn_cv],
+                  evaluation_cycle=EVALUATION_FREQUENCY,
+                  log_experience=rep)
         agent.reset_services_states()
-        time.sleep(2)
+        time.sleep(4)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
         agent.terminate_gracefully()
+        export_experience_buffer(agent.experience_buffer)
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
@@ -156,7 +164,7 @@ def calculate_mean_std(df: DataFrame):
 
 if __name__ == '__main__':
     # train_q_network()
-    # eval_DQN_agent()
+    eval_DQN_agent()
     # eval_RRM_agent()
-    visualize_data(["agent_experience.csv"], ROOT + "/plots/slo_f.png")
-    sys.exit()
+    # visualize_data(["agent_experience.csv"], ROOT + "/plots/slo_f.png")
+    # sys.exit()

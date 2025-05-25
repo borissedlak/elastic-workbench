@@ -17,13 +17,13 @@ logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
-
+QR_QUALITY_DEFAULT = 700
 
 class QrDetector(IoTService):
 
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': 720}
+        self.service_conf = {'quality': QR_QUALITY_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")

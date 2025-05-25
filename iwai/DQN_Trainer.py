@@ -32,8 +32,8 @@ ACTION_DIM_CV = 7
 CV_QUALITY_STEP = 32
 QR_QUALITY_STEP = 100
 
-EPISODE_LENGTH = 30
-NO_EPISODES = 400
+EPISODE_LENGTH = 25
+NO_EPISODES = 300
 
 
 class DQN:
@@ -58,7 +58,7 @@ class DQN:
         self.nn_folder = nn_folder
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
-    def choose_action(self, state: np.ndarray, rand=None):
+    def choose_action(self, state: np.ndarray, rand=None) -> int:
         s_tensor = torch.FloatTensor(state).to(device)
 
         if rand is None:
@@ -143,7 +143,9 @@ class DQN:
 
     # @utils.print_execution_time
     def store_dqn_as_file(self, suffix=None):
-        torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"_" + suffix if suffix else ""}.pt")
+        file_name = self.nn_folder + f"/Q{"_" + suffix if suffix else ""}.pt"
+        logger.info(f"Save DQN as {file_name}")
+        torch.save(self.Q.state_dict(), file_name)
 
     def load(self, file_name):
         self.Q.load_state_dict(torch.load(self.nn_folder + "/" + file_name, weights_only=True))

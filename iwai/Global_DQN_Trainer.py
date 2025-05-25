@@ -9,7 +9,7 @@ import utils
 from agent.ES_Registry import ServiceType
 from iwai.DQN_Trainer import DQN, STATE_DIM, ACTION_DIM_QR, ACTION_DIM_CV, QR_QUALITY_STEP, CV_QUALITY_STEP, \
     NO_EPISODES, EPISODE_LENGTH
-from iwai.Joint_Training_Env import JointTrainingEnv
+from iwai.Global_Training_Env import GlobalTrainingEnv
 from iwai.LGBN_Training_Env import LGBN_Training_Env
 
 ROOT = os.path.dirname(__file__)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     env_cv.reload_lgbn_model(df)
 
     # Wrap in joint environment
-    joint_env = JointTrainingEnv(env_qr, env_cv, max_cores=8)
+    joint_env = GlobalTrainingEnv(env_qr, env_cv, max_cores=8)
 
     # Create DQNs
     dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)

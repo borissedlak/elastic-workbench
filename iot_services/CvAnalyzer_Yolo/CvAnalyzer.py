@@ -18,13 +18,14 @@ logger = logging.getLogger("multiscale")
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 ROOT = os.path.dirname(__file__)
-
+CV_QUALITY_DEFAULT = 256
+CV_M_SIZE_DEFAULT = 3
 
 # WRITE: Show the impact of resources on throughput and that this is heavily penalized
 class CvAnalyzer(IoTService):
     def __init__(self, store_to_csv=True):
         super().__init__(store_to_csv)
-        self.service_conf = {'quality': 256, 'model_size': 3}
+        self.service_conf = {'quality': CV_QUALITY_DEFAULT, 'model_size': CV_M_SIZE_DEFAULT}
         self.service_type = ServiceType.CV
         self.video_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 

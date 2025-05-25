@@ -14,10 +14,12 @@ from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import log_service_state, Full_State_DQN, wait_for_remaining_interval
+from iot_services.CvAnalyzer_Yolo.CvAnalyzer import CV_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT
+from iot_services.QrDetector.QrDetector import QR_QUALITY_DEFAULT
 
 logger = logging.getLogger("multiscale")
 
-PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
+MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
 
 
@@ -95,12 +97,12 @@ class ScalingAgent(Thread, ABC):
 
     def get_free_cores(self):
         cores_ass = self.get_core_assignment(self.services_monitored)
-        free_cores = PHYSICAL_CORES - sum(cores_ass.values())
+        free_cores = MAX_CORES - sum(cores_ass.values())
         return free_cores
 
     def get_max_available_cores(self, service: ServiceID):
         cores_ass = self.get_core_assignment(self.services_monitored)
-        free_cores = PHYSICAL_CORES - sum(cores_ass.values())
+        free_cores = MAX_CORES - sum(cores_ass.values())
         max_available_c = free_cores + cores_ass[service.container_id]
         return max_available_c
 
@@ -114,32 +116,33 @@ class ScalingAgent(Thread, ABC):
 
     # Between the experiments, we need to reset the processing environment to a default state
     def reset_services_states(self):
+
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 720}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': QR_QUALITY_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
                 self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': 720}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.MODEL_SCALE, {'model_size': 3}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': CV_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, EsType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 
     def terminate_gracefully(self):
         self._running = False
 
-    def build_state_and_log(self, service_state, service_m, assigned_clients):
-        all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
-        free_cores = self.get_free_cores()
-
-        # TODO: A bit too cheep here.....
-        extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
-
-        quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
-        state_pw = Full_State_DQN(service_state[extra_var], quality_t, service_state['throughput'],
-                                  tp_t, service_state['cores'], free_cores)
-
-        log_service_state(state_pw, self.log_experience)
+    # def build_state_and_log(self, service_state, service_m, assigned_clients):
+    #     all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
+    #     free_cores = self.get_free_cores()
+    #
+    #     # TODO: A bit too cheep here.....
+    #     extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
+    #
+    #     quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
+    #     state_pw = Full_State_DQN(service_state[extra_var], quality_t, service_state['throughput'],
+    #                               tp_t, service_state['cores'], free_cores)
+    #
+    #     log_service_state(state_pw, self.log_experience)
 
     def evaluate_slos_and_buffer(self, service_m, service_state, slos_all_clients):
         slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)

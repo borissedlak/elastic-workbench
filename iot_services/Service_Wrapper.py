@@ -10,7 +10,7 @@ from iot_services.IoTService import IoTService
 
 app = Flask(__name__)
 
-# logger = logging.getLogger("multiscale")
+logger = logging.getLogger("multiscale")
 # logging.getLogger('multiscale').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +18,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 DEFAULT_CORES = float(utils.get_env_param("DEFAULT_CORES", 2.0))
 DEFAULT_CLIENTS = utils.get_env_param("DEFAULT_CLIENTS", None)
 SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
+MAX_CORES = utils.get_env_param("MAX_CORES", None)
 
 
 def init_service(s_type):
@@ -35,6 +36,7 @@ class ServiceWrapper:
     def __init__(self, s_type, start_processing=False):
         self.service: IoTService = init_service(s_type)
         self.docker_client = DockerClient()
+        self.bounds = self.service.es_registry.get_boundaries_minimalistic(self.service.service_type, MAX_CORES)
 
         if start_processing:
             self.start_processing()
@@ -84,18 +86,27 @@ class ServiceWrapper:
 
     def quality_scaling(self):
         quality = round(float(request.args.get('quality')))
+        quality_corrected = np.clip(quality, self.bounds['quality']['min'], self.bounds['quality']['max'])
+
+        if quality != quality_corrected:
+            logger.warning(f"Manually corrected quality from {quality} to {quality_corrected}")
+
         s_conf = self.service.service_conf.copy()
-        s_conf['quality'] = quality
+        s_conf['quality'] = quality_corrected
 
         self.service.change_config(s_conf)
         self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
         return ""
 
     def model_scaling(self):
-        # TODO: For all strategies here, I should clip them to the ES parameter bounds
-        model_size = np.clip(round(float(request.args.get('model_size'))), 1, 5)
+        model_size = round(float(request.args.get('model_size')))
+        model_size_corrected = np.clip(model_size, self.bounds['model_size']['min'], self.bounds['model_size']['max'])
+
+        if model_size != model_size_corrected:
+            logger.warning(f"Manually corrected model size from {model_size} to {model_size_corrected}")
+
         s_conf = self.service.service_conf.copy()
-        s_conf['model_size'] = model_size
+        s_conf['model_size'] = model_size_corrected
 
         self.service.change_config(s_conf)
         self.service.set_flag_and_cooldown(EsType.MODEL_SCALE)
@@ -103,7 +114,12 @@ class ServiceWrapper:
 
     def resource_scaling(self):
         cpu_cores = round(float(request.args.get('cores')), 2)
-        self.scale_cores(cpu_cores)
+        cores_corrected = np.clip(cpu_cores, self.bounds['cores']['min'], self.bounds['cores']['max'])
+
+        if cpu_cores != cores_corrected:
+            logger.warning(f"Manually corrected resources from {cpu_cores} to {cores_corrected}")
+
+        self.scale_cores(cores_corrected)
         return ""
 
     def scale_cores(self, fractional_cores: float):

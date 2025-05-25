@@ -15,7 +15,7 @@ logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
-INVALID_ACTION_PUNISHMENT = -2
+INVALID_ACTION_PUNISHMENT = -5
 
 class LGBN_Training_Env(gymnasium.Env):
     def __init__(self, service_type, step_quality, step_cores=1, step_model_size=1):
@@ -56,7 +56,7 @@ class LGBN_Training_Env(gymnasium.Env):
             delta_cores = -self.step_cores if action == 3 else self.step_cores
             new_core = self.state.cores + delta_cores
 
-            if new_core < 0:  # Wants to go lower than 0 core
+            if new_core <= 0:  # Wants to go lower than 0 core
                 behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 done = True
             elif delta_cores > self.state.free_cores:  # Want to consume resources that are not free
@@ -79,8 +79,8 @@ class LGBN_Training_Env(gymnasium.Env):
         new_state['throughput'] = self.sample_from_lgbn(new_state['quality'], new_state['cores'], new_state['model_size'])['throughput']
         self.state = Full_State_DQN(**new_state)
 
-        reward = to_normalized_SLO_F(calculate_slo_fulfillment(self.state._asdict(), self.client_slos),
-                                     self.client_slos) + behavioral_punishment
+        reward = (to_normalized_SLO_F(calculate_slo_fulfillment(self.state._asdict(), self.client_slos),self.client_slos)
+                  + behavioral_punishment)
         return self.state, reward, done, False, {}
 
     def sample_from_lgbn(self, quality, cores, model_size):
@@ -102,7 +102,7 @@ class LGBN_Training_Env(gymnasium.Env):
             model_size = 1
             model_size_thresh = 1
 
-        ass_cores = randint(1, MAX_CORES)
+        ass_cores = randint(1, int(MAX_CORES /2))
         free_cores = MAX_CORES - ass_cores
 
         throughput = self.sample_from_lgbn(quality, ass_cores, model_size)['throughput']
