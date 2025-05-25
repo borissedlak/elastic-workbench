@@ -73,6 +73,8 @@ class JointDQNTrainer:
             self.dqn_cv.epsilon = max(self.dqn_cv.epsilon * self.dqn_cv.epsilon_decay, self.dqn_cv.epsilon_min)
 
             score_list.append(ep_score)
+            logger.info(f"Final state for QR Env: {self.env.env_qr.state}")
+            logger.info(f"Final state for CV Env: {self.env.env_cv.state}")
             logger.info(f"[EP {ep + 1:3d}] Score: {ep_score:.2f} | Epsilon QR: {self.dqn_qr.epsilon:.4f}, CV: {self.dqn_cv.epsilon:.4f}")
 
         plt.plot(score_list)

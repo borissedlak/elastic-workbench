@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import time
 
 import numpy as np
@@ -10,7 +9,6 @@ from pandas import DataFrame
 
 from agent.ES_Registry import ServiceID, ServiceType
 from agent.RRM_Global_Agent import RRM_Global_Agent
-from agent.SLO_Registry import SLO_Registry
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from iwai.DQN_Agent import DQN_Agent
 from iwai.DQN_Trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
@@ -20,7 +18,7 @@ plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 100
+EXPERIMENT_DURATION = 5
 MAX_EXPLORE = 15
 
 ps = "http://172.20.0.2:9090"
@@ -72,7 +70,7 @@ def eval_DQN_agent():
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
         agent.terminate_gracefully()
-        export_experience_buffer(agent.experience_buffer)
+        export_experience_buffer(agent.experience_buffer, ROOT + "/agent_experience.csv")
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
@@ -92,7 +90,7 @@ def eval_RRM_agent():
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
         agent.terminate_gracefully()
-        export_experience_buffer(agent.experience_buffer)
+        export_experience_buffer(agent.experience_buffer, ROOT + "/agent_experience.csv")
         print(f"Agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
@@ -165,6 +163,6 @@ def calculate_mean_std(df: DataFrame):
 if __name__ == '__main__':
     # train_q_network()
     eval_DQN_agent()
-    # eval_RRM_agent()
+    eval_RRM_agent()
     # visualize_data(["agent_experience.csv"], ROOT + "/plots/slo_f.png")
     # sys.exit()

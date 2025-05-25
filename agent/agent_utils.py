@@ -91,13 +91,10 @@ class Full_State_DQN(NamedTuple):
 
 
 # @utils.print_execution_time
-def export_experience_buffer(rows: tuple):
-    directory = "./"
-    file_name = "agent_experience.csv"
-    file_path = os.path.join(directory, file_name)
+def export_experience_buffer(rows: tuple, file_name):
 
-    file_exists = os.path.isfile(file_path)
-    is_empty = not file_exists or os.path.getsize(file_path) == 0
+    file_exists = os.path.isfile(file_name)
+    is_empty = not file_exists or os.path.getsize(file_name) == 0
 
     data = []
 
@@ -109,7 +106,7 @@ def export_experience_buffer(rows: tuple):
         for service, timestamp, slo_f, prefix, service_state in rows
     ])
 
-    with open(file_path, mode='a', newline='') as file:
+    with open(file_name, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(data)
 
