@@ -201,7 +201,7 @@ class ReplayBuffer:
 
 if __name__ == '__main__':
     logging.getLogger("multiscale").setLevel(logging.INFO)
-    df_t = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
+    df_t = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
     # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
     # qr_env_t.reload_lgbn_model(df_t)

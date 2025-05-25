@@ -88,7 +88,7 @@ class JointDQNTrainer:
         self.dqn_cv.store_dqn_as_file(suffix="CV_joint")
 
 if __name__ == "__main__":
-    df = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
+    df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
     env_qr = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
     env_qr.reload_lgbn_model(df)

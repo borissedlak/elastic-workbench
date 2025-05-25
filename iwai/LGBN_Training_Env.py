@@ -120,7 +120,7 @@ class LGBN_Training_Env(gymnasium.Env):
 if __name__ == "__main__":
     env = LGBN_Training_Env(ServiceType.CV, step_quality=32, step_cores=1, step_model_size=1)
 
-    df_t = pd.read_csv("../share/metrics/metrics.csv")
+    df_t = pd.read_csv("../share/metrics/LGBN.csv")
     env.reload_lgbn_model(df_t)
     env.reset()
 
