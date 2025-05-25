@@ -68,7 +68,7 @@ The base class for all agents is `Scaling_Agent.py`, it features multiple functi
 This includes:
 
 * `resolve_service_state()` Getting the current state of a service from Prometheus (i.e., metrics and parameters)
-* `execute_ES()` Execute an elasticity strategy on a specific service; the ``ServiceWrapper`` forwards it to Docker and the wrapped ``IoTService`` instance.
+* `execute_ES()` Execute an elasticity strategy on a specific service; the ``ServiceWrapper`` forwards it to Docker and the wrapped `IoTService.py` instance.
 * `evaluate_slos_and_buffer()` Evaluate the current SLO fulfillment and log to a buffer; to export them, execute `agent_utils.export_experience_buffer()`
 * `get_max_available_cores()` Gives the maximum number of cores accessible for a service
 

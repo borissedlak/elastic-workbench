@@ -77,27 +77,17 @@ class Full_State_DQN(NamedTuple):
     free_cores: int
     bounds: Dict[str, Dict]
 
-    # TODO: Normalize sensory states
     def for_tensor(self):
         return [
             self.quality <= self.bounds['quality']['min'],
             self.quality >= self.bounds['quality']['max'],
-            self.model_size <= self.bounds['model_size']['min'],
-            self.model_size >= self.bounds['model_size']['max'],
+            (self.model_size <= self.bounds['model_size']['min']) if 'model_size' in self.bounds else True,
+            (self.model_size >= self.bounds['model_size']['max']) if 'model_size' in self.bounds else True,
             self.cores <= self.bounds['cores']['min'],
             self.free_cores > 0,
             self.quality / self.quality_thresh,
             self.model_size / self.model_size_thresh,
             self.throughput / self.tp_thresh]
-
-        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh, self.model_size,
-        #         self.model_size_thresh, self.cores, self.cores > self.free_cores]
-
-        # return [self.quality, self.quality / self.quality_thresh, self.throughput, self.throughput / self.tp_thresh,
-        #     self.cores, self.free_cores > 0]
-
-        # return [self.quality, self.quality_thresh, self.throughput, self.tp_thresh,
-        #     self.cores, self.free_cores > 0]
 
 
 # @utils.print_execution_time

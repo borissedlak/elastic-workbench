@@ -35,7 +35,7 @@ def train_networks():
         partition_df = df.iloc[:val]
 
         dqn = DQN(state_dim=STATE_DIM, action_dim=5, force_restart=True, nn_folder=nn)
-        dqn.train_dqn_from_env(df=partition_df, suffix=f"{i + 1}")
+        dqn.train_single_dqn_from_env(df=partition_df, suffix=f"{i + 1}")
 
         print(f"{((i + 1) / partitions) * 100}% finished")
 

@@ -29,6 +29,12 @@ STATE_DIM = 9
 ACTION_DIM_QR = 5
 ACTION_DIM_CV = 7
 
+CV_QUALITY_STEP = 32
+QR_QUALITY_STEP = 100
+
+EPISODE_LENGTH = 30
+NO_EPISODES = 400
+
 
 class DQN:
     def __init__(self, state_dim, action_dim, neurons=16, nn_folder=ROOT + "/../share/networks"):
@@ -72,7 +78,7 @@ class DQN:
         return target
 
     @utils.print_execution_time
-    def train_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
+    def train_single_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
 
         self.epsilon = self.epsilon_default
         training_env.reset()
@@ -81,18 +87,16 @@ class DQN:
         score_list = []
         episode_position = 0
         finished_episodes = 0
-        EPISODE_LENGTH = 30
-        NO_EPISODE = 400
 
         # self.epsilon = np.clip(self.epsilon, 0, self.training_length_coeff)
         # print(f"Episodes: {NO_EPISODE} * {self.training_rounds}; epsilon: {self.epsilon}")
-        while finished_episodes < NO_EPISODE:
+        while finished_episodes < NO_EPISODES:
 
             initial_state = training_env.state
             action = self.choose_action(np.array(training_env.state.for_tensor()))
             next_state, reward, done, _, _ = training_env.step(action)
-            print(f"State transition {initial_state}, {action} --> {next_state}")
-            print(f"Reward {reward}")
+            # print(f"State transition {initial_state}, {action} --> {next_state}")
+            # print(f"Reward {reward}")
 
             self.memory.put((initial_state.for_tensor(), action, reward, next_state.for_tensor(), done))
             episode_score += reward
@@ -140,6 +144,9 @@ class DQN:
     # @utils.print_execution_time
     def store_dqn_as_file(self, suffix=None):
         torch.save(self.Q.state_dict(), self.nn_folder + f"/Q{"_" + suffix if suffix else ""}.pt")
+
+    def load(self, file_name):
+        self.Q.load_state_dict(torch.load(self.nn_folder + "/" + file_name, weights_only=True))
 
 
 class QNetwork(nn.Module):
@@ -194,10 +201,10 @@ if __name__ == '__main__':
     logging.getLogger("multiscale").setLevel(logging.INFO)
     df_t = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
 
-    # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=100)
+    # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
     # qr_env_t.reload_lgbn_model(df_t)
     # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM).train_dqn_from_env(qr_env_t, "QR")
 
-    cv_env_t = LGBN_Training_Env(ServiceType.CV, step_quality=32)
+    cv_env_t = LGBN_Training_Env(ServiceType.CV, step_quality=CV_QUALITY_STEP)
     cv_env_t.reload_lgbn_model(df_t)
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_dqn_from_env(cv_env_t, "CV")
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(cv_env_t, "CV")

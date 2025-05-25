@@ -44,7 +44,7 @@ def train_q_network():
     df = pd.read_csv(file_path)
 
     dqn = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, force_restart=True, nn_folder=nn_folder)
-    dqn.train_dqn_from_env(df)
+    dqn.train_single_dqn_from_env(df)
 
     print(f"Finished Q-Network Training")
 

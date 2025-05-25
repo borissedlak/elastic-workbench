@@ -22,6 +22,7 @@ class EsType(Enum):
     MODEL_SCALE = 'model_scaling'
     RESOURCE_SWAP = 'resource_swapping'
     OFFLOADING = 'offloading'
+    IDLE = 'idle'
     UNKNOWN = 'unknown'
 
 
