@@ -14,8 +14,10 @@ from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval
-from iot_services.CvAnalyzer_Yolo.CvAnalyzer import CV_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT
-from iot_services.QrDetector.QrDetector import QR_QUALITY_DEFAULT
+
+CV_QUALITY_DEFAULT = 256
+CV_M_SIZE_DEFAULT = 3
+QR_QUALITY_DEFAULT = 700
 
 logger = logging.getLogger("multiscale")
 
