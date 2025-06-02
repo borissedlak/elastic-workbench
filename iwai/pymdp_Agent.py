@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Dict
 import numpy as np
-from pymdp import utils
+from pymdp import utils as mdp_utils
 from pymdp.agent import Agent
 
 import utils
@@ -61,10 +61,10 @@ class pymdp_Agent(ScalingAgent):
 
         # Matrices initialization
         A_shapes = [[o_dim] + self.num_states for o_dim in self.num_observations]
-        self.A = utils.obj_array_zeros(A_shapes)
-        self.B = utils.obj_array(self.num_factors)
-        self.C = utils.obj_array_zeros(self.num_observations)
-        self.D = utils.obj_array_zeros(self.num_states)
+        self.A = mdp_utils.obj_array_zeros(A_shapes)
+        self.B = mdp_utils.obj_array(self.num_factors)
+        self.C = mdp_utils.obj_array_zeros(self.num_observations)
+        self.D = mdp_utils.obj_array_zeros(self.num_states)
 
     def generate_A(self):
         A_matrices = [np.eye(self.throughput.size), np.eye(self.quality.size), np.eye(self.model_size.size),
@@ -136,8 +136,8 @@ class pymdp_Agent(ScalingAgent):
         self.D[3] = [2]  # Cores at 2
 
     def generate_uniform_dirichlet_dist(self):
-        pA = utils.dirichlet_like(self.A)
-        pB = utils.dirichlet_like(self.B)
+        pA = mdp_utils.dirichlet_like(self.A)
+        pB = mdp_utils.dirichlet_like(self.B)
         return pA, pB
 
     def generate_agent(self, policy_length, learning_rate):
@@ -165,8 +165,6 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    # p_agent = pymdp_Agent(services_monitored=[qr_local], prom_server=ps,
-    #           evaluation_cycle=EVALUATION_CYCLE_DELAY).start()
     p_agent = pymdp_Agent(services_monitored=[qr_local], prom_server=ps,
                           evaluation_cycle=EVALUATION_CYCLE_DELAY)
 

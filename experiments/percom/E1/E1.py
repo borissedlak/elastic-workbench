@@ -178,4 +178,4 @@ if __name__ == '__main__':
     # create_test_routine()
     # eval_networks()
     # eval_baseline()
-    visualize_data(["slo_f_meth.csv", "slo_f_base.csv"], "./plots/tight_constraints_comparison.png")
+    visualize_data(["slo_f_meth.csv", "slo_f_base.csv"], "plots/tight_constraints_comparison.png")

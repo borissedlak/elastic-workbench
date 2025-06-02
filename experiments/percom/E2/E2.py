@@ -70,7 +70,7 @@ def improve_global_slof():
 
 
 def visualize_data():
-    df = pd.read_csv("./slo_f.csv")
+    df = pd.read_csv("slo_f.csv")
     del df['timestamp']
 
     alice = df[df['index'] == "Alice"]

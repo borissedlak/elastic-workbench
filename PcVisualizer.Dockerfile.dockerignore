@@ -1,7 +1,7 @@
 venv
 share/metrics
 agent/obsolete
-results
+experiments
 tests
 
 iot_services/QrDetector
