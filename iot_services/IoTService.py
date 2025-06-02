@@ -10,7 +10,7 @@ from prometheus_client import start_http_server, Gauge
 
 import utils
 from RedisClient import RedisClient
-from agent.ES_Registry import EsType, ES_Registry, ServiceID, ServiceType
+from agent.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 
 logger = logging.getLogger("multiscale")
 
@@ -27,7 +27,7 @@ class IoTService(ABC):
         self._running = False
         self.service_conf = {}
         self.cores_reserved: float = 2.0
-        self.es_registry = ES_Registry("./config/es_registry.json")
+        self.es_registry = ESRegistry("./config/es_registry.json")
         self.store_to_csv = store_to_csv
 
         self.simulate_arrival_interval = True
@@ -100,7 +100,7 @@ class IoTService(ABC):
     def vertical_scaling(self, c_cores: float):
         self.cores_reserved = c_cores
         logger.info(f"{self.service_type} set to {c_cores} cores")
-        self.set_flag_and_cooldown(EsType.RESOURCE_SCALE)
+        self.set_flag_and_cooldown(ESType.RESOURCE_SCALE)
 
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:
@@ -126,6 +126,6 @@ class IoTService(ABC):
     def get_service_id(self):
         return ServiceID(self.container_ip, self.service_type, self.docker_container_ref)
 
-    def set_flag_and_cooldown(self, es_type: EsType):
-        self.flag_metric_cooldown = self.es_registry.get_ES_cooldown(self.service_type, es_type)
+    def set_flag_and_cooldown(self, es_type: ESType):
+        self.flag_metric_cooldown = self.es_registry.get_es_cooldown(self.service_type, es_type)
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)

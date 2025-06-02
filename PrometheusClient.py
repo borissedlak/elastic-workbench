@@ -3,7 +3,7 @@ import time
 from prometheus_api_client import PrometheusConnect
 
 import utils
-from agent.ES_Registry import ServiceID, ServiceType
+from agent.es_registry import ServiceID, ServiceType
 
 
 class PrometheusClient:

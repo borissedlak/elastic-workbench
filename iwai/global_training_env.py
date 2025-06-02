@@ -1,11 +1,18 @@
 import utils
-from iwai.LGBN_Training_Env import LGBN_Training_Env, INVALID_ACTION_PUNISHMENT
+from iwai.lgbn_training_env import LGBNTrainingEnv, INVALID_ACTION_PUNISHMENT
 
-MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
+MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
+
+
+"""
+Environment you can "sample" from. Gymnasium compatible
+"""
 
 
 class GlobalTrainingEnv:
-    def __init__(self, env_qr: LGBN_Training_Env, env_cv: LGBN_Training_Env, max_cores=MAX_CORES):
+    def __init__(
+        self, env_qr: LGBNTrainingEnv, env_cv: LGBNTrainingEnv, max_cores=MAX_CORES
+    ):
         self.env_qr = env_qr
         self.env_cv = env_cv
         self.max_cores = max_cores

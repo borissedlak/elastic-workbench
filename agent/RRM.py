@@ -11,7 +11,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 import utils
 from agent import agent_utils
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 
 logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)

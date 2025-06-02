@@ -3,7 +3,7 @@ from typing import Dict
 
 import redis
 
-from agent.ES_Registry import ServiceID, ServiceType, EsType
+from agent.es_registry import ServiceID, ServiceType, ESType
 
 
 class RedisClient:
@@ -21,7 +21,7 @@ class RedisClient:
         dict_with_str = self.redis_conn.hgetall(key)
         return {service_id: int(rps) for service_id, rps in dict_with_str.items()}
 
-    def store_cooldown(self, service_id: ServiceID, es_type: EsType, cooldown_ms):
+    def store_cooldown(self, service_id: ServiceID, es_type: ESType, cooldown_ms):
         key = create_cool_key(service_id)
         freeze_until = (datetime.datetime.now() + datetime.timedelta(milliseconds=cooldown_ms)).isoformat()
         self.redis_conn.hset(key, mapping={"ES": es_type.value, "unfreeze": freeze_until})

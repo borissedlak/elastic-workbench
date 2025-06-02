@@ -2,6 +2,7 @@ import json
 import logging
 import random
 from enum import Enum
+from os import PathLike
 from typing import NamedTuple, List, Dict, Tuple
 
 from agent import agent_utils
@@ -15,7 +16,7 @@ class ServiceType(Enum):
     UNKNOWN = "unknown"
 
 
-class EsType(Enum):
+class ESType(Enum):
     STARTUP = 'startup'
     QUALITY_SCALE = 'quality_scaling'
     RESOURCE_SCALE = 'resource_scaling'
@@ -32,48 +33,48 @@ class ServiceID(NamedTuple):
     container_id: str
 
 
-class ES_Registry:
+class ESRegistry:
 
-    def __init__(self, es_registry_path):
+    def __init__(self, es_registry_path: PathLike):
         # self.http_client = HttpClient()
 
         with open(es_registry_path, 'r') as f:
             self.es_api = json.load(f)
 
-    def get_ES_information(self, service_type: ServiceType, es_type: EsType):
+    def get_es_information(self, service_type: ServiceType, es_type: ESType):
         if service_type.value in self.es_api and es_type.value in self.es_api[service_type.value]:
             return self.es_api[service_type.value][es_type.value]
 
         logger.warning(f"Trying to find unknown strategy {es_type.value} for service {service_type.value}")
         return None
 
-    def is_ES_supported(self, service_type: ServiceType, es_type: EsType) -> bool:
-        return self.get_ES_information(service_type, es_type) is not None
+    def is_es_supported(self, service_type: ServiceType, es_type: ESType) -> bool:
+        return self.get_es_information(service_type, es_type) is not None
 
-    def get_supported_ES_for_service(self, service_type: ServiceType) -> List[EsType]:
+    def get_supported_ES_for_service(self, service_type: ServiceType) -> List[ESType]:
         strategies = self.es_api.get(service_type.value, {})
-        return [EsType(es) for es in strategies]
+        return [ESType(es) for es in strategies]
 
-    def _get_random_ES_for_service(self, service_type: ServiceType) -> EsType:
+    def _get_random_ES_for_service(self, service_type: ServiceType) -> ESType:
         return random.choice(self.get_supported_ES_for_service(service_type))
 
-    def get_random_ES_and_params(self, service_type: ServiceType) -> Tuple[EsType, Dict]:
+    def get_random_ES_and_params(self, service_type: ServiceType) -> Tuple[ESType, Dict]:
         rand_ES = self._get_random_ES_for_service(service_type)
         parameter_bounds = self.get_parameter_bounds_for_active_ES(service_type).get(rand_ES, {})
         random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
 
         return rand_ES, random_params
 
-    def get_parameter_bounds_for_active_ES(self, service_type: ServiceType, available_cores=None) -> Dict[EsType, Dict]:
+    def get_parameter_bounds_for_active_ES(self, service_type: ServiceType, available_cores=None) -> Dict[ESType, Dict]:
         parameter_bounds = {}
         for es_type in self.get_supported_ES_for_service(service_type):
-            info = self.get_ES_information(service_type, es_type)
+            info = self.get_es_information(service_type, es_type)
             if not info or "parameters" not in info:
                 continue
 
             params = info["parameters"]
 
-            if es_type == EsType.RESOURCE_SCALE and available_cores is not None:
+            if es_type == ESType.RESOURCE_SCALE and available_cores is not None:
                 params["cores"]["max"] = available_cores
 
             parameter_bounds[es_type] = params
@@ -90,11 +91,11 @@ class ES_Registry:
 
         return boundaries
 
-    def get_ES_cooldown(self, service_type: ServiceType, es_type: EsType) -> int:
-        if es_type == EsType.STARTUP:
+    def get_es_cooldown(self, service_type: ServiceType, es_type: ESType) -> int:
+        if es_type == ESType.STARTUP:
             return 3500
 
-        service_info = self.get_ES_information(service_type, es_type)
+        service_info = self.get_es_information(service_type, es_type)
         if service_info is None:
             logger.warning(f"Trying to get cooldown for unknown strategy {es_type.value}, {service_type.value}")
             return 0

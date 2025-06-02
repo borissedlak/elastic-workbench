@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pytest
 
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 from agent.RRM import RRM
 
 

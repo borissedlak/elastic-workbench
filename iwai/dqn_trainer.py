@@ -12,14 +12,16 @@ import torch.optim as optim
 from matplotlib import pyplot as plt
 
 import utils
-from agent.ES_Registry import ServiceType
-from iwai.LGBN_Training_Env import LGBN_Training_Env
+from agent.es_registry import ServiceType
+from iwai.lgbn_training_env import LGBNTrainingEnv
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logger.info(f"Using {"GPU (CUDA)" if torch.cuda.is_available() else "CPU"} for training")
+logger.info(
+    f"Using {'GPU (CUDA)' if torch.cuda.is_available() else 'CPU'''} for training"
+)
 
 if not torch.cuda.is_available():
     torch.set_num_threads(1)
@@ -37,7 +39,9 @@ NO_EPISODES = 300
 
 
 class DQN:
-    def __init__(self, state_dim, action_dim, neurons=16, nn_folder=ROOT + "/../share/networks"):
+    def __init__(
+        self, state_dim, action_dim, neurons=16, nn_folder=ROOT + "/../share/networks"
+    ):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.lr = 0.01
@@ -51,10 +55,14 @@ class DQN:
         self.batch_size = 200
         self.memory = ReplayBuffer(self.buffer_size)
 
-        self.Q = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Q-Network
-        self.Q_target = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(device)  # Target Network
+        self.q_network = QNetwork(self.state_dim, self.action_dim, self.lr, neurons).to(
+            device
+        )
+        self.q_target_network = QNetwork(
+            self.state_dim, self.action_dim, self.lr, neurons
+        ).to(device)
 
-        self.Q_target.load_state_dict(self.Q.state_dict())
+        self.q_target_network.load_state_dict(self.q_network.state_dict())
         self.nn_folder = nn_folder
 
     @torch.no_grad()  # We don't want to store gradient updates here at inference
@@ -66,19 +74,21 @@ class DQN:
         if rand > np.random.rand():  # Explore
             action = np.random.choice([n for n in range(self.action_dim)])
         else:  # Exploit
-            action = torch.argmax(self.Q(s_tensor)).cpu().numpy()  # Must bring tensor to CPU for Numpy
+            action = (
+                torch.argmax(self.q_network(s_tensor)).cpu().numpy()
+            )  # Must bring tensor to CPU for Numpy
 
         return action
 
     def calc_target(self, mini_batch):
         s, a, r, s_prime, d = mini_batch
         with torch.no_grad():
-            q_target = self.Q_target(s_prime).max(1)[0].unsqueeze(1)
+            q_target = self.q_target_network(s_prime).max(1)[0].unsqueeze(1)
             target = r + self.gamma * q_target
         return target
 
     @utils.print_execution_time
-    def train_single_dqn_from_env(self, training_env: LGBN_Training_Env, suffix=None):
+    def train_single_dqn_from_env(self, training_env: LGBNTrainingEnv, suffix=None):
 
         self.epsilon = self.epsilon_default
         training_env.reset()
@@ -98,7 +108,15 @@ class DQN:
             # print(f"State transition {initial_state}, {action} --> {next_state}")
             # print(f"Reward {reward}")
 
-            self.memory.put((initial_state.for_tensor(), action, reward, next_state.for_tensor(), done))
+            self.memory.put(
+                (
+                    initial_state.for_tensor(),
+                    action,
+                    reward,
+                    next_state.for_tensor(),
+                    done,
+                )
+            )
             episode_score += reward
 
             if self.memory.size() > self.batch_size:
@@ -116,7 +134,9 @@ class DQN:
                 finished_episodes += 1
 
         if logger.level <= logging.INFO:
-            logger.info(f"Average Score for 5 last rounds: {np.average(score_list[-5:])}")
+            logger.info(
+                f"Average Score for 5 last rounds: {np.average(score_list[-5:])}"
+            )
             plt.plot(score_list)
             plt.show()
 
@@ -125,39 +145,45 @@ class DQN:
     # @utils.print_execution_time
     def train_batch(self):
         mini_batch = self.memory.sample(self.batch_size)
-        s_batch, a_batch, r_batch, s_prime_batch, d_batch = mini_batch
-        a_batch = a_batch.type(torch.int64)
+        state_batch, action_batch, reward_batch, state_prime_batch, done_batch = mini_batch
+        action_batch = action_batch.type(torch.int64)
 
         td_target = self.calc_target(mini_batch)
 
-        #### Q train ####
-        Q_a = self.Q(s_batch).gather(1, a_batch)
-        q_loss = F.smooth_l1_loss(Q_a, td_target)
-        self.Q.optimizer.zero_grad()
+        # Q train
+        q_action = self.q_network(state_batch).gather(1, action_batch)
+        q_loss = F.smooth_l1_loss(q_action, td_target)
+        self.q_network.optimizer.zero_grad()
         q_loss.mean().backward()
-        self.Q.optimizer.step()
+        self.q_network.optimizer.step()
 
-        #### Q soft-update ####
-        for param_target, param in zip(self.Q_target.parameters(), self.Q.parameters()):
-            param_target.data.copy_(param_target.data * (1.0 - self.tau) + param.data * self.tau)
+        # Q soft-update
+        for param_target, param in zip(
+            self.q_target_network.parameters(), self.q_network.parameters()
+        ):
+            param_target.data.copy_(
+                param_target.data * (1.0 - self.tau) + param.data * self.tau
+            )
 
     # @utils.print_execution_time
     def store_dqn_as_file(self, suffix=None):
-        file_name = self.nn_folder + f"/Q{"_" + suffix if suffix else ""}.pt"
+        file_name = self.nn_folder + f"/Q{'_' + suffix if suffix else ''}.pt"
         logger.info(f"Save DQN as {file_name}")
-        torch.save(self.Q.state_dict(), file_name)
+        torch.save(self.q_network.state_dict(), file_name)
 
     def load(self, file_name):
-        self.Q.load_state_dict(torch.load(self.nn_folder + "/" + file_name, weights_only=True))
+        self.q_network.load_state_dict(
+            torch.load(self.nn_folder + "/" + file_name, weights_only=True)
+        )
 
 
 class QNetwork(nn.Module):
-    def __init__(self, state_dim, action_dim, q_lr, neurons):
+    def __init__(self, state_dim: int, actions_dim: int, q_lr: float, latent_dim: int):
         super(QNetwork, self).__init__()
 
-        self.fc_1 = nn.Linear(state_dim, neurons).to(device)
-        self.fc_2 = nn.Linear(neurons, neurons).to(device)
-        self.fc_out = nn.Linear(neurons, action_dim).to(device)
+        self.fc_1 = nn.Linear(state_dim, latent_dim).to(device)
+        self.fc_2 = nn.Linear(latent_dim, latent_dim).to(device)
+        self.fc_out = nn.Linear(latent_dim, actions_dim).to(device)
         self.optimizer = optim.Adam(self.parameters(), lr=q_lr)
 
     def forward(self, x):
@@ -190,7 +216,9 @@ class ReplayBuffer:
         s_batch = torch.tensor(s_lst, dtype=torch.float).to(device)
         a_batch = torch.tensor(np.array(a_lst), dtype=torch.float).to(device)
         r_batch = torch.tensor(np.array(r_lst), dtype=torch.float).to(device)
-        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(device)
+        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(
+            device
+        )
         d_batch = torch.tensor(done_mask_lst).to(device)
 
         return s_batch, a_batch, r_batch, s_prime_batch, d_batch
@@ -199,7 +227,7 @@ class ReplayBuffer:
         return len(self.buffer)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.getLogger("multiscale").setLevel(logging.INFO)
     df_t = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
@@ -207,6 +235,8 @@ if __name__ == '__main__':
     # qr_env_t.reload_lgbn_model(df_t)
     # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM).train_dqn_from_env(qr_env_t, "QR")
 
-    cv_env_t = LGBN_Training_Env(ServiceType.CV, step_quality=CV_QUALITY_STEP)
+    cv_env_t = LGBNTrainingEnv(ServiceType.CV, step_quality=CV_QUALITY_STEP)
     cv_env_t.reload_lgbn_model(df_t)
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(cv_env_t, "CV")
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(
+        cv_env_t, "CV"
+    )

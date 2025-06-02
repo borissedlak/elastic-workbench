@@ -5,7 +5,7 @@ from flask import Flask, request
 
 import utils
 from DockerClient import DockerClient
-from agent.ES_Registry import EsType
+from agent.es_registry import ESType
 from iot_services.IoTService import IoTService
 
 app = Flask(__name__)
@@ -95,7 +95,7 @@ class ServiceWrapper:
         s_conf['quality'] = quality_corrected
 
         self.service.change_config(s_conf)
-        self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
+        self.service.set_flag_and_cooldown(ESType.QUALITY_SCALE)
         return ""
 
     def model_scaling(self):
@@ -109,7 +109,7 @@ class ServiceWrapper:
         s_conf['model_size'] = model_size_corrected
 
         self.service.change_config(s_conf)
-        self.service.set_flag_and_cooldown(EsType.MODEL_SCALE)
+        self.service.set_flag_and_cooldown(ESType.MODEL_SCALE)
         return ""
 
     def resource_scaling(self):

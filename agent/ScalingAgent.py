@@ -3,14 +3,14 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
-from typing import Dict
+from typing import Dict, List
 
 import utils
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
+from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval
@@ -39,7 +39,7 @@ class ScalingAgent(Thread, ABC):
         self.http_client = HttpClient()
         self.reddis_client = RedisClient()
         self.slo_registry = SLO_Registry(slo_registry_path)
-        self.es_registry = ES_Registry(es_registry_path)
+        self.es_registry = ESRegistry(es_registry_path)
         self.experience_buffer = []
         # This is needed because the Prom becomes unavailable (i.e., deletes metrics) while we load a new model
         # It's also not possible to load the model in a new Process because the onnxruntime cannot be pickled
@@ -75,32 +75,40 @@ class ScalingAgent(Thread, ABC):
             wait_for_remaining_interval(self.evaluation_cycle, start_time)
 
     # TODO: Remove this host fix as soon as possible
-    def execute_ES(self, host, service: ServiceID, es_type: EsType, params, respect_cooldown=True):
+    def execute_ES(self, host, service: ServiceID, es_type: ESType, params, respect_cooldown=True):
 
         if respect_cooldown and self.reddis_client.is_under_cooldown(service):
             warning_msg = f"Service <{service.host, service.container_id}> is under cooldown, cannot call ES"
             logger.warning(warning_msg)
             return
 
-        if not self.es_registry.is_ES_supported(service.service_type, es_type):
+        if not self.es_registry.is_es_supported(service.service_type, es_type):
             logger.warning(f"Trying to call unsupported ES for {service.service_type}, {es_type}")
             return
 
-        ES_endpoint = self.es_registry.get_ES_information(service.service_type, es_type)['endpoint']
+        ES_endpoint = self.es_registry.get_es_information(service.service_type, es_type)['endpoint']
 
         self.http_client.call_ES_endpoint(host, ES_endpoint, params)
         logger.info(f"Calling ES <{service.service_type},{es_type}> with {params}")
 
     @abstractmethod
-    def orchestrate_services_optimally(self, services_m):
+    def orchestrate_services_optimally(self, services_m: List[ServiceID]):
+        """Primary hook of an Agent's gameloop
+
+        Most logic is coupled and tailored for the specific use cases. Subclasses may only implement logic to interct
+        with the hardcoded services (QR and CV)
+
+        :param services_m:
+        :return:
+        """
         pass
 
-    def get_free_cores(self):
+    def get_free_cores(self) -> int:
         cores_ass = self.get_core_assignment(self.services_monitored)
         free_cores = MAX_CORES - sum(cores_ass.values())
         return free_cores
 
-    def get_max_available_cores(self, service: ServiceID):
+    def get_max_available_cores(self, service: ServiceID) -> int:
         cores_ass = self.get_core_assignment(self.services_monitored)
         free_cores = MAX_CORES - sum(cores_ass.values())
         max_available_c = free_cores + cores_ass[service.container_id]
@@ -119,12 +127,12 @@ class ScalingAgent(Thread, ABC):
 
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
-                self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': QR_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'quality': QR_QUALITY_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
-                self.execute_ES(service_m.host, service_m, EsType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.QUALITY_SCALE, {'quality': CV_QUALITY_DEFAULT}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, EsType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'quality': CV_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 

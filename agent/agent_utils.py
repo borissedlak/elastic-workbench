@@ -66,7 +66,7 @@ def normalize_in_bounds(vector, min_val, max_val):
     return np.clip(normalized, min_val, max_val)
 
 
-class Full_State_DQN(NamedTuple):
+class FullStateDQN(NamedTuple):
     quality: int
     quality_thresh: int
     throughput: int
@@ -116,7 +116,7 @@ def export_experience_buffer(rows: tuple, file_name):
         writer.writerows(data)
 
 
-def log_service_state(state: Full_State_DQN, prefix):
+def log_service_state(state: FullStateDQN, prefix):
     # Define the directory and file name
     directory = "./"
     file_name = "agent_experience.csv"
