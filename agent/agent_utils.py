@@ -71,7 +71,7 @@ class Full_State_DQN(NamedTuple):
     quality_thresh: int
     throughput: int
     tp_thresh: int
-    model_size: int
+    model_size: int # only for CV!
     model_size_thresh: int
     cores: int
     free_cores: int
@@ -79,7 +79,7 @@ class Full_State_DQN(NamedTuple):
 
     def discretize(self, service_type):
         return [
-            np.digitize(self.quality, np.arange(300, 1000, 100)) if service_type.value == "CV" else np.digitize(self.quality, np.arange(128, 320, 32)),
+            np.digitize(self.quality, np.arange(300, 1000, 100)) if service_type.value == "QR" else np.digitize(self.quality, np.arange(128, 320, 32)),
             np.digitize(self.throughput, np.arange(0, 100, 5))]
 
     def for_tensor(self):
