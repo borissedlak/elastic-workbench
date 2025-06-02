@@ -79,6 +79,7 @@ def eval_scaling_agent(agent_factory, agent_type):
 
 
 color_dict = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
+color_dict_agent = {"DQN": "red", "RRM": "green"}
 line_style_dict = {"DQN": "--", "RRM": "-"}
 
 
@@ -92,14 +93,27 @@ def visualize_data(agent_types: list[str], output_file: str):
     # TODO: Ideally, I get the overall SLO-F per agent and show it with mean and std
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
-        for service in df['service'].unique():
-            df_filtered = df[df['service'] == service]
-            s_mean, s_std = calculate_mean_std(df_filtered)
-            lower_bound = np.array(s_mean) - np.array(s_std)
-            upper_bound = np.array(s_mean) + np.array(s_std)
-            plt.plot(x, s_mean, label=service+ f", {agent}", color=color_dict[service], linewidth=2,
-                     linestyle=line_style_dict[agent])  # label = ''
-            # plt.fill_between(x, lower_bound, upper_bound, color=color_dict[service], alpha=0.2)
+        # for service in df['service'].unique():
+        #     df_filtered = df[df['service'] == service]
+        #     s_mean, s_std = calculate_mean_std(df_filtered)
+        #     lower_bound = np.array(s_mean) - np.array(s_std)
+        #     upper_bound = np.array(s_mean) + np.array(s_std)
+        #     plt.plot(x, s_mean, label=service+ f", {agent}", color=color_dict[service], linewidth=2,
+        #              linestyle=line_style_dict[agent])
+        #     plt.fill_between(x, lower_bound, upper_bound, color=color_dict[service], alpha=0.2)
+
+        paired_df = df.groupby(df.index // 2).agg({
+            'rep': 'first',
+            'timestamp': 'first',
+            'slo_f': 'mean'
+        })
+
+        s_mean, s_std = calculate_mean_std(paired_df)
+        lower_bound = np.array(s_mean) - np.array(s_std)
+        upper_bound = np.array(s_mean) + np.array(s_std)
+        plt.plot(x, s_mean, label=f"{agent}", color=color_dict_agent[agent], linewidth=2,
+                 linestyle=line_style_dict[agent])
+        plt.fill_between(x, lower_bound, upper_bound, color=color_dict_agent[agent], alpha=0.2)
 
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
@@ -146,27 +160,27 @@ if __name__ == '__main__':
     # train_q_network()
 
     # Load the trained DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
-    dqn_qr.load("Q_QR_joint.pt")
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
-    dqn_cv.load("Q_CV_joint.pt")
-
-    agent_fact_dqn = lambda repetition: DQN_Agent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        dqn_for_services=[dqn_qr, dqn_cv],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition
-    )
-
-    agent_fact_rrm = lambda repetition: RRM_Global_Agent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition,
-        max_explore=MAX_EXPLORE
-    )
-
+    # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
+    # dqn_qr.load("Q_QR_joint.pt")
+    # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    # dqn_cv.load("Q_CV_joint.pt")
+    #
+    # agent_fact_dqn = lambda repetition: DQN_Agent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     dqn_for_services=[dqn_qr, dqn_cv],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition
+    # )
+    #
+    # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition,
+    #     max_explore=MAX_EXPLORE
+    # )
+    #
     # eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_rrm, "RRM")
     visualize_data(["RRM", "DQN"], ROOT + "/plots/slo_f.png")

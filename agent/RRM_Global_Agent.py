@@ -42,11 +42,11 @@ class RRM_Global_Agent(ScalingAgent):
             logger.info("Agent is exploring.....")
             self.explore_count += 1
             # self.epsilon *= self.epsilon_decay
-            self.orchestrate_all_services_randomly(services_m)
+            self.call_all_ES_randomly(services_m)
         else:
             assignments = solve_global(service_contexts, MAX_CORES)
             assignments = apply_gaussian_noise_to_asses(assignments)
-            self.orchestrate_all_ES_deterministic(services_m, assignments)
+            self.call_all_ES_deterministic(services_m, assignments)
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
@@ -62,16 +62,14 @@ class RRM_Global_Agent(ScalingAgent):
         return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
 
     # @utils.print_execution_time
-    def orchestrate_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
+    def call_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
         # TODO: Ideally, this needs a mechanisms that avoids oscillating or changing the instance if it stays the same
         for i, service_m in enumerate(services_m):  # For all monitored services
             all_ES = self.es_registry.get_supported_ES_for_service(service_m.service_type)
             for target_ES in all_ES:
                 self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
 
-    # TODO: The exploration is a bit too boring, it always favors the first and gives similar distributions
-    #  However, I should not focus too much on this for the IWAI, but for the WIP extension
-    def orchestrate_all_services_randomly(self, services_m: list[ServiceID]):
+    def call_all_ES_randomly(self, services_m: list[ServiceID]):
         for service_m in services_m:
 
             all_ES_supported = self.es_registry.get_supported_ES_for_service(service_m.service_type)
