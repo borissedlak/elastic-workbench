@@ -55,7 +55,7 @@ class ScalingAgent(Thread, ABC):
         :param assigned_clients:
         :return: Full service state; otherwise empty dict
         """
-        metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="10s")
+        metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="5s")
         parameter_ass = self.prom_client.get_metrics(["quality", "cores", "model_size"], service_id)
 
         if parameter_ass == {} or metric_values == {}:
