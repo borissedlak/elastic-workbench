@@ -13,7 +13,7 @@ from RedisClient import RedisClient
 from agent.ES_Registry import ES_Registry, ServiceID, ServiceType, EsType
 from agent.LGBN import calculate_missing_vars
 from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
-from agent.agent_utils import log_service_state, Full_State_DQN, wait_for_remaining_interval
+from agent.agent_utils import wait_for_remaining_interval
 from iot_services.CvAnalyzer_Yolo.CvAnalyzer import CV_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT
 from iot_services.QrDetector.QrDetector import QR_QUALITY_DEFAULT
 
@@ -130,19 +130,6 @@ class ScalingAgent(Thread, ABC):
 
     def terminate_gracefully(self):
         self._running = False
-
-    # def build_state_and_log(self, service_state, service_m, assigned_clients):
-    #     all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
-    #     free_cores = self.get_free_cores()
-    #
-    #     # TODO: A bit too cheep here.....
-    #     extra_var = 'quality' if service_m.service_type == ServiceType.QR else 'model_size'
-    #
-    #     quality_t, tp_t = all_client_slos[0][extra_var].thresh, all_client_slos[0]['throughput'].thresh
-    #     state_pw = Full_State_DQN(service_state[extra_var], quality_t, service_state['throughput'],
-    #                               tp_t, service_state['cores'], free_cores)
-    #
-    #     log_service_state(state_pw, self.log_experience)
 
     def evaluate_slos_and_buffer(self, service_m, service_state, slos_all_clients):
         slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)

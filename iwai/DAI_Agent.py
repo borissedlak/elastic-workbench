@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Dict
 
 import utils
 from agent.ES_Registry import ServiceID, ServiceType
@@ -15,6 +14,7 @@ ROOT = os.path.dirname(__file__)
 
 
 class DAI_Agent(ScalingAgent):
+
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
@@ -22,8 +22,8 @@ class DAI_Agent(ScalingAgent):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
 
-    def get_optimal_local_ES(self, service: ServiceID, service_state, assigned_clients: Dict[str, int]):
-        return None, {}
+    def orchestrate_services_optimally(self, services_m):
+        pass
 
 
 if __name__ == '__main__':

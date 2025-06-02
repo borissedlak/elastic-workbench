@@ -77,6 +77,11 @@ class Full_State_DQN(NamedTuple):
     free_cores: int
     bounds: Dict[str, Dict]
 
+    def discretize(self, service_type):
+        return [
+            np.digitize(self.quality, np.arange(300, 1000, 100)) if service_type.value == "CV" else np.digitize(self.quality, np.arange(128, 320, 32)),
+            np.digitize(self.throughput, np.arange(0, 100, 5))]
+
     def for_tensor(self):
         return [
             self.quality <= self.bounds['quality']['min'],
