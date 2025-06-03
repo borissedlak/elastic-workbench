@@ -89,7 +89,6 @@ class FullStateDQN(NamedTuple):
     free_cores: int
     bounds: Dict[str, Dict]
 
-    # TODO: Needs transform the state of the training env to the desired pymdp shape
     def for_pymdp(self, env_type):
         if env_type == 'qr':
             aif_throughput = self.throughput // 5
