@@ -11,10 +11,10 @@ import time
 import utils
 from agent.es_registry import ServiceID, ServiceType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
-from iwai.DQN_Trainer import CV_QUALITY_STEP, QR_QUALITY_STEP
-from iwai.Global_Training_Env import GlobalTrainingEnv
+from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP
+from iwai.global_training_env import GlobalTrainingEnv
 
-from iwai.LGBN_Training_Env import LGBN_Training_Env
+from iwai.lgbn_training_env import LGBNTrainingEnv
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))
 
@@ -365,10 +365,10 @@ if __name__ == '__main__':
     start_time = time.time()
     df = pd.read_csv("../share/metrics/LGBN.csv")
 
-    env_qr = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
+    env_qr = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
     env_qr.reload_lgbn_model(df)
 
-    env_cv = LGBN_Training_Env(ServiceType.CV, step_quality=CV_QUALITY_STEP)
+    env_cv = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
     env_cv.reload_lgbn_model(df)
 
     # Wrap in joint environment

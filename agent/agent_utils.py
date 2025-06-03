@@ -93,7 +93,7 @@ class FullStateDQN(NamedTuple):
             aif_throughput = self.throughput // 5
 
             base_quality = np.arange(300, 1100, 100)
-            index = np.where(base_quality == self.quality)[0][0]
+            index = np.where(base_quality == self.data_quality)[0][0]
             aif_quality = index
 
             aif_cores = self.cores - 1
@@ -104,7 +104,7 @@ class FullStateDQN(NamedTuple):
             aif_throughput = self.throughput
 
             base_quality = np.arange(128, 352, 32)
-            index = np.where(base_quality == self.quality)[0][0]
+            index = np.where(base_quality == self.data_quality)[0][0]
             aif_quality = index
 
             aif_model_size = self.model_size - 1
