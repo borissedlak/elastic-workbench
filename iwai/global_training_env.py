@@ -34,6 +34,9 @@ class GlobalTrainingEnv:
         # Execute both actions, but apply shared resource logic
         # total_used_cores_before = self.env_qr.state.cores + self.env_cv.state.cores
 
+        old_state_qr = self.env_qr.state
+        old_state_cv = self.env_cv.state
+
         # Apply actions
         next_state_qr, reward_qr, done_qr, _, _ = self.env_qr.step(action_qr)
         next_state_cv, reward_cv, done_cv, _, _ = self.env_cv.step(action_cv)
@@ -48,8 +51,12 @@ class GlobalTrainingEnv:
         done = done_qr or done_cv
         penalty = 0
         if overuse:  # Shared penalty if resource overuse occurred
-            penalty = INVALID_ACTION_PUNISHMENT
-            done = True
+            # penalty = INVALID_ACTION_PUNISHMENT
+            # done = True
+            next_state_qr = old_state_qr
+            next_state_cv = old_state_cv
+            reward_qr = 0
+            reward_cv = 0
 
         joint_reward = reward_qr + reward_cv + penalty
 

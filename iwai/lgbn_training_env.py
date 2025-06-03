@@ -72,15 +72,15 @@ class LGBNTrainingEnv(gymnasium.Env):
             new_core = self.state.cores + delta_cores
 
             if new_core <= 0:  # Wants to go lower than 0 core
-                behavioral_punishment = INVALID_ACTION_PUNISHMENT
-                done = True
-                # pass
+                # behavioral_punishment = INVALID_ACTION_PUNISHMENT
+                # done = True
+                pass
             elif (
                 delta_cores > self.state.free_cores
             ):  # Want to consume resources that are not free
-                behavioral_punishment = INVALID_ACTION_PUNISHMENT
-                done = True
-                # pass
+                # behavioral_punishment = INVALID_ACTION_PUNISHMENT
+                # done = True
+                pass
             else:
                 new_state["cores"] = self.state.cores + delta_cores
                 new_state["free_cores"] = new_state["free_cores"] - delta_cores
@@ -94,9 +94,9 @@ class LGBNTrainingEnv(gymnasium.Env):
                 new_model_s < self.boundaries["model_size"]["min"]
                 or new_model_s > self.boundaries["model_size"]["max"]
             ):
-                behavioral_punishment = INVALID_ACTION_PUNISHMENT
-                done = True
-                # pass
+                # behavioral_punishment = INVALID_ACTION_PUNISHMENT
+                # done = True
+                pass
             else:
                 new_state["model_size"] = new_model_s
 
