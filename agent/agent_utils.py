@@ -113,7 +113,9 @@ class FullStateDQN(NamedTuple):
                 min_max_scale(self.data_quality, min_val=self.bounds["quality"]["min"], max_val=self.bounds["quality"]["max"]),
                 min_max_scale(self.data_quality_target, min_val=self.bounds["quality"]["min"], max_val=self.bounds["quality"]["max"]),
                 min_max_scale(self.throughput, min_val=0,  max_val=self.throughput_target),
+                min_max_scale(self.throughput_target, min_val=0,  max_val=self.throughput_target),
                 min_max_scale(self.model_size, min_val=1,  max_val=self.model_size_target),
+                min_max_scale(self.model_size_target, min_val=1,  max_val=self.model_size_target),
                 min_max_scale(self.cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
                 min_max_scale(self.free_cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
             ])
