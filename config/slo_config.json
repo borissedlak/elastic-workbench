@@ -5,15 +5,15 @@
       "service_type": "elastic-workbench-qr-detector",
       "SLOs": [
         {
-          "var": "quality",
+          "var": "data_quality",
           "larger": true,
-          "thresh": 1000,
+          "target": 1000,
           "weight": 0.5
         },
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 100,
+          "target": 100,
           "weight": 1.0
         }
       ]
@@ -23,21 +23,21 @@
       "service_type": "elastic-workbench-cv-analyzer",
       "SLOs": [
         {
-          "var": "quality",
+          "var": "data_quality",
           "larger": true,
-          "thresh": 320,
+          "target": 256,
           "weight": 0.2
         },
         {
           "var": "model_size",
           "larger": true,
-          "thresh": 5.0,
+          "target": 3,
           "weight": 0.2
         },
         {
           "var": "throughput",
           "larger": true,
-          "thresh": 5,
+          "target": 5,
           "weight": 1.0
         }
       ]

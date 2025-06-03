@@ -1,5 +1,6 @@
 import utils
 from iwai.lgbn_training_env import LGBNTrainingEnv, INVALID_ACTION_PUNISHMENT
+from proj_types import ESServiceAction
 
 MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
 
@@ -8,6 +9,7 @@ MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
 Environment you can "sample" from. Gymnasium compatible
 """
 
+# INVALID_ACTION_PUNISHMENT = 5
 
 class GlobalTrainingEnv:
     def __init__(
@@ -28,7 +30,7 @@ class GlobalTrainingEnv:
 
         return state_qr, state_cv
 
-    def step(self, action_qr, action_cv):
+    def step(self, action_qr: ESServiceAction, action_cv: ESServiceAction):
         # Execute both actions, but apply shared resource logic
         # total_used_cores_before = self.env_qr.state.cores + self.env_cv.state.cores
 

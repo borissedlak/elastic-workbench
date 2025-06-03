@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 import utils
 from agent.es_registry import ServiceType
 from iwai.lgbn_training_env import LGBNTrainingEnv
+from proj_types import ESServiceAction
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")
@@ -27,15 +28,15 @@ if not torch.cuda.is_available():
     torch.set_num_threads(1)
 torch.autograd.set_detect_anomaly(True)
 
-STATE_DIM = 9
+STATE_DIM = 8
 ACTION_DIM_QR = 5
 ACTION_DIM_CV = 7
 
-CV_QUALITY_STEP = 32
-QR_QUALITY_STEP = 100
+CV_DATA_QUALITY_STEP = 32
+QR_DATA_QUALITY_STEP = 100
 
 EPISODE_LENGTH = 25
-NO_EPISODES = 300
+NO_EPISODES = 200
 
 
 class DQN:
@@ -103,17 +104,17 @@ class DQN:
         while finished_episodes < NO_EPISODES:
 
             initial_state = training_env.state
-            action = self.choose_action(np.array(training_env.state.for_tensor()))
-            next_state, reward, done, _, _ = training_env.step(action)
+            action = self.choose_action(training_env.state.to_np_ndarray(True))
+            next_state, reward, done, _, _ = training_env.step(ESServiceAction(action))
             # print(f"State transition {initial_state}, {action} --> {next_state}")
             # print(f"Reward {reward}")
 
             self.memory.put(
                 (
-                    initial_state.for_tensor(),
+                    initial_state.to_np_ndarray(True),
                     action,
                     reward,
-                    next_state.for_tensor(),
+                    next_state.to_np_ndarray(True),
                     done,
                 )
             )
@@ -213,12 +214,10 @@ class ReplayBuffer:
             s_prime_lst.append(s_prime)
             done_mask_lst.append([done_mask])
 
-        s_batch = torch.tensor(s_lst, dtype=torch.float).to(device)
+        s_batch = torch.tensor(np.array(s_lst), dtype=torch.float).to(device)
         a_batch = torch.tensor(np.array(a_lst), dtype=torch.float).to(device)
         r_batch = torch.tensor(np.array(r_lst), dtype=torch.float).to(device)
-        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(
-            device
-        )
+        s_prime_batch = torch.tensor(np.array(s_prime_lst), dtype=torch.float).to(device)
         d_batch = torch.tensor(done_mask_lst).to(device)
 
         return s_batch, a_batch, r_batch, s_prime_batch, d_batch
@@ -231,12 +230,12 @@ if __name__ == "__main__":
     logging.getLogger("multiscale").setLevel(logging.INFO)
     df_t = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
-    # qr_env_t = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
-    # qr_env_t.reload_lgbn_model(df_t)
-    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM).train_dqn_from_env(qr_env_t, "QR")
+    qr_env_t = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
+    qr_env_t.reload_lgbn_model(df_t)
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR).train_single_dqn_from_env(qr_env_t, "QR")
 
-    cv_env_t = LGBNTrainingEnv(ServiceType.CV, step_quality=CV_QUALITY_STEP)
-    cv_env_t.reload_lgbn_model(df_t)
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(
-        cv_env_t, "CV"
-    )
+    # cv_env_t = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
+    # cv_env_t.reload_lgbn_model(df_t)
+    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(
+    #     cv_env_t, "CV"
+    # )

@@ -12,17 +12,15 @@ logger = logging.getLogger("multiscale")
 class SLO(NamedTuple):
     var: str
     larger: bool
-    thresh: float
+    target: float
     weight: float
 
 
 def smoothstep(x, x0=0.0, x1=1.0) -> float:
-    # return np.clip(x, x0, x1)
     t = np.clip((x - x0) / (x1 - x0), 0.0, 1.0)
     return float(t * t * (3 - 2 * t))
 
 
-# TODO: Write tests for this and the normalized method
 def calculate_SLO_F_clients(full_state, slos_all_clients):
     slo_f_all_clients = 0.0
     for slos_single_client in slos_all_clients:
@@ -53,15 +51,15 @@ def calculate_slo_fulfillment(
         full_state["data_quality_target"] * 0.25
         + full_state["model_size_target"] * 0.75
     )
+    # quality_weight = slos['data_quality'].weight + slos['model_size'].weight
+
     throughput = full_state["throughput"]
     throughput_target = full_state["throughput_target"]
+    # tp_weight = slos['throughput'].weight
+
     slo_trace = [
-        ("quality", (quality / quality_target) * (0.1 if throughput < 1.0 else 1.0)),
-        (
-            "throughput",
-            (throughput_target / throughput_target)
-            * (0.1 if throughput < 1.0 else 1.0),
-        ),
+        ("quality", smoothstep((quality / quality_target))  if throughput > 0.0 else 0.0),
+        ("throughput", smoothstep((throughput / throughput_target))),
     ]
     # slo_trace = []
     # for slo in slos.values():

@@ -97,9 +97,9 @@ def train_lgbn_model(df, show_result=False, structure_training=False):
 
 def get_edges_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return [('quality', 'throughput'), ('cores', 'throughput')]
+        return [('data_quality', 'throughput'), ('cores', 'throughput')]
     elif service_type == ServiceType.CV:
-        return [('cores', 'throughput'), ('model_size', 'throughput'), ('quality', 'throughput')]
+        return [('cores', 'throughput'), ('model_size', 'throughput'), ('data_quality', 'throughput')]
     # elif service_type == ServiceType.QR_DEPRECATED:
     #     return [('quality', 'throughput'), ('cores', 'throughput')]
     else:

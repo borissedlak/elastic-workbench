@@ -1,7 +1,6 @@
 import logging
 import os
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -12,13 +11,14 @@ from iwai.dqn_trainer import (
     STATE_DIM,
     ACTION_DIM_QR,
     ACTION_DIM_CV,
-    QR_QUALITY_STEP,
-    CV_QUALITY_STEP,
+    QR_DATA_QUALITY_STEP,
+    CV_DATA_QUALITY_STEP,
     NO_EPISODES,
     EPISODE_LENGTH,
 )
 from iwai.global_training_env import GlobalTrainingEnv
 from iwai.lgbn_training_env import LGBNTrainingEnv
+from proj_types import ESServiceAction
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")
@@ -49,30 +49,30 @@ class JointDQNTrainer:
 
             for t in range(self.episode_length):
                 # Choose actions
-                action_qr = self.dqn_qr.choose_action(np.array(state_qr.for_tensor()))
-                action_cv = self.dqn_cv.choose_action(np.array(state_cv.for_tensor()))
+                action_qr = self.dqn_qr.choose_action(state_qr.to_np_ndarray(True))
+                action_cv = self.dqn_cv.choose_action(state_cv.to_np_ndarray(True))
 
                 # Step joint env
                 (next_state_qr, next_state_cv), reward, done = self.env.step(
-                    action_qr, action_cv
+                    ESServiceAction(action_qr), ESServiceAction(action_cv)
                 )
 
                 # Store transitions in each agent's buffer
                 self.dqn_qr.memory.put(
                     (
-                        state_qr.for_tensor(),
+                        state_qr.to_np_ndarray(True),
                         action_qr,
                         reward,
-                        next_state_qr.for_tensor(),
+                        next_state_qr.to_np_ndarray(True),
                         done,
                     )
                 )
                 self.dqn_cv.memory.put(
                     (
-                        state_cv.for_tensor(),
+                        state_cv.to_np_ndarray(True),
                         action_cv,
                         reward,
-                        next_state_cv.for_tensor(),
+                        next_state_cv.to_np_ndarray(True),
                         done,
                     )
                 )
@@ -116,12 +116,12 @@ class JointDQNTrainer:
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("share/metrics/LGBN.csv")
+    df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
-    env_qr = LGBNTrainingEnv(ServiceType.QR, step_quality=QR_QUALITY_STEP)
+    env_qr = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
     env_qr.reload_lgbn_model(df)
 
-    env_cv = LGBNTrainingEnv(ServiceType.CV, step_quality=CV_QUALITY_STEP)
+    env_cv = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
     env_cv.reload_lgbn_model(df)
 
     # Wrap in joint environment

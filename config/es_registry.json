@@ -4,8 +4,8 @@
       "cooldown": 2000,
       "endpoint": "/quality_scaling",
       "parameters": {
-        "quality": {
-          "min": 300,
+        "data_quality": {
+          "min": 100,
           "max": 1000
         }
       }
@@ -36,8 +36,8 @@
       "cooldown": 2000,
       "endpoint": "/quality_scaling",
       "parameters": {
-        "quality": {
-          "min": 128,
+        "data_quality": {
+          "min": 32,
           "max": 320
         }
       }

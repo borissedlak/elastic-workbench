@@ -11,7 +11,7 @@ from agent.agent_utils import FullStateDQN
 from iwai.dqn_trainer import (
     DQN,
     ACTION_DIM_QR,
-    QR_QUALITY_STEP,
+    QR_DATA_QUALITY_STEP,
     CV_QUALITY_STEP,
     ACTION_DIM_CV,
 )
@@ -95,12 +95,12 @@ class DQNAgent(ScalingAgent):
         if "model_size" in service_state or "model_size" in all_client_slos[0]:
             model_size, model_size_t = (
                 service_state["model_size"],
-                all_client_slos[0]["model_size"].thresh,
+                all_client_slos[0]["model_size"].target,
             )
 
         quality_t, throughput_t = (
-            all_client_slos[0]["quality"].thresh,
-            all_client_slos[0]["throughput"].thresh,
+            all_client_slos[0]["quality"].target,
+            all_client_slos[0]["throughput"].target,
         )
         state_pw = FullStateDQN(
             service_state["quality"],
@@ -119,7 +119,7 @@ class DQNAgent(ScalingAgent):
         )
 
         step_quality = (
-            QR_QUALITY_STEP
+            QR_DATA_QUALITY_STEP
             if service.service_type == ServiceType.QR
             else CV_QUALITY_STEP
         )
