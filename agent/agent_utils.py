@@ -90,10 +90,30 @@ class FullStateDQN(NamedTuple):
     bounds: Dict[str, Dict]
 
     # TODO: Needs transform the state of the training env to the desired pymdp shape
-    def for_pymdp(self, service_type):
-        return [
-            np.digitize(self.data_quality, np.arange(300, 1000, 100)) if service_type.value == "QR" else np.digitize(self.data_quality, np.arange(128, 320, 32)),
-            np.digitize(self.throughput, np.arange(0, 100, 5))]
+    def for_pymdp(self, env_type):
+        if env_type == 'qr':
+            aif_throughput = self.throughput // 5
+
+            base_quality = np.arange(300, 1100, 100)
+            index = np.where(base_quality == self.quality)[0][0]
+            aif_quality = index
+
+            aif_cores = self.cores - 1
+
+            return [aif_throughput, aif_quality, aif_cores]
+
+        elif env_type == 'cv':
+            aif_throughput = self.throughput
+
+            base_quality = np.arange(128, 352, 32)
+            index = np.where(base_quality == self.quality)[0][0]
+            aif_quality = index
+
+            aif_model_size = self.model_size - 1
+
+            aif_cores = self.cores - 1
+
+            return [aif_throughput, aif_quality, aif_model_size, aif_cores]
 
     def for_tensor(self):
         return [
