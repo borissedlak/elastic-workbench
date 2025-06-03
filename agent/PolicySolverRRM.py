@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 from agent.es_registry import ServiceType
 from agent.LGBN import calculate_missing_vars
 from agent.RRM import RRM
-from agent.SLO_Registry import calculate_SLO_F_clients
+from agent.SLORegistry import calculate_SLO_F_clients
 
 rrm = RRM(show_figures=False)
 

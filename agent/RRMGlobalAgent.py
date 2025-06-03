@@ -6,8 +6,8 @@ import numpy as np
 
 import utils
 from agent import agent_utils
-from agent.ES_Registry import ServiceID, ServiceType, EsType
-from agent.PolicySolver_RRM import solve_global
+from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.PolicySolverRRM import solve_global
 from agent.ScalingAgent import ScalingAgent
 
 logging.basicConfig(level=logging.INFO)
@@ -48,7 +48,7 @@ class RRM_Global_Agent(ScalingAgent):
             assignments = apply_gaussian_noise_to_asses(assignments)
             self.call_all_ES_deterministic(services_m, assignments)
 
-    def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[EsType, Dict], Any, int]:
+    def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
         service_state = self.resolve_service_state(service_m, assigned_clients)

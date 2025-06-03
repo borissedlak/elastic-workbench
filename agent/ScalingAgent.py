@@ -12,7 +12,7 @@ from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 from agent.LGBN import calculate_missing_vars
-from agent.SLO_Registry import SLO_Registry, calculate_SLO_F_clients
+from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval
 
 CV_QUALITY_DEFAULT = 256

@@ -8,7 +8,7 @@ import pandas as pd
 import utils
 from agent.es_registry import ServiceType, ESRegistry
 from agent.LGBN import LGBN
-from agent.SLO_Registry import (
+from agent.SLORegistry import (
     calculate_slo_fulfillment,
     to_normalized_SLO_F,
     SLO_Registry,
