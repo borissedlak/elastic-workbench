@@ -17,13 +17,13 @@ logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
-QR_QUALITY_DEFAULT = 700
+QR_DATA_QUALITY_DEFAULT = 700
 
 class QrDetector(IoTService):
 
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'quality': QR_QUALITY_DEFAULT}
+        self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
         self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
@@ -31,7 +31,7 @@ class QrDetector(IoTService):
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
 
-        target_height = int(self.service_conf['quality'])
+        target_height = int(self.service_conf['data_quality'])
         original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height
         frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))

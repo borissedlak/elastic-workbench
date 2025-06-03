@@ -85,14 +85,14 @@ class ServiceWrapper:
     #     return ""
 
     def quality_scaling(self):
-        quality = round(float(request.args.get('quality')))
-        quality_corrected = np.clip(quality, self.bounds['quality']['min'], self.bounds['quality']['max'])
+        data_quality = round(float(request.args.get('data_quality')))
+        data_quality_corrected = np.clip(data_quality, self.bounds['data_quality']['min'], self.bounds['data_quality']['max'])
 
-        if quality != quality_corrected:
-            logger.warning(f"Manually corrected quality from {quality} to {quality_corrected}")
+        if data_quality != data_quality_corrected:
+            logger.warning(f"Manually corrected data_quality from {data_quality} to {data_quality_corrected}")
 
         s_conf = self.service.service_conf.copy()
-        s_conf['quality'] = quality_corrected
+        s_conf['data_quality'] = data_quality_corrected
 
         self.service.change_config(s_conf)
         self.service.set_flag_and_cooldown(ESType.QUALITY_SCALE)

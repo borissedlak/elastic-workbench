@@ -1,5 +1,4 @@
 import csv
-import datetime
 import logging
 import os
 import random
@@ -84,7 +83,7 @@ class FullStateDQN(NamedTuple):
     throughput: int
     throughput_target: int
     model_size: int # only for CV!
-    model_size_target: int
+    model_size_target: int # only for CV!
     cores: int
     free_cores: int
     bounds: Dict[str, Dict]
@@ -184,24 +183,24 @@ def export_experience_buffer(rows: tuple, file_name):
         writer.writerows(data)
 
 
-def log_service_state(state: FullStateDQN, prefix):
-    # Define the directory and file name
-    directory = "./"
-    file_name = "agent_experience.csv"
-    file_path = os.path.join(directory, file_name)
-
-    file_exists = os.path.isfile(file_path)
-
-    # Open the file in append mode
-    with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
-
-        if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(
-                ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores",
-                 "free_cores"])
-
-        writer.writerow([prefix, datetime.datetime.now()] + list(state))
+# def log_service_state(state: FullStateDQN, prefix):
+#     # Define the directory and file name
+#     directory = "./"
+#     file_name = "agent_experience.csv"
+#     file_path = os.path.join(directory, file_name)
+#
+#     file_exists = os.path.isfile(file_path)
+#
+#     # Open the file in append mode
+#     with open(file_path, mode='a', newline='') as file:
+#         writer = csv.writer(file)
+#
+#         if not file_exists or os.path.getsize(file_path) == 0:
+#             writer.writerow(
+#                 ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores",
+#                  "free_cores"])
+#
+#         writer.writerow([prefix, datetime.datetime.now()] + list(state))
 
 
 def wait_for_remaining_interval(interval_length: int, start_time: float):

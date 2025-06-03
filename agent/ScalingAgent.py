@@ -15,9 +15,9 @@ from agent.LGBN import calculate_missing_vars
 from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval
 
-CV_QUALITY_DEFAULT = 256
+CV_DATA_QUALITY_DEFAULT = 256
 CV_M_SIZE_DEFAULT = 3
-QR_QUALITY_DEFAULT = 700
+QR_DATA_QUALITY_DEFAULT = 700
 
 logger = logging.getLogger("multiscale")
 
@@ -56,7 +56,7 @@ class ScalingAgent(Thread, ABC):
         :return: Full service state; otherwise empty dict
         """
         metric_values = self.prom_client.get_metrics(["avg_p_latency", "throughput"], service_id, period="5s")
-        parameter_ass = self.prom_client.get_metrics(["quality", "cores", "model_size"], service_id)
+        parameter_ass = self.prom_client.get_metrics(["data_quality", "cores", "model_size"], service_id)
 
         if parameter_ass == {} or metric_values == {}:
             logger.warning(f"No metrics found for service {service_id}") # Remove if never happens
@@ -130,10 +130,10 @@ class ScalingAgent(Thread, ABC):
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'quality': QR_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': QR_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
                 self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'quality': CV_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': CV_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
                 self.execute_ES(service_m.host, service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")

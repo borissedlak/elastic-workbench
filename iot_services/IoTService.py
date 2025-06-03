@@ -42,7 +42,7 @@ class IoTService(ABC):
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
         self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item', ['service_type', 'container_id', 'metric_id'])
-        self.prom_quality = Gauge('quality', 'Current configured quality', ['service_type', 'container_id', 'metric_id'])
+        self.prom_quality = Gauge('data_quality', 'Current configured quality', ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
 
@@ -56,7 +56,7 @@ class IoTService(ABC):
         self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                metric_id="cores").set(self.cores_reserved)
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                 metric_id="quality").set(self.service_conf['quality'])
+                                 metric_id="data_quality").set(self.service_conf['data_quality'])
 
         if self.service_type == ServiceType.CV:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,

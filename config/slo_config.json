@@ -7,7 +7,7 @@
         {
           "var": "data_quality",
           "larger": true,
-          "target": 1000,
+          "target": 900,
           "weight": 0.5
         },
         {
@@ -25,13 +25,13 @@
         {
           "var": "data_quality",
           "larger": true,
-          "target": 256,
+          "target": 288,
           "weight": 0.2
         },
         {
           "var": "model_size",
           "larger": true,
-          "target": 3,
+          "target": 4,
           "weight": 0.2
         },
         {

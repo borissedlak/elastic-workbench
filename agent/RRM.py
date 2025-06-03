@@ -123,9 +123,9 @@ def train_rrn_models(df, show_result=False):
 
 def get_dependent_variable_mapping(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return {'throughput': sorted(['cores', 'quality'])}
+        return {'throughput': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:
-        return {'throughput': sorted(['cores', 'model_size', 'quality'])}
+        return {'throughput': sorted(['cores', 'model_size', 'data_quality'])}
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 

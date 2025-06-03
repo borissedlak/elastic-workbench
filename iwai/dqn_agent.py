@@ -1,18 +1,18 @@
 import logging
 import os
-from typing import Dict, Any, List
+from typing import Dict, List
 
 import numpy as np
 
 import utils
-from agent.es_registry import ServiceID, ServiceType, ESType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
 from agent.agent_utils import FullStateDQN
+from agent.es_registry import ServiceID, ServiceType, ESType
 from iwai.dqn_trainer import (
     DQN,
     ACTION_DIM_QR,
     QR_DATA_QUALITY_STEP,
-    CV_QUALITY_STEP,
+    CV_DATA_QUALITY_STEP,
     ACTION_DIM_CV,
 )
 from iwai.dqn_trainer import STATE_DIM
@@ -98,13 +98,13 @@ class DQNAgent(ScalingAgent):
                 all_client_slos[0]["model_size"].target,
             )
 
-        quality_t, throughput_t = (
-            all_client_slos[0]["quality"].target,
+        data_quality_t, throughput_t = (
+            all_client_slos[0]["data_quality"].target,
             all_client_slos[0]["throughput"].target,
         )
         state_pw = FullStateDQN(
-            service_state["quality"],
-            quality_t,
+            service_state["data_quality"],
+            data_quality_t,
             service_state["throughput"],
             throughput_t,
             model_size,
@@ -115,18 +115,18 @@ class DQNAgent(ScalingAgent):
         )
 
         action_pw = self.dqn[service.service_type].choose_action(
-            np.array(state_pw.for_tensor()), rand=0.0
+            np.array(state_pw.to_np_ndarray(True)), rand=0.0
         )
 
-        step_quality = (
+        step_data_quality = (
             QR_DATA_QUALITY_STEP
             if service.service_type == ServiceType.QR
-            else CV_QUALITY_STEP
+            else CV_DATA_QUALITY_STEP
         )
         if 1 <= action_pw <= 2:
-            delta_quality = -step_quality if action_pw == 1 else step_quality
+            delta_data_quality = -step_data_quality if action_pw == 1 else step_data_quality
             return ESType.QUALITY_SCALE, {
-                "quality": int(state_pw.data_quality + delta_quality)
+                "data_quality": int(state_pw.data_quality + delta_data_quality)
             }
         if 3 <= action_pw <= 4:
             delta_cores = -1 if action_pw == 3 else 1
@@ -158,9 +158,12 @@ if __name__ == "__main__":
     dqn_cv.load("Q_CV_joint.pt")
 
     # Start the agent with both services
-    DQNAgent(
+    agent = DQNAgent(
         prom_server=ps,
         services_monitored=[qr_local, cv_local],
         dqn_for_services=[dqn_qr, dqn_cv],
         evaluation_cycle=EVALUATION_CYCLE_DELAY,
-    ).start()
+    )
+
+    agent.reset_services_states()
+    agent.start()

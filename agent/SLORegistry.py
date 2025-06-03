@@ -1,13 +1,17 @@
 import json
 import logging
+import os
 from typing import Dict, Any, List, Tuple, NamedTuple
 
 import numpy as np
 
-from agent.es_registry import ServiceType
+from agent.agent_utils import FullStateDQN
+from agent.es_registry import ServiceType, ESRegistry
 
 logger = logging.getLogger("multiscale")
 
+ROOT = os.path.dirname(__file__)
+es_registry = ESRegistry(ROOT + "/../config/es_registry.json")
 
 class SLO(NamedTuple):
     var: str
@@ -23,8 +27,23 @@ def smoothstep(x, x0=0.0, x1=1.0) -> float:
 
 def calculate_SLO_F_clients(full_state, slos_all_clients):
     slo_f_all_clients = 0.0
+
     for slos_single_client in slos_all_clients:
-        slo_f_list = calculate_slo_fulfillment(full_state, slos_single_client)
+
+        boundaries = es_registry.get_boundaries_minimalistic(ServiceType.CV if 'model_size' in slos_single_client else ServiceType.QR, 8)
+        full_state_tensor = FullStateDQN(
+            full_state["data_quality"],
+            slos_single_client['data_quality'].target,
+            full_state["throughput"],
+            slos_single_client['throughput'].target,
+            full_state['model_size'] if 'model_size' in slos_single_client else 0,
+            slos_single_client['model_size'].target if 'model_size' in slos_single_client else 0,
+            0, # cores irrelevant for SLO-F
+            0, # cores irrelevant for SLO-F
+            boundaries,
+        )
+
+        slo_f_list = calculate_slo_fulfillment(full_state_tensor.to_normalized_dict(), slos_single_client)
         normalized_reward = to_normalized_slo_f(slo_f_list, slos_single_client)
         slo_f_all_clients += normalized_reward
 
@@ -46,16 +65,19 @@ def calculate_slo_fulfillment(
     full_state: Dict[str, Any], slos: Dict[str, SLO]
 ) -> List[Tuple[str, float]]:
 
-    quality = full_state["data_quality"] * 0.25 + full_state["model_size"] * 0.75
-    quality_target = (
-        full_state["data_quality_target"] * 0.25
-        + full_state["model_size_target"] * 0.75
-    )
-    # quality_weight = slos['data_quality'].weight + slos['model_size'].weight
+
+    if 'model_size' in slos: # === service_type.CV
+        quality = full_state["data_quality"] * 0.25 + full_state["model_size"] * 0.75
+        quality_target = (
+            full_state["data_quality_target"] * 0.25
+            + full_state["model_size_target"] * 0.75
+        )
+    else: # === service_type.QR
+        quality = full_state["data_quality"]
+        quality_target = full_state["data_quality_target"]
 
     throughput = full_state["throughput"]
     throughput_target = full_state["throughput_target"]
-    # tp_weight = slos['throughput'].weight
 
     slo_trace = [
         ("quality", smoothstep((quality / quality_target))  if throughput > 0.0 else 0.0),

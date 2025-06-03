@@ -49,7 +49,7 @@ class GlobalTrainingEnv:
         overuse = total_used_cores_after > self.max_cores
 
         done = done_qr or done_cv
-        penalty = 0
+        # penalty = 0
         if overuse:  # Shared penalty if resource overuse occurred
             # penalty = INVALID_ACTION_PUNISHMENT
             # done = True
@@ -58,6 +58,6 @@ class GlobalTrainingEnv:
             reward_qr = 0
             reward_cv = 0
 
-        joint_reward = reward_qr + reward_cv + penalty
+        joint_reward = reward_qr + reward_cv #+ penalty
 
         return (next_state_qr, next_state_cv), joint_reward, done
