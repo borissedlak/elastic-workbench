@@ -6,7 +6,7 @@ from pymdp import utils as mdp_utils
 from pymdp.agent import Agent
 
 import utils
-from agent.ES_Registry import ServiceID, ServiceType
+from agent.es_registry import ServiceID, ServiceType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
 
 PHYSICAL_CORES = int(utils.get_env_param('MAX_CORES', 8))

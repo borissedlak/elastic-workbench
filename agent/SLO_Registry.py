@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Tuple, NamedTuple
 
 import numpy as np
 
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 
 logger = logging.getLogger("multiscale")
 

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from agent.ES_Registry import EsType, ServiceType
+from agent.es_registry import ESType, ServiceType
 from agent.PolicySolver_RRM import solve, local_obj, solve_global
 from agent.SLO_Registry import SLO
 
@@ -15,8 +15,8 @@ class TestPolicySolver(TestCase):
         pass
 
     def test_composite_obj(self):
-        parameter_bounds = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
-                            EsType.QUALITY_SCALE: {'quality': {'min': 360, 'max': 1080}}}
+        parameter_bounds = {ESType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                            ESType.QUALITY_SCALE: {'quality': {'min': 360, 'max': 1080}}}
         clients_slos = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
                          'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
                          'quality': SLO(var='quality', larger=True, thresh=800, weight=0.7)}]
@@ -34,8 +34,8 @@ class TestPolicySolver(TestCase):
         self.assertAlmostEqual(1.0, -calculated_slo_f, delta=0.015)
 
     def test_solve_cv_minimal(self):
-        parameter_bounds_cv = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
-                               EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}}}
+        parameter_bounds_cv = {ESType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                               ESType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 2}}}
         clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
                             'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
                             'model_size': SLO(var='model_size', larger=True, thresh=2, weight=0.7)}]
@@ -43,8 +43,8 @@ class TestPolicySolver(TestCase):
         print(solve(ServiceType.CV, parameter_bounds_cv, clients_slos_cv, 10))
 
     def test_solve_qr(self):
-        parameter_bounds = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
-                            EsType.QUALITY_SCALE: {'quality': {'min': 360, 'max': 1080}}}
+        parameter_bounds = {ESType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                            ESType.QUALITY_SCALE: {'quality': {'min': 360, 'max': 1080}}}
         clients_slos = [{'throughput': SLO(var='throughput', larger=True, thresh=100000, weight=1.0),
                          'completion_rate': SLO(var='completion_rate', larger=True, thresh=1.0, weight=1.0),
                          'quality': SLO(var='quality', larger=True, thresh=800, weight=0.7)}]
@@ -55,16 +55,16 @@ class TestPolicySolver(TestCase):
         max_cores = 8
         service_context = []
 
-        parameter_bounds_qr = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
-                               EsType.QUALITY_SCALE: {'quality': {'min': 300, 'max': 1000}}}
+        parameter_bounds_qr = {ESType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                               ESType.QUALITY_SCALE: {'quality': {'min': 300, 'max': 1000}}}
         clients_slos_qr = [{'throughput': SLO(var='throughput', larger=True, thresh=100, weight=1.0),
                             'quality': SLO(var='quality', larger=True, thresh=800, weight=0.7)}]
         service_context.append((ServiceType.QR, parameter_bounds_qr, clients_slos_qr, 100))
         # service_context.append((parameter_bounds_qr, {'throughput': self.cpd_qr}, clients_slos_qr, 100))
 
-        parameter_bounds_cv = {EsType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
-                               EsType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 5}},
-                               EsType.QUALITY_SCALE: {'quality': {'min': 300, 'max': 1000}}}
+        parameter_bounds_cv = {ESType.RESOURCE_SCALE: {'cores': {'min': 1, 'max': 8}},
+                               ESType.MODEL_SCALE: {'model_size': {'min': 1, 'max': 5}},
+                               ESType.QUALITY_SCALE: {'quality': {'min': 300, 'max': 1000}}}
         clients_slos_cv = [{'throughput': SLO(var='throughput', larger=True, thresh=10, weight=0.6),
                             'model_size': SLO(var='model_size', larger=True, thresh=2, weight=0.2)}]
         service_context.append((ServiceType.CV, parameter_bounds_cv, clients_slos_cv, 100))

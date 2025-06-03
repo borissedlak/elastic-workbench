@@ -6,18 +6,27 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import utils
-from agent.ES_Registry import ServiceType
-from iwai.DQN_Trainer import DQN, STATE_DIM, ACTION_DIM_QR, ACTION_DIM_CV, QR_QUALITY_STEP, CV_QUALITY_STEP, \
-    NO_EPISODES, EPISODE_LENGTH
-from iwai.Global_Training_Env import GlobalTrainingEnv
-from iwai.LGBN_Training_Env import LGBN_Training_Env
+from agent.es_registry import ServiceType
+from iwai.dqn_trainer import (
+    DQN,
+    STATE_DIM,
+    ACTION_DIM_QR,
+    ACTION_DIM_CV,
+    QR_QUALITY_STEP,
+    CV_QUALITY_STEP,
+    NO_EPISODES,
+    EPISODE_LENGTH,
+)
+from iwai.global_training_env import GlobalTrainingEnv
+from iwai.lgbn_training_env import LGBNTrainingEnv
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
 
+
 class JointDQNTrainer:
-    def __init__(self, dqn_qr, dqn_cv, joint_env):
+    def __init__(self, dqn_qr: DQN, dqn_cv: DQN, joint_env: GlobalTrainingEnv):
         """
         Trainer for joint DQN training of QR and CV autoscalers.
 
@@ -44,17 +53,29 @@ class JointDQNTrainer:
                 action_cv = self.dqn_cv.choose_action(np.array(state_cv.for_tensor()))
 
                 # Step joint env
-                (next_state_qr, next_state_cv), reward, done = self.env.step(action_qr, action_cv)
+                (next_state_qr, next_state_cv), reward, done = self.env.step(
+                    action_qr, action_cv
+                )
 
                 # Store transitions in each agent's buffer
-                self.dqn_qr.memory.put((
-                    state_qr.for_tensor(), action_qr, reward,
-                    next_state_qr.for_tensor(), done
-                ))
-                self.dqn_cv.memory.put((
-                    state_cv.for_tensor(), action_cv, reward,
-                    next_state_cv.for_tensor(), done
-                ))
+                self.dqn_qr.memory.put(
+                    (
+                        state_qr.for_tensor(),
+                        action_qr,
+                        reward,
+                        next_state_qr.for_tensor(),
+                        done,
+                    )
+                )
+                self.dqn_cv.memory.put(
+                    (
+                        state_cv.for_tensor(),
+                        action_cv,
+                        reward,
+                        next_state_cv.for_tensor(),
+                        done,
+                    )
+                )
 
                 state_qr, state_cv = next_state_qr, next_state_cv
                 ep_score += reward
@@ -69,13 +90,19 @@ class JointDQNTrainer:
                     break
 
             # Decay epsilon
-            self.dqn_qr.epsilon = max(self.dqn_qr.epsilon * self.dqn_qr.epsilon_decay, self.dqn_qr.epsilon_min)
-            self.dqn_cv.epsilon = max(self.dqn_cv.epsilon * self.dqn_cv.epsilon_decay, self.dqn_cv.epsilon_min)
+            self.dqn_qr.epsilon = max(
+                self.dqn_qr.epsilon * self.dqn_qr.epsilon_decay, self.dqn_qr.epsilon_min
+            )
+            self.dqn_cv.epsilon = max(
+                self.dqn_cv.epsilon * self.dqn_cv.epsilon_decay, self.dqn_cv.epsilon_min
+            )
 
             score_list.append(ep_score)
             logger.info(f"Final state for QR Env: {self.env.env_qr.state}")
             logger.info(f"Final state for CV Env: {self.env.env_cv.state}")
-            logger.info(f"[EP {ep + 1:3d}] Score: {ep_score:.2f} | Epsilon QR: {self.dqn_qr.epsilon:.4f}, CV: {self.dqn_cv.epsilon:.4f}")
+            logger.info(
+                f"[EP {ep + 1:3d}] Score: {ep_score:.2f} | Epsilon QR: {self.dqn_qr.epsilon:.4f}, CV: {self.dqn_cv.epsilon:.4f}"
+            )
 
         plt.plot(score_list)
         plt.xlabel("Episode")
@@ -87,13 +114,14 @@ class JointDQNTrainer:
         self.dqn_qr.store_dqn_as_file(suffix="QR_joint")
         self.dqn_cv.store_dqn_as_file(suffix="CV_joint")
 
-if __name__ == "__main__":
-    df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
-    env_qr = LGBN_Training_Env(ServiceType.QR, step_quality=QR_QUALITY_STEP)
+if __name__ == "__main__":
+    df = pd.read_csv(ROOT + "/../../share/metrics/LGBN.csv")
+
+    env_qr = LGBNTrainingEnv(ServiceType.QR, step_quality=QR_QUALITY_STEP)
     env_qr.reload_lgbn_model(df)
 
-    env_cv = LGBN_Training_Env(ServiceType.CV, step_quality=CV_QUALITY_STEP)
+    env_cv = LGBNTrainingEnv(ServiceType.CV, step_quality=CV_QUALITY_STEP)
     env_cv.reload_lgbn_model(df)
 
     # Wrap in joint environment

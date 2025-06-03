@@ -9,7 +9,7 @@ import numpy as np
 from pyzbar.pyzbar import decode
 
 import utils
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
 

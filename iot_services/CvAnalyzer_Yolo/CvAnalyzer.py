@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 
 import utils
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 from iot_services.CvAnalyzer_Yolo.YOLOv8_ONNX import YOLOv8
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader

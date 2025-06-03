@@ -66,13 +66,13 @@ def normalize_in_bounds(vector, min_val, max_val):
     return np.clip(normalized, min_val, max_val)
 
 
-class Full_State_DQN(NamedTuple):
+class FullStateDQN(NamedTuple):
     quality: int
-    quality_thresh: int
+    quality_target: int
     throughput: int
     tp_thresh: int
     model_size: int # only for CV!
-    model_size_thresh: int
+    model_size_target: int
     cores: int
     free_cores: int
     bounds: Dict[str, Dict]
@@ -91,11 +91,21 @@ class Full_State_DQN(NamedTuple):
             (self.model_size >= self.bounds['model_size']['max']) if 'model_size' in self.bounds else True,
             self.cores <= self.bounds['cores']['min'],
             self.free_cores > 0,
-            self.quality / self.quality_thresh,
-            self.model_size / self.model_size_thresh,
+            self.quality / self.quality_target,
+            self.model_size / self.model_size_target,
             self.throughput / self.tp_thresh]
 
-
+    def to_np_ndarray(self):
+        return np.asarray([
+            self.quality,
+            self.quality_target,
+            self.throughput,
+            self.tp_thresh,
+            self.model_size,
+            self.model_size_target,
+            self.cores,
+            self.free_cores,
+        ])
 # @utils.print_execution_time
 def export_experience_buffer(rows: tuple, file_name):
 
@@ -117,7 +127,7 @@ def export_experience_buffer(rows: tuple, file_name):
         writer.writerows(data)
 
 
-def log_service_state(state: Full_State_DQN, prefix):
+def log_service_state(state: FullStateDQN, prefix):
     # Define the directory and file name
     directory = "./"
     file_name = "agent_experience.csv"

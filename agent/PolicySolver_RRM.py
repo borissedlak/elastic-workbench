@@ -2,7 +2,7 @@ import random
 
 from scipy.optimize import minimize
 
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 from agent.LGBN import calculate_missing_vars
 from agent.RRM import RRM
 from agent.SLO_Registry import calculate_SLO_F_clients

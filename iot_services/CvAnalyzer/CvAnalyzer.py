@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 
 import utils
-from agent.ES_Registry import ServiceType
+from agent.es_registry import ServiceType
 from iot_services.CvAnalyzer.FaceDetector import FaceDetector
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
