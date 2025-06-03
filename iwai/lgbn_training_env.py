@@ -14,7 +14,7 @@ from agent.SLORegistry import (
     SLO_Registry,
 )
 from agent.agent_utils import FullStateDQN
-from proj_types import ESServiceAction
+from proj_types import QRServiceAction
 
 logger = logging.getLogger("multiscale")
 
@@ -43,7 +43,7 @@ class LGBNTrainingEnv(gymnasium.Env):
             self.service_type, {"C_1": 100}
         )[0]
 
-    def step(self, action: ESServiceAction):
+    def step(self, action: QRServiceAction):
         behavioral_punishment = 0
         new_state = self.state._asdict()
         done = False
@@ -57,8 +57,8 @@ class LGBNTrainingEnv(gymnasium.Env):
             new_data_quality = self.state.data_quality + delta_data_quality
 
             if (
-                new_data_quality < self.boundaries["data_quality"]["min"]
-                or new_data_quality > self.boundaries["data_quality"]["max"]
+                    new_data_quality < self.boundaries["data_quality"]["min"]
+                    or new_data_quality > self.boundaries["data_quality"]["max"]
             ):
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -76,7 +76,7 @@ class LGBNTrainingEnv(gymnasium.Env):
                 # done = True
                 pass
             elif (
-                delta_cores > self.state.free_cores
+                    delta_cores > self.state.free_cores
             ):  # Want to consume resources that are not free
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -91,8 +91,8 @@ class LGBNTrainingEnv(gymnasium.Env):
             new_model_s = self.state.model_size + delta_model
 
             if (
-                new_model_s < self.boundaries["model_size"]["min"]
-                or new_model_s > self.boundaries["model_size"]["max"]
+                    new_model_s < self.boundaries["model_size"]["min"]
+                    or new_model_s > self.boundaries["model_size"]["max"]
             ):
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -107,9 +107,9 @@ class LGBNTrainingEnv(gymnasium.Env):
 
         reward = (
                 to_normalized_slo_f(
-                calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
-                self.client_slos,
-            )
+                    calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
+                    self.client_slos,
+                )
                 + behavioral_punishment
         )
         return self.state, reward, done, False, {}

@@ -12,6 +12,8 @@ from torch.nn.init import trunc_normal_
 from proj_types import (
     HabitualNetworkOutput,
     MCDaciWorldModelDecOutput,
+    SimpleDeltaTransitionNetworkOutput,
+    SimpleMCDaciWorldModelDecOutput,
     WorldModelEncoding,
     MCDaciWorldOutput,
     TransitionNetworkOutput,
@@ -142,15 +144,15 @@ class TransitionNetwork(nn.Module):  # Model Mid
 
     def __init__(
         self,
-        latent_dim: int = 10,  # s_dim
-        policy_dim: int = 4,  # pi_dim,
+        world_latent_dim: int = 4,  # s_dim
+        policy_dim: int = 7,  # pi_dim,
         width: int = 32,
         dropout: float = 0.5,
         depth_increase: int = 0,
     ):
         super().__init__()
 
-        self.latent_dim = latent_dim
+        self.latent_dim = world_latent_dim
         self.policy_dim = policy_dim
 
         self.layers = nn.Sequential(
@@ -181,11 +183,66 @@ class TransitionNetwork(nn.Module):  # Model Mid
         eps = torch.randn_like(std)
         return eps * std + mu
 
-    def forward(self, pi_t, s_t) -> TransitionNetworkOutput:
+    def forward(self, pi_t: torch.Tensor, s_t: torch.Tensor) -> TransitionNetworkOutput:
+        # transition in_dim => [B, world_latent_dim + action_dim]
         gauss_params = self.layers(torch.cat([pi_t, s_t], dim=1))
         mu, logvar = gauss_params.chunk(chunks=2, dim=1)
         s_t1 = self.reparameterize(mu, logvar)
         return TransitionNetworkOutput(s=s_t1, s_dist_params=(mu, logvar))
+
+
+class SimpleDeltaTransitionNetwork(nn.Module):  # Model Mid
+    """P(s_t|s_t-1,a_t-1)
+
+    Like TransitionNetwork, but for predicting deltas and setting scale = 0.0
+    """
+
+    def __init__(
+        self,
+        latent_dim: int = 4,
+        policy_dim: int = 4,
+        width: int = 32,
+        dropout: float = 0.0,
+        depth_increase: int = 0,
+    ):
+        super().__init__()
+
+        self.norm = nn.LayerNorm(latent_dim + policy_dim)
+
+        self.joint_latent_dim = latent_dim
+        self.policy_dim = policy_dim
+
+        self.layers = nn.Sequential(
+            FullyConnectedBlock(
+                in_features=self.joint_latent_dim + self.policy_dim,
+                out_features=width,
+                non_linearity=nn.LeakyReLU,
+                dropout=dropout,
+            ),
+            *[
+                FullyConnectedBlock(
+                    in_features=width,
+                    out_features=width,
+                    non_linearity=nn.LeakyReLU,
+                    dropout=dropout,
+                )
+                for _ in range(depth_increase)
+            ],
+        )
+        self.head = nn.Linear(
+            in_features=width,
+            out_features=self.joint_latent_dim,
+        )
+
+    def forward(
+        self, pi_t: torch.Tensor, s_t: torch.Tensor
+    ) -> SimpleDeltaTransitionNetworkOutput:
+        # transition in_dim => [B, world_latent_dim + action_dim]
+        t = self.norm(torch.cat([pi_t, s_t], dim=1))
+        t = self.layers(t)
+        mu = self.layers(t)
+        delta = self.head(mu)
+        return SimpleDeltaTransitionNetworkOutput(delta=delta)
 
 
 class WorldModel(ParametricTransform):
@@ -199,11 +256,11 @@ class WorldModel(ParametricTransform):
 
     def __init__(
         self,
-        in_dim: int = 3,
+        in_dim: int = 9,
         out_dim: Optional[int] = None,
-        world_latent_dim: int = 10,  # s_dim
-        policy_dim: int = 4,  # pi_dim,
-        width: int=32,
+        world_latent_dim: int = 4,  # s_dim
+        policy_dim: int = 7,  # pi_dim,
+        width: int = 32,
         dropout: float = 0.5,
         depth_increase: int = 0,
     ):
@@ -229,7 +286,9 @@ class WorldModel(ParametricTransform):
                 )
                 for _ in range(depth_increase)
             ],
-            nn.Linear(in_features=width, out_features=world_latent_dim * 2),  # loc, scale
+            nn.Linear(
+                in_features=width, out_features=world_latent_dim * 2
+            ),  # loc, scale
         )
 
         self.dec_linear = nn.Sequential(
@@ -248,9 +307,7 @@ class WorldModel(ParametricTransform):
                 )
                 for _ in range(depth_increase)
             ],
-            nn.Linear(
-                in_features=width, out_features=out_dim
-            ),  # loc, scale
+            nn.Linear(in_features=width, out_features=out_dim),  # loc, scale
         )
 
         self.apply(self._init_weights)
@@ -274,6 +331,103 @@ class WorldModel(ParametricTransform):
     def decode(self, s) -> MCDaciWorldModelDecOutput:
         o_t1 = self.dec_linear(s)
         return MCDaciWorldModelDecOutput(o_pred=o_t1)
+
+    def forward(self, o) -> MCDaciWorldOutput:
+        enc_out = self.encode(o, sample=True)
+        s = enc_out["s"]
+        dec_out = self.decode(s)
+        return MCDaciWorldOutput(**dec_out, **enc_out)
+
+
+class SimpleMCDaciWorldModel(ParametricTransform):
+    """Like WorldModel but for simplified environments and objective
+
+    Does not use habitual network
+    Encoder: Q(s|o)
+    Decoder: P(o|s)
+
+    """
+
+    def __init__(
+        self,
+        in_dim: int = 2 * 8,  # observe both service states
+        out_dim: Optional[int] = None,
+        world_latent_dim: int = 2 * 4,  # output joint latent
+        width: int = 32,
+        dropout: float = 0.5,
+        depth_increase: int = 0,
+    ):
+        super().__init__()
+
+        self.out_dim = out_dim or in_dim
+        # Sort of only needed in MTCS might as well use agent to query that
+
+        self.enc_transf = nn.Sequential(
+            FullyConnectedBlock(
+                in_features=in_dim,
+                out_features=width,
+                non_linearity=nn.LeakyReLU,
+                dropout=dropout,
+            ),
+            *[
+                FullyConnectedBlock(
+                    in_features=width,
+                    out_features=width,
+                    non_linearity=nn.LeakyReLU,
+                    dropout=dropout,
+                )
+                for _ in range(depth_increase)
+            ],
+        )
+        self.enc_mu = nn.Linear(width, world_latent_dim)
+        self.enc_logvar = nn.Linear(width, world_latent_dim)
+
+        self.dec_transf = nn.Sequential(
+            FullyConnectedBlock(
+                in_features=world_latent_dim,
+                out_features=width,
+                non_linearity=nn.LeakyReLU,
+                dropout=0.5,
+            ),
+            *[
+                FullyConnectedBlock(
+                    in_features=width,
+                    out_features=width,
+                    non_linearity=nn.LeakyReLU,
+                    dropout=dropout,
+                )
+                for _ in range(depth_increase)
+            ],
+        )
+        self.dec_mu = nn.Linear(width, world_latent_dim)
+        self.dec_logvar = nn.Linear(width, world_latent_dim)
+
+        self.apply(self._init_weights)
+
+    def reparameterize(self, mu, logvar):
+        """Reparameterization trick"""
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
+
+    def encode(self, obs: torch.Tensor, sample: bool = True) -> WorldModelEncoding:
+        s = self.enc_transf(obs)
+        mu, logvar = self.enc_mu(s), self.enc_mu(s)
+        if sample:
+            s = self.reparameterize(mu, logvar)
+            return WorldModelEncoding(s=s, s_dist_params=(mu, logvar))
+        return WorldModelEncoding(s=None, s_dist_params=(mu, logvar))
+
+    def decode(
+        self, s: torch.Tensor, sample: bool = False
+    ) -> SimpleMCDaciWorldModelDecOutput:
+        h = self.dec_transf(s)
+        expectation, logvar = self.dec_mu(h), self.dec_logvar(h)
+        obs_pred = repeat(expectation, logvar) if sample else None
+
+        return SimpleMCDaciWorldModelDecOutput(
+            o_pred=obs_pred, o_expectation=expectation, o_logvar=logvar
+        )
 
     def forward(self, o) -> MCDaciWorldOutput:
         enc_out = self.encode(o, sample=True)
