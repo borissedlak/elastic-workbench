@@ -99,7 +99,7 @@ class HabitualNetwork(nn.Module):  # ModelTop
         self,
         latent_dim: int = 10,  # s_dim
         policy_dim: int = 4,  # pi_dim,
-        width: int = 128,
+        width: int = 32,
     ):
         super().__init__()
         self.latent_dim = latent_dim
@@ -144,7 +144,7 @@ class TransitionNetwork(nn.Module):  # Model Mid
         self,
         latent_dim: int = 10,  # s_dim
         policy_dim: int = 4,  # pi_dim,
-        width: int = 512,
+        width: int = 32,
         dropout: float = 0.5,
         depth_increase: int = 0,
     ):
@@ -199,69 +199,58 @@ class WorldModel(ParametricTransform):
 
     def __init__(
         self,
-        in_channels: int = 3,
+        in_dim: int = 3,
         out_dim: Optional[int] = None,
         world_latent_dim: int = 10,  # s_dim
         policy_dim: int = 4,  # pi_dim,
-        spatial_dimensions: Union[int, Tuple[int, int]] = (32, 32),
+        width: int=32,
+        dropout: float = 0.5,
+        depth_increase: int = 0,
     ):
         super().__init__()
 
-        spatial_dimensions = to_2tuple(spatial_dimensions)
-
+        self.out_dim = out_dim or in_dim
         # Sort of only needed in MTCS might as well use agent to query that
         self.policy_dim = policy_dim
-        self.latent_spatials = spatial_dimensions[0] // 8, spatial_dimensions[1] // 8
-        dec_out_channels = out_dim or in_channels
         # just hardcode for now
         self.enc_linear = nn.Sequential(
             FullyConnectedBlock(
-                # spatial dimensi
-                in_features=self.latent_spatials[0] * self.latent_spatials[1] * 64,
-                out_features=256,
+                in_features=in_dim,
+                out_features=width,
                 non_linearity=nn.LeakyReLU,
-                dropout=0.5,
+                dropout=dropout,
             ),
-            FullyConnectedBlock(
-                in_features=256,
-                out_features=256,
-                non_linearity=nn.LeakyReLU,
-                dropout=0.5,
-            ),
-            FullyConnectedBlock(
-                in_features=256,
-                out_features=256,
-                non_linearity=nn.LeakyReLU,
-                dropout=0.5,
-            ),
-            nn.Linear(in_features=256, out_features=world_latent_dim * 2),
+            *[
+                FullyConnectedBlock(
+                    in_features=width,
+                    out_features=width,
+                    non_linearity=nn.LeakyReLU,
+                    dropout=dropout,
+                )
+                for _ in range(depth_increase)
+            ],
+            nn.Linear(in_features=width, out_features=world_latent_dim * 2),  # loc, scale
         )
 
         self.dec_linear = nn.Sequential(
             FullyConnectedBlock(
                 in_features=world_latent_dim,
-                out_features=256,
+                out_features=width,
                 non_linearity=nn.LeakyReLU,
                 dropout=0.5,
             ),
-            FullyConnectedBlock(
-                in_features=256,
-                out_features=256,
-                non_linearity=nn.LeakyReLU,
-                dropout=0.5,
-            ),
-            FullyConnectedBlock(
-                in_features=256,
-                out_features=256,
-                non_linearity=nn.LeakyReLU,
-                dropout=0.5,
-            ),
-            FullyConnectedBlock(
-                in_features=256,
-                out_features=self.latent_spatials[0] * self.latent_spatials[1] * 64,
-                non_linearity=nn.LeakyReLU,
-                dropout=0.5,
-            ),
+            *[
+                FullyConnectedBlock(
+                    in_features=width,
+                    out_features=width,
+                    non_linearity=nn.LeakyReLU,
+                    dropout=dropout,
+                )
+                for _ in range(depth_increase)
+            ],
+            nn.Linear(
+                in_features=width, out_features=out_dim
+            ),  # loc, scale
         )
 
         self.apply(self._init_weights)

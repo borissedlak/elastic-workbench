@@ -52,6 +52,18 @@ def get_random_parameter_assignments(parameters):
     return random_params
 
 
+def min_max_scale(value: float | int, min_val: float , max_val: float) -> float:
+    """Min max scale to 0 and 1"""
+    if min_val == max_val:
+        return 1.0  # Should only happen for QR service model_size
+
+    scaled_value = (value - min_val) / (max_val - min_val)
+
+    scaled_value = max(0, min(1, scaled_value))
+
+    return scaled_value
+
+
 def to_partial(full_state):
     partial_state = full_state.copy()
     del partial_state["avg_p_latency"]
@@ -67,10 +79,10 @@ def normalize_in_bounds(vector, min_val, max_val):
 
 
 class FullStateDQN(NamedTuple):
-    quality: int
-    quality_target: int
+    data_quality: int
+    data_quality_target: int
     throughput: int
-    tp_thresh: int
+    throughput_target: int
     model_size: int # only for CV!
     model_size_target: int
     cores: int
@@ -80,32 +92,42 @@ class FullStateDQN(NamedTuple):
     # TODO: Needs transform the state of the training env to the desired pymdp shape
     def for_pymdp(self, service_type):
         return [
-            np.digitize(self.quality, np.arange(300, 1000, 100)) if service_type.value == "QR" else np.digitize(self.quality, np.arange(128, 320, 32)),
+            np.digitize(self.data_quality, np.arange(300, 1000, 100)) if service_type.value == "QR" else np.digitize(self.data_quality, np.arange(128, 320, 32)),
             np.digitize(self.throughput, np.arange(0, 100, 5))]
 
     def for_tensor(self):
         return [
-            self.quality <= self.bounds['quality']['min'],
-            self.quality >= self.bounds['quality']['max'],
+            self.data_quality <= self.bounds['quality']['min'],
+            self.data_quality >= self.bounds['quality']['max'],
             (self.model_size <= self.bounds['model_size']['min']) if 'model_size' in self.bounds else True,
             (self.model_size >= self.bounds['model_size']['max']) if 'model_size' in self.bounds else True,
             self.cores <= self.bounds['cores']['min'],
             self.free_cores > 0,
-            self.quality / self.quality_target,
+            self.data_quality / self.data_quality_target,
             self.model_size / self.model_size_target,
-            self.throughput / self.tp_thresh]
+            self.throughput / self.throughput_target]
 
-    def to_np_ndarray(self):
-        return np.asarray([
-            self.quality,
-            self.quality_target,
-            self.throughput,
-            self.tp_thresh,
-            self.model_size,
-            self.model_size_target,
-            self.cores,
-            self.free_cores,
-        ])
+    def to_np_ndarray(self, normalized: bool) -> np.ndarray[float]:
+        if normalized:
+            return np.asarray([
+                min_max_scale(self.data_quality, min_val=self.bounds["quality"]["min"], max_val=self.bounds["quality"]["max"]),
+                min_max_scale(self.data_quality_target, min_val=self.bounds["quality"]["min"], max_val=self.bounds["quality"]["max"]),
+                min_max_scale(self.throughput, min_val=0,  max_val=self.throughput_target),
+                min_max_scale(self.model_size, min_val=1,  max_val=self.model_size_target),
+                min_max_scale(self.cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
+                min_max_scale(self.free_cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
+            ])
+        else:
+            return np.asarray([
+                self.data_quality,
+                self.data_quality_target,
+                self.throughput,
+                self.throughput_target,
+                self.model_size,
+                self.model_size_target,
+                self.cores,
+                self.free_cores,
+            ])
 # @utils.print_execution_time
 def export_experience_buffer(rows: tuple, file_name):
 

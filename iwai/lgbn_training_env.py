@@ -10,10 +10,11 @@ from agent.es_registry import ServiceType, ESRegistry
 from agent.LGBN import LGBN
 from agent.SLORegistry import (
     calculate_slo_fulfillment,
-    to_normalized_SLO_F,
+    to_normalized_slo_f,
     SLO_Registry,
 )
 from agent.agent_utils import FullStateDQN
+from proj_types import ESServiceAction
 
 logger = logging.getLogger("multiscale")
 
@@ -42,7 +43,7 @@ class LGBNTrainingEnv(gymnasium.Env):
             self.service_type, {"C_1": 100}
         )[0]
 
-    def step(self, action):
+    def step(self, action: ESServiceAction):
         behavioral_punishment = 0
         new_state = self.state._asdict()
         done = False
@@ -53,7 +54,7 @@ class LGBNTrainingEnv(gymnasium.Env):
 
         if 1 <= action <= 2:
             delta_quality = -self.step_quality if action == 1 else self.step_quality
-            new_quality = self.state.quality + delta_quality
+            new_quality = self.state.data_quality + delta_quality
 
             if (
                 new_quality < self.boundaries["quality"]["min"]
@@ -101,11 +102,11 @@ class LGBNTrainingEnv(gymnasium.Env):
         self.state = FullStateDQN(**new_state)
 
         reward = (
-            to_normalized_SLO_F(
+                to_normalized_slo_f(
                 calculate_slo_fulfillment(self.state._asdict(), self.client_slos),
                 self.client_slos,
             )
-            + behavioral_punishment
+                + behavioral_punishment
         )
         return self.state, reward, done, False, {}
 
