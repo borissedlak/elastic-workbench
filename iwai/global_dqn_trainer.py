@@ -116,7 +116,7 @@ class JointDQNTrainer:
 
 
 if __name__ == "__main__":
-    df = pd.read_csv(ROOT + "/../../share/metrics/LGBN.csv")
+    df = pd.read_csv("share/metrics/LGBN.csv")
 
     env_qr = LGBNTrainingEnv(ServiceType.QR, step_quality=QR_QUALITY_STEP)
     env_qr.reload_lgbn_model(df)

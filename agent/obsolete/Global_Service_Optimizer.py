@@ -36,8 +36,8 @@ class Global_Service_Optimizer:
                 options.append((0, 0, 0))
                 continue
 
-            fps_a = sample_values_from_lgbn(self.lgbn, state_1.quality, combi[0])
-            fps_b = sample_values_from_lgbn(self.lgbn, state_2.quality, combi[1])
+            fps_a = sample_values_from_lgbn(self.lgbn, state_1.data_quality, combi[0])
+            fps_b = sample_values_from_lgbn(self.lgbn, state_2.data_quality, combi[1])
 
             s_new_1 = state_1._replace(fps=fps_a, cores=combi[0])
             s_new_2 = state_2._replace(fps=fps_b, cores=combi[1])

@@ -126,7 +126,7 @@ class DQNAgent(ScalingAgent):
         if 1 <= action_pw <= 2:
             delta_quality = -step_quality if action_pw == 1 else step_quality
             return ESType.QUALITY_SCALE, {
-                "quality": int(state_pw.quality + delta_quality)
+                "quality": int(state_pw.data_quality + delta_quality)
             }
         if 3 <= action_pw <= 4:
             delta_cores = -1 if action_pw == 3 else 1

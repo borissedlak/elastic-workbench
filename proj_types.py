@@ -10,6 +10,16 @@ from torch import nn
 GenericConfigDict = Dict[str, Any]
 
 
+class ESServiceAction(Enum):
+    DILLY_DALLY = 0
+    DEC_DATA_QUALIT = 1
+    INC_DATA_QUALIT = 2
+    DEC_CORES = 3
+    INC_CORES = 4
+    DEC_PRED_QUALITY = 5
+    INC_PRED_QUALITY = 6
+
+
 
 class HabitualNetworkOutput(TypedDict):
     policy_logits: torch.Tensor
