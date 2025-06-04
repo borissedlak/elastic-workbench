@@ -319,7 +319,7 @@ class pymdp_Agent(): # ScalingAgent):
         return Agent(A=self.A, B=self.B, C=self.C, D=self.D, pA=pA, pB=pB, policy_len=policy_length,
                      num_controls=self.num_controls, B_factor_list=self.B_factor_list,
                      B_factor_control_list=self.B_factor_control_list,action_selection='deterministic',
-                     inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True)
+                     inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True, use_states_info_gain=True)
 
 
     def orchestrate_services_optimally(self, services_m):
@@ -375,6 +375,22 @@ if __name__ == '__main__':
 
         chosen_action_id = pymdp_agent.sample_action()
 
+        policy_list = pymdp_agent.policies  # shape: (num_policies, policy_len, num_control_factors)
+
+        # Flatten if policy length is 1
+        flattened_policies = policy_list[:, 0, :]  # shape: (num_policies, num_control_factors)
+
+        # Find the index of the selected policy
+        policy_index = next(
+            i for i, policy in enumerate(flattened_policies)
+            if np.array_equal(policy, chosen_action_id)
+        )
+
+        # Extract metrics
+        efe = G[policy_index]
+        info_gain = G_sub[0][policy_index]  # usually epistemic value
+        pragmatic_value = G_sub[1][policy_index]  # usually extrinsic value
+
         action_cv = ESServiceAction(int(chosen_action_id[0]))
         action_qr = ESServiceAction(int(chosen_action_id[1]))
 
@@ -391,6 +407,9 @@ if __name__ == '__main__':
             "action_qr": action_qr.name if hasattr(action_qr, 'name') else str(action_qr),
             "action_cv": action_cv.name if hasattr(action_cv, 'name') else str(action_cv),
             "reward": joint_reward,
+            "efe":efe,
+            "info_gain": info_gain,
+            "pragmatic_value": pragmatic_value,
         })
 
     df = pd.DataFrame(logged_data)
