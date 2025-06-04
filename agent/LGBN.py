@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import numpy as np
@@ -13,6 +14,7 @@ from agent.es_registry import ServiceType
 from agent.RRM import calculate_missing_vars, collect_all_metric_files, preprocess_data
 from utils import print_execution_time
 
+ROOT = os.path.dirname(__file__)
 
 class LGBN:
     def __init__(self, show_figures=False, structural_training=False, df=None):
@@ -20,7 +22,7 @@ class LGBN:
         self.structural_training = structural_training
         self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models(df)
 
-    def init_models(self, df):
+    def init_models(self, df = None):
         if df is None:  # Remove this df when not needed anymore
             df = collect_all_metric_files()
         df_cleared = preprocess_data(df)
@@ -34,11 +36,11 @@ class LGBN:
         samples = {}
         for index, v in enumerate(var):
             mu, sigma = mean[0][index], np.sqrt(vari[index][index])
-            sample_val = np.random.normal(mu, sigma, 1)[0]
+            sample_val = np.random.normal(mu, sigma / 5, 1)[0] # TODO: Hard fix, decrease sigma
             samples = samples | {v: int(sample_val)}
 
         if sanitize:
-            for var, min, max in [("avg_p_latency", 1, 999999)]:
+            for var, min, max in [("throughput", 0, 1000)]:
                 if var in samples.keys():
                     samples[var] = np.clip(samples[var], min, max)
 
@@ -107,5 +109,6 @@ def get_edges_for_service_type(service_type: ServiceType):
 
 
 if __name__ == "__main__":
-    lgbn = LGBN(show_figures=True, structural_training=False)
-    print(lgbn.get_linear_relations(ServiceType.CV))
+
+    df_t = pd.read_csv(ROOT + "/../share/metrics/metrics.csv")
+    lgbn = LGBN(show_figures=True, structural_training=False, df=df_t)
