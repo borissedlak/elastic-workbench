@@ -351,8 +351,7 @@ class pymdp_Agent(): # ScalingAgent):
         # Create agent with loaded parameters
         agent = Agent(A=A, B=B, C=C, D=D, pA=pA, pB=pB, policy_len=policy_len, lr_pB=lr_pB, num_controls=self.num_controls,
                       B_factor_list=self.B_factor_list, B_factor_control_list=self.B_factor_control_list,
-                      action_selection='deterministic', inference_algo='VANILLA', use_param_info_gain=True,
-                      use_states_info_gain=True)
+                      action_selection='deterministic', inference_algo='VANILLA')
 
         print(f"Agent successfully loaded from: {save_path}")
         return agent
