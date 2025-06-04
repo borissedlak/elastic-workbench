@@ -3,6 +3,7 @@ import os
 from random import randint
 
 import gymnasium
+import numpy as np
 import pandas as pd
 
 import utils
@@ -100,9 +101,9 @@ class LGBNTrainingEnv(gymnasium.Env):
             else:
                 new_state["model_size"] = new_model_s
 
-        new_state["throughput"] = self.sample_from_lgbn(
+        new_state["throughput"] = self.sample_throughput_from_lgbn(
             new_state["data_quality"], new_state["cores"], new_state["model_size"]
-        )["throughput"]
+        )
         self.state = FullStateDQN(**new_state)
 
         reward = (
@@ -114,10 +115,11 @@ class LGBNTrainingEnv(gymnasium.Env):
         )
         return self.state, reward, done, False, {}
 
-    def sample_from_lgbn(self, data_quality, cores, model_size):
+    # TODO: Generalize again at a later stage
+    def sample_throughput_from_lgbn(self, data_quality, cores, model_size):
         partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
         full_state = self.lgbn.predict_lgbn_vars(partial_state, self.service_type)
-        return full_state
+        return np.clip(full_state['throughput'], 0, 100)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -141,7 +143,7 @@ class LGBNTrainingEnv(gymnasium.Env):
         ass_cores = randint(1, int(MAX_CORES / 2))
         free_cores = MAX_CORES - ass_cores
 
-        throughput = self.sample_from_lgbn(data_quality, ass_cores, model_size)["throughput"]
+        throughput = self.sample_throughput_from_lgbn(data_quality, ass_cores, model_size)
         tp_target = self.client_slos["throughput"].target
 
         self.state = FullStateDQN(
