@@ -89,23 +89,27 @@ class FullStateDQN(NamedTuple):
     bounds: Dict[str, Dict]
 
     def for_pymdp(self, env_type):
+        def discretize_value(value, bins):
+            index = np.digitize(value, bins, right=False)
+            # Cap to highest valid bin index
+            return min(index, len(bins) - 1)
         if env_type == 'qr':
-            aif_throughput = self.throughput // 5
+            throughput_qr_bins = np.arange(0, 101, 20)
+            aif_throughput = discretize_value(self.throughput, throughput_qr_bins)
 
             base_quality = np.arange(300, 1100, 100)
-            index = np.where(base_quality == self.data_quality)[0][0]
-            aif_quality = index
+            aif_quality = np.argmin(np.abs(base_quality - self.data_quality))
 
             aif_cores = self.cores - 1
 
             return [aif_throughput, aif_quality, aif_cores]
 
         elif env_type == 'cv':
-            aif_throughput = self.throughput
+            throughput_cv_bins = np.arange(0, 6, 1)
+            aif_throughput = discretize_value(self.throughput, throughput_cv_bins)
 
             base_quality = np.arange(128, 352, 32)
-            index = np.where(base_quality == self.data_quality)[0][0]
-            aif_quality = index
+            aif_quality = np.argmin(np.abs(base_quality - self.data_quality))
 
             aif_model_size = self.model_size - 1
 
