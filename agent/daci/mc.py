@@ -75,7 +75,7 @@ class MCDaciTrainer:
 
     def train(self):
         epochs = 5000
-        max_steps = 100
+        max_steps = 200
         # Tracking
         episode_rewards = []
         episode_lengths = []

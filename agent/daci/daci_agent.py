@@ -803,9 +803,9 @@ class SimpleMCDACIAgent:
                     self.optim_world_model.step()
                     self.scheduler.step()
                     if (
-                            i > 1000
-                            and self.validate_enc_dec(i)
-                            and not self.train_transition
+                            i > 1200
+                            # and self.validate_enc_dec(i)
+                            # and not self.train_transition
                     ):
                         # 600 does not allow transition model to start training too early, acts like a guard
                         self.train_transition = True
