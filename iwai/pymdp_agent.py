@@ -3,7 +3,6 @@ import os
 from typing import Dict
 import numpy as np
 import pandas as pd
-import itertools
 from pymdp import utils as mdp_utils
 from pymdp.agent import Agent
 import time
@@ -37,36 +36,6 @@ def generate_normalized_2d_sq_matrix(rows):
     matrix = np.ones((rows, rows))  # Create a matrix with all values set to 1
     normalized_matrix = matrix / rows  # Normalize so that each row sums to 1
     return normalized_matrix
-
-def convert_action(action):
-    converted_actions = list()
-
-    # QUALITY action TRANSFORMATION
-    if action[0] == 0:
-        converted_actions.append(1)
-    elif action[0] == 1:
-        converted_actions.append(0)
-    elif action[0] == 2:
-        converted_actions.append(2)
-
-    # Model size action transformation
-    if action[1] == 0:
-        converted_actions.append(5)
-    elif action[1] == 1:
-        converted_actions.append(0)
-    elif action[1] == 2:
-        converted_actions.append(6)
-
-    # Cores action transformation
-    if action[2] == 0:
-        converted_actions.append(3)
-    elif action[2] == 1:
-        converted_actions.append(0)
-    elif action[2] == 2:
-        converted_actions.append(4)
-
-    return converted_actions
-
 
 class pymdp_Agent(): # ScalingAgent):
 
@@ -352,53 +321,6 @@ class pymdp_Agent(): # ScalingAgent):
                      B_factor_control_list=self.B_factor_control_list,action_selection='deterministic',
                      inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True)
 
-    # def generate_valid_policies(self, qs, max_cores=PHYSICAL_CORES):
-    #     # Reduces the amount of candidate policies by removing those actions that try to go beyond the state limits
-    #     # Get MAP indices from belief distributions
-    #     qcv_idx = np.argmax(qs[1])  # quality_cv
-    #     msize_idx = np.argmax(qs[2])  # model_size
-    #     ccv_idx = np.argmax(qs[3])  # cores_cv
-    #     qqr_idx = np.argmax(qs[5])  # quality_qr
-    #     cqr_idx = np.argmax(qs[6])  # cores_qr
-    #
-    #     def is_valid_action(idx, action, value_list):
-    #         """Check if the action is valid at a given state index."""
-    #         if action == 1 and idx == len(value_list) - 1:
-    #             return False
-    #         if action == -1 and idx == 0:
-    #             return False
-    #         return True
-    #
-    #     valid_policies = []
-    #
-    #     for u_qcv in self.u_quality_cv:
-    #         if not is_valid_action(qcv_idx, u_qcv, self.quality_cv):
-    #             continue
-    #
-    #         for u_msize in self.u_model_size_cv:
-    #             if not is_valid_action(msize_idx, u_msize, self.model_size):
-    #                 continue
-    #
-    #             for u_ccv in self.u_cores_cv:
-    #                 if not is_valid_action(ccv_idx, u_ccv, self.cores_cv):
-    #                     continue
-    #
-    #                 for u_qqr in self.u_quality_qr:
-    #                     if not is_valid_action(qqr_idx, u_qqr, self.quality_qr):
-    #                         continue
-    #
-    #                     for u_cqr in self.u_cores_qr:
-    #                         if not is_valid_action(cqr_idx, u_cqr, self.cores_qr):
-    #                             continue
-    #
-    #                         # Check resource constraints
-    #                         new_cv = self.cores_cv[ccv_idx] + u_ccv
-    #                         new_qr = self.cores_qr[cqr_idx] + u_cqr
-    #                         total = new_cv + new_qr
-    #                         if (1 <= new_cv <= max_cores) and (1 <= new_qr <= max_cores) and (total <= max_cores):
-    #                             valid_policies.append([[u_qcv, u_msize, u_ccv, u_qqr, u_cqr]])
-    #
-    #     return np.array(valid_policies)
 
     def orchestrate_services_optimally(self, services_m):
         pass
@@ -437,57 +359,28 @@ if __name__ == '__main__':
     elapsed = time.time() - start_time
     print(f"Execution time: {elapsed:.4f} seconds")
 
-    acc_reward = list()
     joint_reward = 0
 
     logged_data = list()
 
-    for steps in range(5):
+    for steps in range(200):
         start_time_loop = time.time()
 
         a_s = pymdp_agent.infer_states(pymdp_state)
         elapsed = time.time() - start_time_loop
-        print(f"infer states time: {elapsed:.4f} seconds")
-        print("states inferred")
         if steps > 0:
-            start_time = time.time()
             pymdp_agent.update_B(a_s)
-            print("Updated B")
-            elapsed = time.time() - start_time
-            print(f"Update time: {elapsed:.4f} seconds")
 
-        # valid_policies = p_agent.generate_valid_policies(qs = a_s, max_cores=PHYSICAL_CORES)
-        # pymdp_agent.policies = valid_policies
-        # print("Policies validated. Candidate policies: " + str(len(valid_policies)))
-
-        start_time = time.time()
         q_pi, G, G_sub = pymdp_agent.infer_policies()
-        print("Policies inferred")
-        elapsed = time.time() - start_time
-        print(f"Policies Infer time: {elapsed:.4f} seconds")
 
-        start_time = time.time()
         chosen_action_id = pymdp_agent.sample_action()
-        print("Chosen action")
-        elapsed = time.time() - start_time
-        print(f"Action selection time: {elapsed:.4f} seconds")
-        # actions = convert_action(chosen_action_id)
+
         action_cv = ESServiceAction(int(chosen_action_id[0]))
         action_qr = ESServiceAction(int(chosen_action_id[1]))
 
-        print(f"Selected CV service action: {action_cv.name}")
-        print(f"Selected QR service action: {action_qr.name}")
-
-        print("applying actions.")
+        #print("applying actions.")
         (next_state_qr, next_state_cv), joint_reward, done = joint_env.step(action_qr=action_qr, action_cv=action_cv)
 
-        print("next state qr:")
-        print(next_state_qr)
-        print("next state cv:")
-        print(next_state_cv)
-        acc_reward.append(joint_reward)
-        print("accumulated reward:")
-        print(acc_reward)
         elapsed = time.time() - start_time_loop
         print(f"Loop time: {elapsed:.4f} seconds")
 
