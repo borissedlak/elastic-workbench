@@ -23,8 +23,9 @@ class RRM:
         self.models: Dict[ServiceType, Dict] = None
 
     @utils.print_execution_time
-    def init_models(self):
-        df_combined = collect_all_metric_files()
+    def init_models(self, df_combined=None):
+        if df_combined is None:
+            df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
         self.models = train_rrn_models(df_cleared, self.show_figures)

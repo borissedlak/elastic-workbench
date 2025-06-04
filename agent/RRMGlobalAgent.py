@@ -6,6 +6,7 @@ import numpy as np
 
 import utils
 from agent import agent_utils
+from agent.RRM import RRM
 from agent.es_registry import ServiceID, ServiceType, ESType
 from agent.PolicySolverRRM import solve_global
 from agent.ScalingAgent import ScalingAgent
@@ -31,9 +32,14 @@ class RRM_Global_Agent(ScalingAgent):
         # self.epsilon_decay = 0.85
         self.explore_count = 0
         self.max_explore = max_explore
+        self.rrm = RRM(show_figures=False)
+
+    # def reload_rrm_model(self, df=None):
+    #     self.rrm.init_models(df)  # Reloads the RRM model from the metrics.csv
 
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
+
         service_contexts = []
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
@@ -44,7 +50,8 @@ class RRM_Global_Agent(ScalingAgent):
             # self.epsilon *= self.epsilon_decay
             self.call_all_ES_randomly(services_m)
         else:
-            assignments = solve_global(service_contexts, MAX_CORES)
+            self.rrm.init_models()  # Reloads the RRM model from the metrics.csv
+            assignments = solve_global(service_contexts, MAX_CORES, self.rrm)
             assignments = apply_gaussian_noise_to_asses(assignments)
             self.call_all_ES_deterministic(services_m, assignments)
 
@@ -52,14 +59,14 @@ class RRM_Global_Agent(ScalingAgent):
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
         service_state = self.resolve_service_state(service_m, assigned_clients)
-        ES_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
+        es_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
         total_rps = utils.to_absolut_rps(assigned_clients)
 
         if self.log_experience is not None:
             self.evaluate_slos_and_buffer(service_m, service_state, all_client_slos)
 
-        return service_m.service_type, ES_parameter_bounds, all_client_slos, total_rps
+        return service_m.service_type, es_parameter_bounds, all_client_slos, total_rps
 
     # @utils.print_execution_time
     def call_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
