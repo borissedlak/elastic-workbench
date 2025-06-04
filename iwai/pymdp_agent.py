@@ -27,6 +27,25 @@ logger.setLevel(logging.INFO)
 
 ROOT = os.path.dirname(__file__)
 
+def load_npz_obj_array(filename, save_path):
+    data = np.load(os.path.join(save_path, filename), allow_pickle=True)
+    values = [data[key] for key in sorted(data.files)]
+    return np.array(values, dtype=object)  # ensures it's a proper obj_array
+
+def save_agent_parameters(agent, save_path="../experiments/iwai/saved_agent"):
+    os.makedirs(save_path, exist_ok=True)
+
+    # Save A, B, C, D, pA, pB
+    np.savez_compressed(os.path.join(save_path, "A.npz"), *agent.A)
+    np.savez_compressed(os.path.join(save_path, "B.npz"), *agent.B)
+    np.savez_compressed(os.path.join(save_path, "C.npz"), *agent.C)
+    np.savez_compressed(os.path.join(save_path, "D.npz"), *agent.D)
+
+    # These are optional but useful if learning is enabled
+    np.savez_compressed(os.path.join(save_path, "pA.npz"), *agent.pA)
+    np.savez_compressed(os.path.join(save_path, "pB.npz"), *agent.pB)
+
+    print(f"Agent parameters saved to: {save_path}")
 
 def generate_normalized_2d_sq_matrix(rows):
     """
@@ -321,6 +340,22 @@ class pymdp_Agent(): # ScalingAgent):
                      B_factor_control_list=self.B_factor_control_list,action_selection='deterministic',
                      inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True, use_states_info_gain=True)
 
+    def load_agent_parameters(self, save_path="../experiments/iwai/saved_agent", policy_len=1, lr_pB=1.0):
+        A = load_npz_obj_array("A.npz", save_path)
+        B = load_npz_obj_array("B.npz", save_path)
+        C = load_npz_obj_array("C.npz", save_path)
+        D = load_npz_obj_array("D.npz", save_path)
+        pA = load_npz_obj_array("pA.npz", save_path)
+        pB = load_npz_obj_array("pB.npz", save_path)
+
+        # Create agent with loaded parameters
+        agent = Agent(A=A, B=B, C=C, D=D, pA=pA, pB=pB, policy_len=policy_len, lr_pB=lr_pB, num_controls=self.num_controls,
+                      B_factor_list=self.B_factor_list, B_factor_control_list=self.B_factor_control_list,
+                      action_selection='deterministic', inference_algo='VANILLA', use_param_info_gain=True,
+                      use_states_info_gain=True)
+
+        print(f"Agent successfully loaded from: {save_path}")
+        return agent
 
     def orchestrate_services_optimally(self, services_m):
         pass
@@ -354,7 +389,13 @@ if __name__ == '__main__':
 
     start_time = time.time()
     p_agent = pymdp_Agent()
-    pymdp_agent = p_agent.generate_agent(policy_length=1, learning_rate=1)
+
+    learning_agent = False
+
+    if learning_agent:
+        pymdp_agent = p_agent.generate_agent(policy_length=1, learning_rate=1)
+    else:
+        pymdp_agent = p_agent.load_agent_parameters(save_path="../experiments/iwai/saved_agent", policy_len=1)
     print("Agent ready.")
     elapsed = time.time() - start_time
     print(f"Execution time: {elapsed:.4f} seconds")
@@ -368,7 +409,7 @@ if __name__ == '__main__':
 
         a_s = pymdp_agent.infer_states(pymdp_state)
         elapsed = time.time() - start_time_loop
-        if steps > 0:
+        if steps & learning_agent> 0:
             pymdp_agent.update_B(a_s)
 
         q_pi, G, G_sub = pymdp_agent.infer_policies()
@@ -415,6 +456,7 @@ if __name__ == '__main__':
             "pragmatic_value": pragmatic_value,
         })
 
+    save_agent_parameters(pymdp_agent, save_path="../experiments/iwai/saved_agent")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = f"../experiments/iwai/{timestamp}_pymdp_service_log.csv"
     df = pd.DataFrame(logged_data)
