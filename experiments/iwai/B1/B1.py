@@ -10,6 +10,7 @@ from pandas import DataFrame
 from agent.RRMGlobalAgent import RRM_Global_Agent
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType
+from experiments.iwai.transform_pymdp_logs import import_pymdp_logs
 from iwai.dqn_agent import DQNAgent
 from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
 
@@ -52,14 +53,15 @@ def eval_scaling_agent(agent_factory, agent_type):
 
 
 color_dict = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
-color_dict_agent = {"DQN": "red", "RRM": "green"}
-line_style_dict = {"DQN": "--", "RRM": "-"}
+color_dict_agent = {"DQN": "red", "RRM": "green", "AIF": "blue"}
+line_style_dict = {"DQN": "--", "RRM": "-", "AIF": "-."}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
+
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
-    df = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
-    x = np.arange(len(df.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
+    df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
+    x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
     plt.figure(figsize=(6.0, 3.8))
 
 
@@ -80,7 +82,7 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
-        s_mean, s_std = calculate_mean_std(paired_df)
+        s_mean, s_std = calculate_mean_std(paired_df) if agent != "AIF" else (paired_df['slo_f'].values, 0)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, label=f"{agent}", color=color_dict_agent[agent], linewidth=2,
@@ -90,7 +92,7 @@ def visualize_data(agent_types: list[str], output_file: str):
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
-    plt.xlim(0.0, len(df.index) / (EXPERIMENT_REPETITIONS * 2) - 1)
+    plt.xlim(0.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) - 1)
     plt.ylim(0.0, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
@@ -155,4 +157,5 @@ if __name__ == '__main__':
 
     #eval_scaling_agent(agent_fact_dqn, "DQN")
     #eval_scaling_agent(agent_fact_rrm, "RRM")
-    visualize_data(["RRM", "DQN"], ROOT + "/plots/slo_f.png")
+    import_pymdp_logs(filename = ROOT+ "/../20250604_175657_pymdp_service_log.csv")
+    visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")

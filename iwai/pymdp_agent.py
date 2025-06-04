@@ -446,8 +446,8 @@ if __name__ == '__main__':
 
         logged_data.append({
             "timestamp": timestamp,
-            "FullStateDQN_qr": str(next_state_qr),
-            "FullStateDQN_cv": str(next_state_cv),
+            "next_state_qr": str(next_state_qr),
+            "next_state_cv": str(next_state_cv),
             "action_qr": action_qr.name if hasattr(action_qr, 'name') else str(action_qr),
             "action_cv": action_cv.name if hasattr(action_cv, 'name') else str(action_cv),
             "reward": joint_reward,
