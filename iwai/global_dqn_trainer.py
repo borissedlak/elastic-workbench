@@ -114,8 +114,7 @@ class JointDQNTrainer:
         self.dqn_qr.store_dqn_as_file(suffix="QR_joint")
         self.dqn_cv.store_dqn_as_file(suffix="CV_joint")
 
-
-if __name__ == "__main__":
+def train_joint_q_networks(nn_folder = None):
     df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
     env_qr = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
@@ -128,9 +127,16 @@ if __name__ == "__main__":
     joint_env = GlobalTrainingEnv(env_qr, env_cv, max_cores=8)
 
     # Create DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    if nn_folder is None:
+        dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
+        dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    else:
+        dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=nn_folder)
+        dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=nn_folder)
 
     # Train jointly
     trainer = JointDQNTrainer(dqn_qr, dqn_cv, joint_env)
     trainer.train()
+
+if __name__ == "__main__":
+    train_joint_q_networks()

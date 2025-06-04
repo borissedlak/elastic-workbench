@@ -104,7 +104,7 @@ if __name__ == '__main__':
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     agent = RRM_Global_Agent(services_monitored=[cv_local, qr_local], prom_server=ps,
-                             evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0)  # , log_experience="RRM Agent"
+                             evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=50)  # , log_experience="RRM Agent"
 
     agent.reset_services_states()
     agent.start()

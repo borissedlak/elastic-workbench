@@ -7,14 +7,12 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-from agent.es_registry import ServiceID, ServiceType
 from agent.RRMGlobalAgent import RRM_Global_Agent
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
+from agent.es_registry import ServiceID, ServiceType
 from iwai.dqn_agent import DQNAgent
-from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV, QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP
-from iwai.global_dqn_trainer import JointDQNTrainer
-from iwai.global_training_env import GlobalTrainingEnv
-from iwai.lgbn_training_env import LGBNTrainingEnv
+from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
+from iwai.global_dqn_trainer import train_joint_q_networks
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -36,27 +34,6 @@ EVALUATION_FREQUENCY = 5
 
 logging.getLogger('multiscale').setLevel(logging.INFO)
 
-def train_q_network():
-    df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
-
-    env_qr = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
-    env_qr.reload_lgbn_model(df)
-
-    env_cv = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
-    env_cv.reload_lgbn_model(df)
-
-    # Wrap in joint environment
-    joint_env = GlobalTrainingEnv(env_qr, env_cv, max_cores=8)
-
-    # Create DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
-
-    # Train jointly
-    trainer = JointDQNTrainer(dqn_qr, dqn_cv, joint_env)
-    trainer.train()
-
-    print(f"Finished Q-Network Training")
 
 
 def eval_scaling_agent(agent_factory, agent_type):
@@ -157,31 +134,30 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    # train_q_network()
+    train_joint_q_networks(nn_folder=ROOT + "/networks")
 
     # Load the trained DQNs
-    # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
-    # dqn_qr.load("Q_QR_joint.pt")
-    # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
-    # dqn_cv.load("Q_CV_joint.pt")
-    #
-    # agent_fact_dqn = lambda repetition: DQN_Agent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     dqn_for_services=[dqn_qr, dqn_cv],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition
-    # )
-    #
-    # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition,
-    #     max_explore=MAX_EXPLORE
-    # )
-    #
-    # eval_scaling_agent(agent_fact_dqn, "DQN")
-    # eval_scaling_agent(agent_fact_rrm, "RRM")
+    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
+    dqn_qr.load("Q_QR_joint.pt")
+    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    dqn_cv.load("Q_CV_joint.pt")
+
+    agent_fact_dqn = lambda repetition: DQNAgent(
+        prom_server=ps,
+        services_monitored=[qr_local, cv_local],
+        dqn_for_services=[dqn_qr, dqn_cv],
+        evaluation_cycle=EVALUATION_FREQUENCY,
+        log_experience=repetition
+    )
+
+    agent_fact_rrm = lambda repetition: RRM_Global_Agent(
+        prom_server=ps,
+        services_monitored=[qr_local, cv_local],
+        evaluation_cycle=EVALUATION_FREQUENCY,
+        log_experience=repetition,
+        max_explore=MAX_EXPLORE
+    )
+
+    eval_scaling_agent(agent_fact_dqn, "DQN")
+    eval_scaling_agent(agent_fact_rrm, "RRM")
     visualize_data(["RRM", "DQN"], ROOT + "/plots/slo_f.png")
-    # sys.exit()

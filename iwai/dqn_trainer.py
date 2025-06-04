@@ -130,6 +130,11 @@ class DQN:
                 self.epsilon *= self.epsilon_decay
                 score_list.append(episode_score)
 
+                logger.info(f"Final state for Env: {training_env.state}")
+                logger.info(
+                    f"[EP {finished_episodes + 1:3d}] Score: {episode_score:.2f} | Epsilon: {self.epsilon:.4f}"
+                )
+
                 episode_score = 0.0
                 episode_position = 0
                 finished_episodes += 1
@@ -230,12 +235,10 @@ if __name__ == "__main__":
     logging.getLogger("multiscale").setLevel(logging.INFO)
     df_t = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
 
-    qr_env_t = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
-    qr_env_t.reload_lgbn_model(df_t)
-    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR).train_single_dqn_from_env(qr_env_t, "QR")
+    # qr_env_t = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
+    # qr_env_t.reload_lgbn_model(df_t)
+    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR).train_single_dqn_from_env(qr_env_t, "QR")
 
-    # cv_env_t = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
-    # cv_env_t.reload_lgbn_model(df_t)
-    # DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(
-    #     cv_env_t, "CV"
-    # )
+    cv_env_t = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
+    cv_env_t.reload_lgbn_model(df_t)
+    DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV).train_single_dqn_from_env(cv_env_t, "CV")

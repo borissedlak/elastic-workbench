@@ -108,14 +108,13 @@ class LGBNTrainingEnv(gymnasium.Env):
 
         reward = (
                 to_normalized_slo_f(
-                calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
+                calculate_slo_fulfillment(self.state._asdict(), self.client_slos),
                 self.client_slos,
             )
                 + behavioral_punishment
         )
         return self.state, reward, done, False, {}
 
-    # TODO: Generalize again at a later stage
     def sample_throughput_from_lgbn(self, data_quality, cores, model_size):
         partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
         full_state = self.lgbn.predict_lgbn_vars(partial_state, self.service_type)
@@ -174,8 +173,8 @@ if __name__ == "__main__":
     env.reset()
 
     boundaries = env.es_registry.get_boundaries_minimalistic(ServiceType.CV, MAX_CORES)
-    env.state = FullStateDQN(128, 128, 5, 5, 1, 1, 8, 0, boundaries)
+    env.state = FullStateDQN(192, 288, 6, 5, 3, 4, 1, 7, boundaries)
     for i in range(1, 100):
-        print(env.step(ESServiceAction.DILLY_DALLY))
+        print(env.step(ESServiceAction.INC_CORES))
         # print(env.state.discretize(ServiceType.CV))
         # print(env.state.discretize(ServiceType.QR))

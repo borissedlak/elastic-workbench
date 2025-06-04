@@ -37,7 +37,7 @@
       "endpoint": "/quality_scaling",
       "parameters": {
         "data_quality": {
-          "min": 64,
+          "min": 128,
           "max": 320
         }
       }
