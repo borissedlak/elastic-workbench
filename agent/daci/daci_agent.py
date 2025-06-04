@@ -282,7 +282,7 @@ class SimpleMCDACIAgent:
             obs_stacked_temp = recon_obs
         return total_efe_cv, total_efe_qr
 
-    def select_joint_action(self, joint_obs, step, episode, horizon=3):
+    def select_joint_action(self, joint_obs, step, episode, horizon=2):
         # policies_cv = [
         #     torch.tensor(seq, dtype=torch.long)
         #     for seq in itertools.product(range(self.action_dim_cv), repeat=horizon)
@@ -869,7 +869,8 @@ class SimpleMCDACIAgent:
                         joint_next_latent = self.world_model.encode(
                             joint_next_obs_norm, sample=True
                         )["s"]
-
+                    self.transition_model_cv.train()
+                    self.transition_model_qr.train()
                     self.optim_transition_network.zero_grad()
                     joint_latent_detach = joint_latent.detach()
                     joint_next_latent_detach = joint_next_latent.detach()
@@ -890,8 +891,16 @@ class SimpleMCDACIAgent:
                             norm_target_deltas, joint_deltas, i, num_episodes, is_multi=False
                         )
                         loss.backward()
+                        torch.nn.utils.clip_grad_norm_(
+                            self.transition_model_cv.parameters(), max_norm=1.0
+                        )
+                        torch.nn.utils.clip_grad_norm_(
+                            self.transition_model_qr.parameters(), max_norm=1.0
+                        )
+
                         self.optim_transition_network.step()
                         self.scheduler_trans.step()
+                        # if i > 100:
                         if self.validate_transition_model(i):
                             self.train_all = True
                             self.start_multi = i

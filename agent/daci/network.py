@@ -241,6 +241,7 @@ class SimpleDeltaTransitionNetwork(nn.Module):  # Model Mid
         t = self.norm(torch.cat([pi_t, s_t], dim=1))
         mu = self.layers(t)
         delta = self.head(mu)
+        delta = torch.tanh(delta)
         return SimpleDeltaTransitionNetworkOutput(delta=delta)
 
 
@@ -309,7 +310,7 @@ class WorldModel(ParametricTransform):
             nn.Linear(in_features=width, out_features=out_dim),  # loc, scale
         )
 
-        # self.apply(self._init_weights)
+        self.apply(self._init_weights)
 
     def reparameterize(self, mu, logvar):
         """Reparameterization trick"""
@@ -401,7 +402,7 @@ class SimpleMCDaciWorldModel(ParametricTransform):
         self.dec_mu = nn.Linear(width, self.out_dim)
         self.dec_logvar = nn.Linear(width, self.out_dim)
 
-        # self.apply(self._init_weights)
+        self.apply(self._init_weights)
 
     def reparameterize(self, mu, logvar):
         """Reparameterization trick"""

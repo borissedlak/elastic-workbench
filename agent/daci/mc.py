@@ -62,7 +62,8 @@ class MCDaciTrainer:
         qr_slo_targets,
         action_dim_cv: int = 7,
         action_dim_qr: int = 5,
-        device: str = "cuda:0",
+        # device: str = "cuda:0",
+        device: str = "cpu",
     ):
         self.boundaries = boundaries
         self.qr_slo_targets = qr_slo_targets
