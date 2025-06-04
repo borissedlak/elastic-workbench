@@ -16,14 +16,14 @@ def entropy_normal_from_logvar(logvar):
 
 
 def calculate_expected_free_energy(
-    joint_recon_norm_obs,
-    preferences_cv,
-    preferences_qr,
-    joint_mu_prior,
-    joint_mu_post,
-    joint_logvar_post,
-    transition_model_cv,
-    transition_model_qr,
+        joint_recon_norm_obs,
+        preferences_cv,
+        preferences_qr,
+        joint_mu_prior,
+        joint_mu_post,
+        joint_logvar_post,
+        transition_model_cv,
+        transition_model_qr,
 ):
     """
     obs: [
@@ -41,11 +41,11 @@ def calculate_expected_free_energy(
     # todo: extract throughput and accuracy stuff from recon obs (split
     recon_norm_obs_cv, recon_norm_obs_qr = torch.chunk(joint_recon_norm_obs, chunks=2, dim=1)
 
-    salient_feat_cv = torch.empty(recon_norm_obs_cv.shape[0], 2)
-    salient_feat_qr = torch.empty(recon_norm_obs_qr.shape[0], 2)
+    salient_feat_cv = torch.empty(recon_norm_obs_cv.shape[0], 2, device=joint_recon_norm_obs.device)
+    salient_feat_qr = torch.empty(recon_norm_obs_qr.shape[0], 2, device=joint_recon_norm_obs.device)
     # interpolate solution quality, extract throughput
     salient_feat_cv[:, 0] = (
-        recon_norm_obs_cv[:, 0] * 0.25 + recon_norm_obs_cv[:, 4] * 0.75
+            recon_norm_obs_cv[:, 0] * 0.25 + recon_norm_obs_cv[:, 4] * 0.75
     )
     salient_feat_cv[:, 1] = recon_norm_obs_cv[:, 3]
     # extract data quality (<=> solution quality), throughpuit
@@ -57,18 +57,18 @@ def calculate_expected_free_energy(
     # @Boris: You can bias towards an objective by changing the variance (the higher the variance, the
     #  more relaxed the objective is for an SLO).
     #  However, I'm already biasing the reward towards sol quality
-    var_qr, var_cv = torch.tensor([0.1, 0.1]), torch.tensor([0.1, 0.1])
+    var_qr, var_cv = torch.tensor([0.1, 0.1], device=joint_recon_norm_obs.device), torch.tensor([0.1, 0.1],
+                                                                                                device=joint_recon_norm_obs.device)
     pragmatic_value_cv = -0.5 * (
-        (salient_feat_cv.detach() - preferences_cv) ** 2 / var_cv + torch.log(var_cv)
+            (salient_feat_cv.detach() - preferences_cv) ** 2 / var_cv + torch.log(var_cv)
     ).sum(dim=1)
     pragmatic_value_qr = -0.5 * (
-        (salient_feat_qr.detach() - preferences_qr) ** 2 / var_qr + torch.log(var_qr)
+            (salient_feat_qr.detach() - preferences_qr) ** 2 / var_qr + torch.log(var_qr)
     ).sum(dim=1)
 
     # a fixed prior bc transition network does not output logvars, 0.1 is mid, not too strict, not too free
     joint_fixed_prior_logvar = torch.ones_like(joint_mu_prior) * np.log(0.1)
     mu_prior_cv, mu_prior_qr = torch.chunk(joint_mu_prior, chunks=2, dim=1)
-
 
     fixed_prior_logvar_cv, fixed_prior_logvar_qr = torch.chunk(joint_fixed_prior_logvar, chunks=2, dim=1)
     mu_post_cv, mu_post_qr = torch.chunk(joint_mu_post, chunks=2, dim=1)
@@ -106,27 +106,27 @@ def calculate_expected_free_energy(
 
     # 6) Information‐gain term: KL[q(z'|o') ∥ p(z'|z,a)]
     ig_cv = torch.sum(
-                0.5
-                * (
-                    fixed_prior_logvar_cv
-                    - logvar_post_cv.detach()
-                    + (logvar_post_cv.detach().exp() + (mu_post_cv.detach() - mu_prior_cv.detach()).pow(2))
-                    / fixed_prior_logvar_cv.exp()
-                    - 1
-                ),
-                dim=1,
-            )
+        0.5
+        * (
+                fixed_prior_logvar_cv
+                - logvar_post_cv.detach()
+                + (logvar_post_cv.detach().exp() + (mu_post_cv.detach() - mu_prior_cv.detach()).pow(2))
+                / fixed_prior_logvar_cv.exp()
+                - 1
+        ),
+        dim=1,
+    )
     ig_qr = torch.sum(
-                0.5
-                * (
-                    fixed_prior_logvar_qr
-                    - logvar_post_qr.detach()
-                    + (logvar_post_qr.detach().exp() + (mu_post_qr.detach() - mu_prior_qr.detach()).pow(2))
-                    / fixed_prior_logvar_qr.exp()
-                    - 1
-                ),
-                dim=1,
-            )
+        0.5
+        * (
+                fixed_prior_logvar_qr
+                - logvar_post_qr.detach()
+                + (logvar_post_qr.detach().exp() + (mu_post_qr.detach() - mu_prior_qr.detach()).pow(2))
+                / fixed_prior_logvar_qr.exp()
+                - 1
+        ),
+        dim=1,
+    )
 
     # entropy is omitted compared to mcdaci bc logvars are not used
     # entropy_decoded_mean = entropy_normal_from_logvar(fixed_prior_logvar).sum(

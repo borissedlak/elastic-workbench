@@ -68,14 +68,14 @@ class SimpleMCDACIAgent:
             world_latent_dim=joint_latent_dim,
             width=width,
             depth_increase=0,
-        )
+        ).to(device)
         self.transition_model_cv = SimpleDeltaTransitionNetwork(
             joint_latent_dim // 2, action_dim_cv, width, depth_increase=depth_increase
-        )
+        ).to(device)
 
         self.transition_model_qr = SimpleDeltaTransitionNetwork(
             joint_latent_dim // 2, action_dim_qr, width, depth_increase=depth_increase
-        )
+        ).to(device)
 
         # preference are SLO targets [1.0, 1.0]
         self.patience_enc_dec = 0
@@ -142,7 +142,7 @@ class SimpleMCDACIAgent:
                     self.boundaries["throughput"]["max"],
                 ),
             ]
-        ).unsqueeze(0)
+        ).unsqueeze(0).to(self.device)
         # in qr service we only use a single algorithm, data quality <=> solution quality
         self.preferences_qr = torch.tensor(
             [
@@ -157,7 +157,7 @@ class SimpleMCDACIAgent:
                     self.boundaries["throughput"]["max"],
                 ),
             ]
-        ).unsqueeze(0)
+        ).unsqueeze(0).to(self.device)
         self.beta = 1
         self.train_transition = False
         self.train_all = False
@@ -220,9 +220,9 @@ class SimpleMCDACIAgent:
         # same starting observation for each sequenec of actions
         obs_stacked_temp = torch.stack(
             [joint_obs for _ in range(len(joint_policies))], dim=0
-        ).to(dtype=torch.float32)
-        total_efe_cv = torch.zeros(len(joint_policies))
-        total_efe_qr = torch.zeros(len(joint_policies))
+        ).to(dtype=torch.float32, device=self.device)
+        total_efe_cv = torch.zeros(len(joint_policies), device=self.device)
+        total_efe_qr = torch.zeros(len(joint_policies), device=self.device)
 
         for step in range(len(joint_policies[0])):  # radius
             actions = [
@@ -313,9 +313,9 @@ class SimpleMCDACIAgent:
         #   sample the trajectory with the lowest EFE and use it.
         #   It is important to leave sampling here, although it works differently in slacio.
         choosen_policy = torch.multinomial(probs, num_samples=1).item()
-        actions = ["-".join(map(str, row.numpy())) for row in joint_policies]
-        pairs = list(zip(actions, probs.numpy()))
-        return joint_policies[choosen_policy].numpy().tolist(), pairs
+        actions = ["-".join(map(str, row.detach().cpu().numpy())) for row in joint_policies]
+        pairs = list(zip(actions, probs.detach().cpu().numpy()))
+        return joint_policies[choosen_policy].detach().cpu().numpy().tolist(), pairs
 
     def min_max_scale(self, vals: np.ndarray):
         min_vals, max_vals = self._get_feature_bounds()
@@ -611,8 +611,8 @@ class SimpleMCDACIAgent:
 
     def validate_enc_dec(self, i):
         obs, actions_cv, actions_qr, next_states = zip(*self.val_buffer)
-        stacked_obs = torch.stack(obs).to(dtype=torch.float32)
-        stacked_next_obs = torch.stack(next_states).to(dtype=torch.float32)
+        stacked_obs = torch.stack(obs).to(dtype=torch.float32, device=self.device)
+        stacked_next_obs = torch.stack(next_states).to(dtype=torch.float32, device=self.device)
         self.world_model.eval()
         with torch.no_grad():
             if True:
@@ -634,12 +634,13 @@ class SimpleMCDACIAgent:
                     pred_obs_next_normalized=next_obs_norm,
                 )
         self.world_model.train()
+        val_loss_vae_det = val_loss_vae.detach().cpu().numpy()
         if np.round(self.val_loss_enc, decimals=4) <= np.round(
-            val_loss_vae, decimals=4
+            val_loss_vae_det, decimals=4
         ):
             self.patience_enc_dec += 1
         else:
-            self.val_loss_enc = val_loss_vae
+            self.val_loss_enc = val_loss_vae_det
             self.patience_enc_dec = 0
         if self.patience_enc_dec > self.patience:
             return True
@@ -647,7 +648,7 @@ class SimpleMCDACIAgent:
             return False
 
     def compute_transition_loss(
-        self, next_latent_deltas, transition_latent_deltas, i, is_multi=False
+        self, next_latent_deltas, transition_latent_deltas, i, T, is_multi=False
     ):
         transition_loss = F.mse_loss(
             transition_latent_deltas, next_latent_deltas, reduction="mean"
@@ -723,6 +724,7 @@ class SimpleMCDACIAgent:
                 next_latent_deltas=norm_target_delta_mu,  # Target
                 transition_latent_deltas=joint_pred_delta,  # Prediction
                 i=i,
+                T=None,
                 is_multi=False,  # As per original logic for validation
             )
 
@@ -845,11 +847,10 @@ class SimpleMCDACIAgent:
                     self.optim_world_model.step()
                     self.scheduler.step()
                     if (
-                        i > 5000
+                        i > 1
                         and self.validate_enc_dec(i)
                         and not self.train_transition
                     ):
-                    # if True:
                         # 600 does not allow transition model to start training too early, acts like a guard
                         self.train_transition = True
                         self.compute_stats()
@@ -886,7 +887,7 @@ class SimpleMCDACIAgent:
                     joint_deltas = torch.cat([z_delta_pred_cv, z_delta_pred_qr], dim=1)
                     if not self.train_all:
                         loss, loss_dict = self.compute_transition_loss(
-                            norm_target_deltas, joint_deltas, i, num_episodes
+                            norm_target_deltas, joint_deltas, i, num_episodes, is_multi=False
                         )
                         loss.backward()
                         self.optim_transition_network.step()
@@ -954,7 +955,7 @@ class SimpleMCDACIAgent:
                             [z_delta_pred_cv, z_delta_pred_qr], dim=1
                         )
                         loss_trans, trans_dict = self.compute_transition_loss(
-                            norm_target_deltas, joint_pred_deltas, i, num_episodes
+                            norm_target_deltas, joint_pred_deltas, i, num_episodes, is_multi=True
                         )
 
                         recon_obs_after_transition = self.world_model.decode(

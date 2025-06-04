@@ -62,13 +62,15 @@ class MCDaciTrainer:
         qr_slo_targets,
         action_dim_cv: int = 7,
         action_dim_qr: int = 5,
+        device: str = "cuda:0",
     ):
         self.boundaries = boundaries
         self.qr_slo_targets = qr_slo_targets
         self.cv_slo_targets = cv_slo_targets
-        self.agent = SimpleMCDACIAgent(boundaries, cv_slo_targets, qr_slo_targets, action_dim_cv, action_dim_qr)
+        self.agent = SimpleMCDACIAgent(boundaries, cv_slo_targets, qr_slo_targets, action_dim_cv, action_dim_qr, device=device)
         self.action_dim_cv = action_dim_cv
         self.action_dim_qr = action_dim_qr
+        self.device=device
 
     def train(self):
         epochs = 5000
@@ -136,7 +138,6 @@ class MCDaciTrainer:
             8,
         )
 
-        max_cores = self.boundaries["cores"]["max"]
         filename = "joint_states.npy"
         if os.path.exists(filename):
             joint_states = np.load(filename)
