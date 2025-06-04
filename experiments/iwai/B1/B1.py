@@ -12,14 +12,13 @@ from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType
 from iwai.dqn_agent import DQNAgent
 from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
-from iwai.global_dqn_trainer import train_joint_q_networks
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 5
-EXPERIMENT_DURATION = 100
+EXPERIMENT_REPETITIONS = 3
+EXPERIMENT_DURATION = 200
 MAX_EXPLORE = 15
 
 ps = "http://172.20.0.2:9090"
@@ -29,16 +28,13 @@ cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyz
 
 EVALUATION_FREQUENCY = 5
 
-# slo_path = "../../config/slo_config.json"
-# es_path = "../../config/es_registry.json"
-
 logging.getLogger('multiscale').setLevel(logging.INFO)
 
 
 
 def eval_scaling_agent(agent_factory, agent_type):
     delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
-    delete_file_if_exists(ROOT + "/../../share/metrics/metrics.csv")
+    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for {agent_type} agent")
 
@@ -67,7 +63,6 @@ def visualize_data(agent_types: list[str], output_file: str):
     plt.figure(figsize=(6.0, 3.8))
 
 
-    # TODO: Ideally, I get the overall SLO-F per agent and show it with mean and std
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
         # for service in df['service'].unique():
@@ -134,7 +129,7 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    train_joint_q_networks(nn_folder=ROOT + "/networks")
+    #train_joint_q_networks(nn_folder=ROOT + "/networks")
 
     # Load the trained DQNs
     dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
@@ -158,6 +153,6 @@ if __name__ == '__main__':
         max_explore=MAX_EXPLORE
     )
 
-    eval_scaling_agent(agent_fact_dqn, "DQN")
-    eval_scaling_agent(agent_fact_rrm, "RRM")
+    #eval_scaling_agent(agent_fact_dqn, "DQN")
+    #eval_scaling_agent(agent_fact_rrm, "RRM")
     visualize_data(["RRM", "DQN"], ROOT + "/plots/slo_f.png")
