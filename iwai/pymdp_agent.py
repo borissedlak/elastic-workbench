@@ -363,7 +363,7 @@ if __name__ == '__main__':
 
     logged_data = list()
 
-    for steps in range(200):
+    for steps in range(50):
         start_time_loop = time.time()
 
         a_s = pymdp_agent.infer_states(pymdp_state)
@@ -378,7 +378,8 @@ if __name__ == '__main__':
         policy_list = pymdp_agent.policies  # shape: (num_policies, policy_len, num_control_factors)
 
         # Flatten if policy length is 1
-        flattened_policies = policy_list[:, 0, :]  # shape: (num_policies, num_control_factors)
+        policy_array = np.array(policy_list)
+        flattened_policies = policy_array[:, 0, :]  # shape: (num_policies, num_control_factors)
 
         # Find the index of the selected policy
         policy_index = next(
@@ -388,8 +389,8 @@ if __name__ == '__main__':
 
         # Extract metrics
         efe = G[policy_index]
-        info_gain = G_sub[0][policy_index]  # usually epistemic value
-        pragmatic_value = G_sub[1][policy_index]  # usually extrinsic value
+        info_gain = G_sub["ig_s"][policy_index]  # usually epistemic value
+        pragmatic_value = G_sub["r"][policy_index]  # usually extrinsic value
 
         action_cv = ESServiceAction(int(chosen_action_id[0]))
         action_qr = ESServiceAction(int(chosen_action_id[1]))
@@ -400,8 +401,10 @@ if __name__ == '__main__':
         elapsed = time.time() - start_time_loop
         print(f"Loop time: {elapsed:.4f} seconds")
 
+        timestamp = datetime.now().isoformat()
+
         logged_data.append({
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": timestamp,
             "FullStateDQN_qr": str(next_state_qr),
             "FullStateDQN_cv": str(next_state_cv),
             "action_qr": action_qr.name if hasattr(action_qr, 'name') else str(action_qr),
@@ -412,8 +415,10 @@ if __name__ == '__main__':
             "pragmatic_value": pragmatic_value,
         })
 
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = f"../experiments/iwai/{timestamp}_pymdp_service_log.csv"
     df = pd.DataFrame(logged_data)
-    df.to_csv("../experiments/iwai/pymdp_service_log.csv", index=False, mode='a', header=not os.path.exists("../experiments/iwai/pymdp_service_log.csv"))
+    df.to_csv(log_path, index=False, mode='a', header=not os.path.exists(log_path))
     log_entries = []  # Clear after saving
     print("done")
 
