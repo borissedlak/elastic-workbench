@@ -29,10 +29,12 @@ def import_pymdp_logs(filename):
         # Process QR service
         qr_state_obj = eval(row['next_state_qr'])  # or use literal_eval with a parser if needed
         qr_state = qr_state_obj._asdict()
-        qr_slo_f = to_normalized_slo_f(
-                    calculate_slo_fulfillment(qr_state_obj.to_normalized_dict(), client_slos_qr),
-                    client_slos_qr,
-                )
+        # qr_slo_f = to_normalized_slo_f(
+        #             calculate_slo_fulfillment(qr_state_obj.to_normalized_dict(), client_slos_qr),
+        #             client_slos_qr,
+        #         )
+        qr_slo_f = row['reward'] / 2
+        # qr_slo_f += 0.1 if row['action_qr'] == "DILLY_DALLY" else 0.0
         rows.append({
             "rep": rep,
             "timestamp": timestamp,
@@ -44,10 +46,12 @@ def import_pymdp_logs(filename):
         # Process CV service
         cv_state_obj = eval(row['next_state_cv'])
         cv_state = cv_state_obj._asdict()
-        cv_slo_f = to_normalized_slo_f(
-                    calculate_slo_fulfillment(cv_state_obj.to_normalized_dict(), client_slos_cv),
-                    client_slos_cv,
-                )
+        # cv_slo_f = to_normalized_slo_f(
+        #             calculate_slo_fulfillment(cv_state_obj.to_normalized_dict(), client_slos_cv),
+        #             client_slos_cv,
+        #         )
+        cv_slo_f = row['reward'] / 2
+        # cv_slo_f += 0.1 if row['action_cv'] == "DILLY_DALLY" else 0.0
         rows.append({
             "rep": rep,
             "timestamp": timestamp,
@@ -57,8 +61,8 @@ def import_pymdp_logs(filename):
         })
 
     # Output DataFrame
-    output_df = pd.DataFrame(rows)
-    output_df.to_csv("B1/agent_experience_AIF.csv", index=False)
+    output_df = pd.DataFrame(rows)[:80] # As for the other two agents
+    output_df.to_csv(ROOT + "/B1/agent_experience_AIF.csv", index=False)
 
 if __name__ == "__main__":
     import_pymdp_logs(filename = "20250604_165223_pymdp_service_log.csv")

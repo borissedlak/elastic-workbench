@@ -157,5 +157,5 @@ if __name__ == '__main__':
 
     #eval_scaling_agent(agent_fact_dqn, "DQN")
     #eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filename = ROOT+ "/../20250604_175657_pymdp_service_log.csv")
+    import_pymdp_logs(filename = ROOT+ "/../20250604_165223_pymdp_service_log.csv")
     visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")
