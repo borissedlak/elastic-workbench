@@ -3,11 +3,15 @@ import os
 from typing import Dict
 import numpy as np
 import pandas as pd
-import itertools
 from pymdp import utils as mdp_utils
 from pymdp.agent import Agent
 import time
+import sys
+from datetime import datetime
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from proj_types import ESServiceAction
 import utils
 from agent.es_registry import ServiceID, ServiceType
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
@@ -24,45 +28,14 @@ logger.setLevel(logging.INFO)
 ROOT = os.path.dirname(__file__)
 
 
-# def generate_normalized_2d_sq_matrix(rows):
-#     """
-#     Generates a matrix of the given size (rows x cols) with random values,
-#     where each row is normalized so that its sum equals 1.
-#     """
-#     matrix = np.ones((rows, rows))  # Create a matrix with all values set to 1
-#     normalized_matrix = matrix / rows  # Normalize so that each row sums to 1
-#     return normalized_matrix
-# NOT IN USE.
-
-def convert_action(action):
-    converted_actions = list()
-
-    # QUALITY action TRANSFORMATION
-    if action[0] == 0:
-        converted_actions.append(1)
-    elif action[0] == 1:
-        converted_actions.append(0)
-    elif action[0] == 2:
-        converted_actions.append(2)
-
-    # Model size action transformation
-    if action[1] == 0:
-        converted_actions.append(5)
-    elif action[1] == 1:
-        converted_actions.append(0)
-    elif action[1] == 2:
-        converted_actions.append(6)
-
-    # Cores action transformation
-    if action[2] == 0:
-        converted_actions.append(3)
-    elif action[2] == 1:
-        converted_actions.append(0)
-    elif action[2] == 2:
-        converted_actions.append(4)
-
-    return converted_actions
-
+def generate_normalized_2d_sq_matrix(rows):
+    """
+    Generates a matrix of the given size (rows x cols) with random values,
+    where each row is normalized so that its sum equals 1.
+    """
+    matrix = np.ones((rows, rows))  # Create a matrix with all values set to 1
+    normalized_matrix = matrix / rows  # Normalize so that each row sums to 1
+    return normalized_matrix
 
 class pymdp_Agent(): # ScalingAgent):
 
@@ -74,11 +47,11 @@ class pymdp_Agent(): # ScalingAgent):
         #                  log_experience)
 
         # States
-        self.throughput_cv = np.arange(0, 11, 1)
+        self.throughput_cv = np.arange(0, 6, 1)
         self.quality_cv = np.arange(128, 352, 32)
         self.model_size = np.arange(1, 6, 1)
         self.cores_cv = np.arange(1, 9, 1)
-        self.throughput_qr = np.arange(0, 101, 5)
+        self.throughput_qr = np.arange(0, 101, 20)
         self.quality_qr = np.arange(300, 1100, 100)
         self.cores_qr = np.arange(1, 9, 1)
 
@@ -89,22 +62,19 @@ class pymdp_Agent(): # ScalingAgent):
         self.num_factors = len(self.num_states)
 
         # Actions (u)
-        self.u_quality_cv = np.array([-1, 0, 1])  # 'DECREASE', 'KEEP', 'INCREASE'
-        self.u_model_size_cv = np.array([-1, 0, 1])  # 'DECREASE', 'KEEP', 'INCREASE'
-        self.u_cores_cv = np.array([-1, 0, 1])  # 'DECREASE', 'KEEP', 'INCREASE'
-        self.u_quality_qr = np.array([-1, 0, 1])  # 'DECREASE', 'KEEP', 'INCREASE'
-        self.u_cores_qr = np.array([-1, 0, 1])  # 'DECREASE', 'KEEP', 'INCREASE'
+        # Don't act, decrease quality, increase quality, decrease cores, increase cores, decrease model size, increase model size
+        self.u_cv = np.array([0,1,2,3,4,5,6])
+        # Don't act, decrease quality, increase quality, decrease cores, increase cores
+        self.u_qr = np.array([0,1,2,3,4])
 
-
-
-        self.num_controls = (len(self.u_quality_cv), len(self.u_model_size_cv), len(self.u_cores_cv), len(self.u_quality_qr), len(self.u_cores_qr))
+        self.num_controls = (len(self.u_cv), len(self.u_qr))
 
         # Dependencies on other state factors (include itself)
         self.B_factor_list = [[0,1,2,3], [1], [2], [3, 6], [4, 5, 6], [5], [3, 6]]
-        # thr_cv, q_cv, model, cores_cv, thr_qr, q_qr, cores_qr, cores
+        # thr_cv, q_cv, model, cores_cv, thr_qr, q_qr, cores_qr
 
         # Dependencies of factors wrt. actions
-        self.B_factor_control_list = [[0,1,2], [0], [1], [2, 4], [3, 4], [3], [2, 4]]
+        self.B_factor_control_list = [[0], [0], [0], [0, 1], [1], [1], [0, 1]]
 
         # Matrices initialization
         A_shapes = [[o_dim] + self.num_states for o_dim in self.num_observations]
@@ -144,92 +114,155 @@ class pymdp_Agent(): # ScalingAgent):
                                         if i == 6:
                                             self.A[i][:, ii, jj, kk, ll, mm, nn, :] = index_to_A[6]
 
-    # def generate_B(self):
-    #     for factor in range(self.num_factors):
-    #         lagging_shape = [ns for i, ns in enumerate(self.num_states) if i in self.B_factor_list[factor]]
-    #         control_shape = [na for i, na in enumerate(self.num_controls) if i in self.B_factor_control_list[factor]]
-    #         factor_shape = [self.num_states[factor]] + lagging_shape + control_shape
-    #         self.B[factor] = np.zeros(factor_shape)
-    #
-    #     # throughput_cv transition matrices
-    #     for ii, _ in enumerate(self.quality_cv):
-    #         for jj, _ in enumerate(self.model_size):
-    #             for kk, _ in enumerate(self.cores_cv):
-    #                 for ll, _ in enumerate(self.u_quality_cv):
-    #                     for mm, _ in enumerate(self.u_model_size_cv):
-    #                         for nn, _ in enumerate(self.u_cores_cv):
-    #                             self.B[0][:, :, ii, jj, kk, ll, mm, nn] = generate_normalized_2d_sq_matrix(self.num_states[0])
-    #
-    #     # quality_cv transition matrices
-    #     self.B[1][:, :, 0] = generate_normalized_2d_sq_matrix(self.num_states[1])
-    #     self.B[1][:, :, 1] = generate_normalized_2d_sq_matrix(self.num_states[1])
-    #     self.B[1][:, :, 2] = generate_normalized_2d_sq_matrix(self.num_states[1])
-    #
-    #     # model_size transition matrices
-    #     self.B[2][:, :, 0] = generate_normalized_2d_sq_matrix(self.num_states[2])
-    #     self.B[2][:, :, 1] = generate_normalized_2d_sq_matrix(self.num_states[2])
-    #     self.B[2][:, :, 2] = generate_normalized_2d_sq_matrix(self.num_states[2])
-    #
-    #     # cores_cv transition matrices
-    #     for ii, _ in enumerate(self.cores_qr):
-    #         for jj, _ in enumerate(self.u_cores_cv):
-    #             for kk, _ in enumerate(self.u_cores_qr):
-    #                 self.B[3][:, :, ii, jj, kk] = generate_normalized_2d_sq_matrix(self.num_states[3])
-    #
-    #     # throughput_qr transition matrices
-    #     for ii, _ in enumerate(self.quality_qr):
-    #         for jj, _ in enumerate(self.cores_qr):
-    #             for kk, _ in enumerate(self.u_quality_qr):
-    #                 for ll, _ in enumerate(self.u_cores_qr):
-    #                     self.B[4][:, :, ii, jj, kk, ll] = generate_normalized_2d_sq_matrix(self.num_states[4])
-    #
-    #     # quality_qr transition matrices
-    #     self.B[5][:, :, 0] = generate_normalized_2d_sq_matrix(self.num_states[5])
-    #     self.B[5][:, :, 1] = generate_normalized_2d_sq_matrix(self.num_states[5])
-    #     self.B[5][:, :, 2] = generate_normalized_2d_sq_matrix(self.num_states[5])
-    #
-    #     # cores_qr transition matrices
-    #     for ii, _ in enumerate(self.cores_cv):
-    #         for jj, _ in enumerate(self.u_cores_cv):
-    #             for kk, _ in enumerate(self.u_cores_qr):
-    #                 self.B[6][:, :, ii, jj, kk] = generate_normalized_2d_sq_matrix(self.num_states[6])
-
     def generate_B(self):
-        control_mapping = {
-            0: len(self.u_quality_cv),
-            1: len(self.u_model_size_cv),
-            2: len(self.u_cores_cv),
-            3: len(self.u_quality_qr),
-            4: len(self.u_cores_qr),
-        }
-
         for factor in range(self.num_factors):
-            lagging_shape = [self.num_states[i] for i in self.B_factor_list[factor]]
-            control_shape = [control_mapping[i] for i in self.B_factor_control_list[factor]]
+            lagging_shape = [ns for i, ns in enumerate(self.num_states) if i in self.B_factor_list[factor]]
+            control_shape = [na for i, na in enumerate(self.num_controls) if i in self.B_factor_control_list[factor]]
             factor_shape = [self.num_states[factor]] + lagging_shape + control_shape
             self.B[factor] = np.zeros(factor_shape)
 
-            index_shape = lagging_shape + control_shape
-            n_states = self.num_states[factor]
+        # throughput_cv transition matrices
+        for ii, _ in enumerate(self.quality_cv):
+            for jj, _ in enumerate(self.model_size):
+                for kk, _ in enumerate(self.cores_cv):
+                    for ll, _ in enumerate(self.u_cv):
+                        self.B[0][:, :, ii, jj, kk, ll] = generate_normalized_2d_sq_matrix(self.num_states[0])
+        #print("B0: " + str(self.B[0]))
 
-            # Uniform probability vector
-            uniform_probs = np.full(n_states, 1.0 / n_states)
+        # quality_cv transition matrices
+        num_qcv = len(self.quality_cv)
+        B1 = np.zeros((num_qcv, num_qcv, len(self.u_cv)))
+        for a in range(len(self.u_cv)):
+            for j in range(num_qcv):
+                if a in [0, 3, 4, 5, 6]:  # NO CHANGE
+                    B1[j, j, a] = 1.0
+                elif a == 1:  # DECREASE
+                    if j > 0:
+                        B1[j - 1, j, a] = 1.0
+                    else:
+                        B1[j, j, a] = 1.0  # saturate at min
+                elif a == 2:  # INCREASE
+                    if j < num_qcv - 1:
+                        B1[j + 1, j, a] = 1.0
+                    else:
+                        B1[j, j, a] = 1.0  # saturate at max
+        self.B[1] = B1
 
-            for idx in itertools.product(*[range(s) for s in index_shape]):
-                full_index = (slice(None),) + idx  # Full slice over to_state axis
-                self.B[factor][full_index] = uniform_probs
+        # model_size transition matrices
+        num_model = len(self.model_size)
+        B2 = np.zeros((num_model, num_model, len(self.u_cv)))
+        for a in range(len(self.u_cv)):
+            for j in range(num_model):
+                if a in [0, 1, 2, 3, 4]:  # NO CHANGE
+                    B2[j, j, a] = 1.0
+                elif a == 5:  # DECREASE
+                    if j > 0:
+                        B2[j - 1, j, a] = 1.0
+                    else:
+                        B2[j, j, a] = 1.0
+                elif a == 6:  # INCREASE
+                    if j < num_model - 1:
+                        B2[j + 1, j, a] = 1.0
+                    else:
+                        B2[j, j, a] = 1.0
+        self.B[2] = B2
+
+        # cores_cv transition matrices
+        n_states = len(self.cores_cv)
+        n_qr_states = len(self.cores_qr)
+        n_actions_cv = len(self.u_cv)
+        n_actions_qr = len(self.u_qr)
+        # Initialize transition matrix: B[3]
+        B3 = np.zeros((n_states, n_states, n_qr_states, n_actions_cv, n_actions_qr))
+        # Build transitions
+        for from_cv_idx, from_cv in enumerate(self.cores_cv):  # current cores_cv
+            for qr_idx, qr in enumerate(self.cores_qr):  # current cores_qr
+                for a_cv_idx, a_cv in enumerate(self.u_cv):  # CV action
+                    for a_qr_idx, a_qr in enumerate(self.u_qr):  # QR action
+                        # Determine action effect on cores
+                        delta_cv = 0
+                        if a_cv == 3:
+                            delta_cv = -1
+                        elif a_cv == 4:
+                            delta_cv = +1
+                        delta_qr = 0
+                        if a_qr == 3:
+                            delta_qr = -1
+                        elif a_qr == 4:
+                            delta_qr = +1
+                        # Compute proposed new states
+                        new_cv = from_cv + delta_cv
+                        new_qr = qr + delta_qr
+                        # Check if transition is valid
+                        if (1 <= new_cv <= 8) and (1 <= new_qr <= 8) and (new_cv + new_qr <= PHYSICAL_CORES):
+                            to_cv_idx = new_cv - 1
+                        else:
+                            # Invalid → stay in same state
+                            to_cv_idx = from_cv_idx
+                        # Set the deterministic transition
+                        B3[to_cv_idx, from_cv_idx, qr_idx, a_cv_idx, a_qr_idx] = 1.0
+        #print("B3: " + str(B3))
+        self.B[3] = B3
+
+        # throughput_qr transition matrices
+        for ii, _ in enumerate(self.quality_qr):
+            for jj, _ in enumerate(self.cores_qr):
+                for kk, _ in enumerate(self.u_qr):
+                        self.B[4][:, :, ii, jj, kk] = generate_normalized_2d_sq_matrix(self.num_states[4])
+        #print("B4: " + str(self.B[4]))
+
+        # quality_qr transition matrices
+        num_q_qr = len(self.quality_qr)
+        B5 = np.zeros((num_q_qr, num_q_qr, len(self.u_qr)))
+        for a in range(len(self.u_qr)):
+            for j in range(num_q_qr):
+                if a in [0, 3, 4]:  # NO CHANGE
+                    B5[j, j, a] = 1.0
+                elif a == 1:  # DECREASE
+                    if j > 0:
+                        B5[j - 1, j, a] = 1.0
+                    else:
+                        B5[j, j, a] = 1.0
+                elif a == 2:  # INCREASE
+                    if j < num_q_qr - 1:
+                        B5[j + 1, j, a] = 1.0
+                    else:
+                        B5[j, j, a] = 1.0
+        self.B[5] = B5
+
+        ### B6 - cores_qr
+        n_cv = len(self.cores_cv)
+        n_qr = len(self.cores_qr)
+        n_acv = len(self.u_cv)
+        n_aqr = len(self.u_qr)
+        # Initialize B[6]
+        B6 = np.zeros((n_qr, n_qr, n_cv, n_acv, n_aqr))
+        # Construct transitions
+        for from_qr_idx, from_qr in enumerate(self.cores_qr):  # current cores_qr
+            for cv_idx, cv in enumerate(self.cores_cv):  # current cores_cv
+                for a_cv_idx, a_cv in enumerate(self.u_cv):  # CV action
+                    for a_qr_idx, a_qr in enumerate(self.u_qr):  # QR action
+                        # Determine action effect
+                        delta_cv = -1 if a_cv == 3 else 1 if a_cv == 4 else 0
+                        delta_qr = -1 if a_qr == 3 else 1 if a_qr == 4 else 0
+                        new_cv = cv + delta_cv
+                        new_qr = from_qr + delta_qr
+                        # Validate transition
+                        if (1 <= new_cv <= 8) and (1 <= new_qr <= 8) and (new_cv + new_qr <= PHYSICAL_CORES):
+                            to_qr_idx = new_qr - 1
+                        else:
+                            to_qr_idx = from_qr_idx  # Stay in same state
+                        # Set transition
+                        B6[to_qr_idx, from_qr_idx, cv_idx, a_cv_idx, a_qr_idx] = 1.0
+        #print("B6: " + str(B6))
+        self.B[6] = B6
 
     def generate_C(self):
         # Preferred outcomes, this could be updated at "runtime"
         # throughput_cv has to be above as high as possible.
         self.C[0] = np.zeros(self.num_states[0])
-        for idx, _ in enumerate(self.C[0]):
-            if idx == 2:
-                self.C[0][idx] = 0.75
-            elif idx == 3:
-                self.C[0][idx] = 1.5
-            elif idx >= 4:
-                self.C[0][idx] = 3
+        smooth_values = np.linspace(0.1, 3.0, self.num_states[0] - 1)
+        self.C[0][1:] = smooth_values
         # quality_cv as high as possible, last 3 values are valuable.
         self.C[1] = np.zeros(self.num_states[1])
         self.C[1][-3:] = [0.75, 1.5, 3]
@@ -240,13 +273,15 @@ class pymdp_Agent(): # ScalingAgent):
         self.C[3] = np.zeros(self.num_states[3])
         # Throughput_qr as high as possible
         self.C[4] = np.zeros(self.num_states[4])
-        smooth_values = np.linspace(0.75, 3.0, 21 - 8)
-        self.C[4][8:21] = smooth_values
+        smooth_values = np.linspace(0.1, 3.0, self.num_states[4] - 1)
+        self.C[4][1:] = smooth_values
         # quality_qr as high as possible
         self.C[5] = np.zeros(self.num_states[5])
         self.C[5][-3:] = [0.75, 1.5, 3]
         # Cores_qr
         self.C[6] = np.zeros(self.num_states[6])
+        # print("Preferred Outcomes (C)")
+        # print(self.C)
 
     def generate_D(self):
         # Initial states
@@ -286,73 +321,6 @@ class pymdp_Agent(): # ScalingAgent):
                      B_factor_control_list=self.B_factor_control_list,action_selection='deterministic',
                      inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True)
 
-    # def valid_joint_actions(self, cores_cv, cores_qr, max_cores=PHYSICAL_CORES):
-    #
-    #     joint_action_space = list(itertools.product(
-    #         self.u_quality_cv,
-    #         self.u_model_size_cv,
-    #         self.u_cores_cv,
-    #         self.u_quality_qr,
-    #         self.u_cores_qr
-    #     ))
-    #     valid = list()
-    #     for joint in joint_action_space:
-    #         dq_cv = joint[2]
-    #         dq_qr = joint[4]
-    #         new_cv = cores_cv + dq_cv
-    #         new_qr = cores_qr + dq_qr
-    #         new_total = new_cv + new_qr
-    #         if 1 <= new_cv <= max_cores and 1 <= new_qr <= max_cores and new_total <= max_cores:
-    #             valid.append(joint)
-    #     return np.array(valid).reshape(len(valid), 1, 5)
-
-    def generate_valid_policies(self, qs, max_cores=PHYSICAL_CORES):
-        # Reduces the amount of candidate policies by removing those actions that try to go beyond the state limits
-        # Get MAP indices from belief distributions
-        qcv_idx = np.argmax(qs[1])  # quality_cv
-        msize_idx = np.argmax(qs[2])  # model_size
-        ccv_idx = np.argmax(qs[3])  # cores_cv
-        qqr_idx = np.argmax(qs[5])  # quality_qr
-        cqr_idx = np.argmax(qs[6])  # cores_qr
-
-        def is_valid_action(idx, action, value_list):
-            """Check if the action is valid at a given state index."""
-            if action == 1 and idx == len(value_list) - 1:
-                return False
-            if action == -1 and idx == 0:
-                return False
-            return True
-
-        valid_policies = []
-
-        for u_qcv in self.u_quality_cv:
-            if not is_valid_action(qcv_idx, u_qcv, self.quality_cv):
-                continue
-
-            for u_msize in self.u_model_size_cv:
-                if not is_valid_action(msize_idx, u_msize, self.model_size):
-                    continue
-
-                for u_ccv in self.u_cores_cv:
-                    if not is_valid_action(ccv_idx, u_ccv, self.cores_cv):
-                        continue
-
-                    for u_qqr in self.u_quality_qr:
-                        if not is_valid_action(qqr_idx, u_qqr, self.quality_qr):
-                            continue
-
-                        for u_cqr in self.u_cores_qr:
-                            if not is_valid_action(cqr_idx, u_cqr, self.cores_qr):
-                                continue
-
-                            # Check resource constraints
-                            new_cv = self.cores_cv[ccv_idx] + u_ccv
-                            new_qr = self.cores_qr[cqr_idx] + u_cqr
-                            total = new_cv + new_qr
-                            if (1 <= new_cv <= max_cores) and (1 <= new_qr <= max_cores) and (total <= max_cores):
-                                valid_policies.append([[u_qcv, u_msize, u_ccv, u_qqr, u_cqr]])
-
-        return np.array(valid_policies)
 
     def orchestrate_services_optimally(self, services_m):
         pass
@@ -391,40 +359,42 @@ if __name__ == '__main__':
     elapsed = time.time() - start_time
     print(f"Execution time: {elapsed:.4f} seconds")
 
-    acc_reward = list()
     joint_reward = 0
 
-    for steps in range(10):
-        start_time = time.time()
+    logged_data = list()
+
+    for steps in range(200):
+        start_time_loop = time.time()
 
         a_s = pymdp_agent.infer_states(pymdp_state)
-        print("states inferred")
+        elapsed = time.time() - start_time_loop
         if steps > 0:
             pymdp_agent.update_B(a_s)
-            print("Updated B")
-
-        valid_policies = p_agent.generate_valid_policies(qs = a_s, max_cores=PHYSICAL_CORES)
-        pymdp_agent.policies = valid_policies
-        print("Policies validated. Candidate policies: " + str(len(valid_policies)))
 
         q_pi, G, G_sub = pymdp_agent.infer_policies()
-        print("Policies inferred")
+
         chosen_action_id = pymdp_agent.sample_action()
-        print("Chosen action")
-        actions = convert_action(chosen_action_id)
 
-        for act in actions:
-            print("applying action.")
-            (next_state_qr, next_state_cv), joint_reward, done = joint_env.step(action_qr=act, action_cv=act)
+        action_cv = ESServiceAction(int(chosen_action_id[0]))
+        action_qr = ESServiceAction(int(chosen_action_id[1]))
 
-        print("next state")
-        print(next_state_qr)
-        print(next_state_cv)
-        acc_reward.append(joint_reward)
-        print(acc_reward)
-        elapsed = time.time() - start_time
+        #print("applying actions.")
+        (next_state_qr, next_state_cv), joint_reward, done = joint_env.step(action_qr=action_qr, action_cv=action_cv)
+
+        elapsed = time.time() - start_time_loop
         print(f"Loop time: {elapsed:.4f} seconds")
 
+        logged_data.append({
+            "timestamp": datetime.now().isoformat(),
+            "FullStateDQN_qr": str(next_state_qr),
+            "FullStateDQN_cv": str(next_state_cv),
+            "action_qr": action_qr.name if hasattr(action_qr, 'name') else str(action_qr),
+            "action_cv": action_cv.name if hasattr(action_cv, 'name') else str(action_cv),
+            "reward": joint_reward,
+        })
 
+    df = pd.DataFrame(logged_data)
+    df.to_csv("../experiments/iwai/pymdp_service_log.csv", index=False, mode='a', header=not os.path.exists("../experiments/iwai/pymdp_service_log.csv"))
+    log_entries = []  # Clear after saving
     print("done")
 
