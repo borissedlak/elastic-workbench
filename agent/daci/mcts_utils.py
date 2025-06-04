@@ -55,6 +55,7 @@ class MCTS:
         return child_node
 
     def rollout(self, obs):
+        # TODO: For joint service
         total_efe = 0
         for i in range(self.depth):
             action = np.random.choice(
@@ -85,11 +86,11 @@ class MCTS:
                 # 4) Re‐encode predicted obs → posterior q(z'|o')
                 mu_post, logvar_post = self.agent.encoder(recon_norm_obs)
 
-            efe, ig, pv = calculate_expected_free_energy(
+            efe_cv, efe_qr, ig_cv, ig_qr, prag_value_cv, prag_value_qr = calculate_expected_free_energy(
                 recon_norm_obs, self.mu_target, mu_prior, mu_post, logvar_post
             )
-            self.logs.append((obs, action, recon_obs, pv, ig, efe))
-            total_efe += efe.item()
+            self.logs.append((obs, action, recon_obs, prag_value_cv, prag_value_qr, ig_cv, efe_cv, ig_qr, efe_qr))
+            total_efe += efe_cv.item() + efe_qr.item()
             obs = recon_obs.detach()
         return total_efe
 

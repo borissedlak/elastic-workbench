@@ -239,7 +239,6 @@ class SimpleDeltaTransitionNetwork(nn.Module):  # Model Mid
     ) -> SimpleDeltaTransitionNetworkOutput:
         # transition in_dim => [B, world_latent_dim + action_dim]
         t = self.norm(torch.cat([pi_t, s_t], dim=1))
-        t = self.layers(t)
         mu = self.layers(t)
         delta = self.head(mu)
         return SimpleDeltaTransitionNetworkOutput(delta=delta)
@@ -310,7 +309,7 @@ class WorldModel(ParametricTransform):
             nn.Linear(in_features=width, out_features=out_dim),  # loc, scale
         )
 
-        self.apply(self._init_weights)
+        # self.apply(self._init_weights)
 
     def reparameterize(self, mu, logvar):
         """Reparameterization trick"""
@@ -399,10 +398,10 @@ class SimpleMCDaciWorldModel(ParametricTransform):
                 for _ in range(depth_increase)
             ],
         )
-        self.dec_mu = nn.Linear(width, world_latent_dim)
-        self.dec_logvar = nn.Linear(width, world_latent_dim)
+        self.dec_mu = nn.Linear(width, self.out_dim)
+        self.dec_logvar = nn.Linear(width, self.out_dim)
 
-        self.apply(self._init_weights)
+        # self.apply(self._init_weights)
 
     def reparameterize(self, mu, logvar):
         """Reparameterization trick"""
@@ -410,9 +409,12 @@ class SimpleMCDaciWorldModel(ParametricTransform):
         eps = torch.randn_like(std)
         return eps * std + mu
 
-    def encode(self, obs: torch.Tensor, sample: bool = True) -> WorldModelEncoding:
+    def encode(self, obs: torch.Tensor, sample: bool = False) -> WorldModelEncoding:
         s = self.enc_transf(obs)
-        mu, logvar = self.enc_mu(s), self.enc_mu(s)
+        mu, logvar = self.enc_mu(s), self.enc_logvar(s)
+        logvar = torch.clamp(
+            logvar, min=-10, max=1
+        )  # Adjust max as needed, e.g., 2 or 4 might be more stable
         if sample:
             s = self.reparameterize(mu, logvar)
             return WorldModelEncoding(s=s, s_dist_params=(mu, logvar))
@@ -423,10 +425,14 @@ class SimpleMCDaciWorldModel(ParametricTransform):
     ) -> SimpleMCDaciWorldModelDecOutput:
         h = self.dec_transf(s)
         expectation, logvar = self.dec_mu(h), self.dec_logvar(h)
-        obs_pred = repeat(expectation, logvar) if sample else None
+
+        expectation = torch.sigmoid(expectation)
+
+        logvar = torch.clamp(logvar, min=-10, max=1)
+        obs_pred = self.reparameterize(expectation, logvar) if sample else None
 
         return SimpleMCDaciWorldModelDecOutput(
-            o_pred=obs_pred, o_expectation=expectation, o_logvar=logvar
+            o_pred=obs_pred, o_dist_params=(expectation,logvar)
         )
 
     def forward(self, o) -> MCDaciWorldOutput:

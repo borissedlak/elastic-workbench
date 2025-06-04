@@ -46,8 +46,7 @@ class MCDaciWorldModelDecOutput(TypedDict):
 
 class SimpleMCDaciWorldModelDecOutput(TypedDict):
     o_pred: Optional[torch.Tensor]
-    o_expectation: torch.Tensor
-    o_logvar: torch.Tensor
+    o_dist_params: Tuple[torch.Tensor, torch.Tensor]
 
 
 class MCDaciWorldOutput(TypedDict):

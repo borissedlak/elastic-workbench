@@ -22,11 +22,13 @@ def visualize_tree(root, max_depth=3):
             )
             add_edges(child, depth + 1)
 
-    labels[id(root)] = (f"ROOT"f"({root.obs[0][0].item():.4f}, {root.obs[0][1].item():.4f})")
+    labels[id(root)] = (
+        f"ROOT" f"({root.obs[0][0].item():.4f}, {root.obs[0][1].item():.4f})"
+    )
     add_edges(root, depth=0)
 
     try:
-        pos = nx.nx_agraph.graphviz_layout(G, prog='dot')
+        pos = nx.nx_agraph.graphviz_layout(G, prog="dot")
     except Exception:
         pos = nx.spring_layout(G)
         print("Graphviz layout unavailable, using spring layout.")
@@ -45,14 +47,14 @@ mcts = MCTS(3, agent)
 # where we start
 # set this value strategically bc if it denies the laws of physics the result will be meh
 # but this one is reasonable and goal is reachable
-state = [0.45, 0.00] 
+state = [0.45, 0.00]
 log_states = []
 log_actions = []
 log_rewards = []
 log_next_states = []
 for i in range(100):
     print(state)
-    actions, stats, root = mcts.run_mcts(state)  
+    actions, stats, root = mcts.run_mcts(state)
     print(actions)
     visualize_tree(root, 2)
     for a in actions:
@@ -68,10 +70,10 @@ for i in range(100):
             print("finish")
             break
         state = next_state
-    
+
 df = pd.DataFrame([], columns=["X", "vel", "action"])
 df["X"] = [row[0] for row in log_states]
 df["vel"] = [row[1] for row in log_states]
 df["action"] = log_actions
-df.to_csv("./mcts_results_upd_efe.csv", sep = "|")
+df.to_csv("./mcts_results_upd_efe.csv", sep="|")
 print("done")
