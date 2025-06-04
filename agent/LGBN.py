@@ -40,7 +40,7 @@ class LGBN:
             samples = samples | {v: int(sample_val)}
 
         if sanitize:
-            for var, min, max in [("throughput", 0, 1000)]:
+            for var, min, max in [("throughput", 0, 100)]:
                 if var in samples.keys():
                     samples[var] = np.clip(samples[var], min, max)
 
