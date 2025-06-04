@@ -63,7 +63,7 @@ class MCDaciTrainer:
         action_dim_cv: int = 7,
         action_dim_qr: int = 5,
         # device: str = "cuda:0",
-        device: str = "cpu",
+        device: str = "cuda:0",
     ):
         self.boundaries = boundaries
         self.qr_slo_targets = qr_slo_targets
@@ -75,7 +75,7 @@ class MCDaciTrainer:
 
     def train(self):
         epochs = 5000
-        max_steps = 200
+        max_steps = 100
         # Tracking
         episode_rewards = []
         episode_lengths = []
@@ -207,9 +207,6 @@ class MCDaciTrainer:
             joint_state = joint_states[idx]
             state_cv, state_qr = np.split(joint_state, 2)
             state_cv, state_qr = self.agent.min_max_scale(state_cv), self.agent.min_max_scale(state_qr)
-            joint_state = np.concatenate([state_cv, state_qr])
-            # desired_state = np.array([-0.5, 0], dtype=np.float32) #default start state
-
             done = False
             step = 0
             trajectory = []
@@ -403,4 +400,5 @@ if __name__ == "__main__":
         action_dim_cv=7,
         action_dim_qr=5,
     )
+
     trainer.train()

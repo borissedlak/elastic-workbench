@@ -27,6 +27,7 @@ Refactor reminders:
 
 """
 
+
 def freeze_module_params(module):
     for param in module.parameters():
         param.requires_grad = False
@@ -44,22 +45,22 @@ class SimpleMCDACIAgent:
     """
 
     def __init__(
-        self,
-        boundaries: Dict[str, Dict[str, float | int]],
-        cv_slo_targets: dict,
-        qr_slo_targets: dict,
-        lr_wm: float = 1e-4,
-        lr_tn: float = 1e-5,  # based on empirical results from 'stasiya transition network needs a higher start lr
-        joint_obs_dim: int = 2 * 8,
-        joint_latent_dim: int = 2 * 4,
-        action_dim_cv: int = 7,
-        action_dim_qr: int = 5,
-        width: int = 48,
-        batch_size: int = 8,
-        early_stopping_rounds=60,
-        device: str = "cpu",
-        depth_increase: int =0,
-        train_transition_from_iter: int = 600,
+            self,
+            boundaries: Dict[str, Dict[str, float | int]],
+            cv_slo_targets: dict,
+            qr_slo_targets: dict,
+            lr_wm: float = 1e-3,
+            lr_tn: float = 1e-4,  # based on empirical results from 'stasiya transition network needs a higher start lr
+            joint_obs_dim: int = 2 * 8,
+            joint_latent_dim: int = 2 * 4,
+            action_dim_cv: int = 7,
+            action_dim_qr: int = 5,
+            width: int = 48,
+            batch_size: int = 8,
+            early_stopping_rounds=60,
+            device: str = "cuda:0",
+            depth_increase: int = 0,
+            train_transition_from_iter: int = 600,
     ):
         self.step_model_size = 1
         self.step_cores = 1
@@ -205,84 +206,38 @@ class SimpleMCDACIAgent:
         )
         return min_vals, max_vals
 
+    @torch.no_grad()
     def calculate_efe_policies(self, joint_obs, joint_policies):
-        """
-        Comrade stasiya:
-            so the point here is that in pymdp during EFE calculation AIF
-            lists ALL possible combinations of actions over the horizon T
-            this is obv. shit and people complain a lot and use all types of freestyle
-            to cut off unpromising policies
-            but I do not see a faster way of incorporating EFE in the training loop
-            w/o losing the richness of policies
-            mcdaci just emulated repeated actions over the horizon (by default 1, lol, deepness)
-        """
+        B, H = len(joint_policies), len(joint_policies[0])  # batch × horizon
+        obs = joint_obs.expand(B, -1).to(self.device, dtype=torch.float32)  # (B,obs)
 
-        # same starting observation for each sequenec of actions
-        obs_stacked_temp = torch.stack(
-            [joint_obs for _ in range(len(joint_policies))], dim=0
-        ).to(dtype=torch.float32, device=self.device)
-        total_efe_cv = torch.zeros(len(joint_policies), device=self.device)
-        total_efe_qr = torch.zeros(len(joint_policies), device=self.device)
+        acts = torch.stack(joint_policies, 0).to(self.device, dtype=torch.float32)  # (B,H,2)
+        act_cv = F.one_hot(acts[:, :, 0].to(dtype=torch.long), self.action_dim_cv).float()
+        act_qr = F.one_hot(acts[:, :, 1].to(dtype=torch.long), self.action_dim_qr).float()
 
-        for step in range(len(joint_policies[0])):  # radius
-            actions = [
-                policy[step] for policy in joint_policies
-            ]  # tuple of ections (cv, qr)
-            actions_cv = [tensor[0].unsqueeze(0) for tensor in actions]
-            actions_qr = [tensor[1].unsqueeze(0) for tensor in actions]
-            # # with torch.no_grad():
-            # reminder (Alireza): vq-VAE
+        mu, _ = self.world_model.encode(self.normalize_obs(obs), sample=False)["s_dist_params"]
+        mu_cv, mu_qr = mu.chunk(2, 1)  # (B,latent/2)
 
-            # 1) Encode current obs → posterior q(z|o)
-            norm_obs = self.normalize_obs(obs_stacked_temp)
-            joint_mu, joint_logvar = self.world_model.encode(norm_obs, sample=False)["s_dist_params"]
-            # joint_latent = self.world_model.reparameterize(joint_mu, joint_logvar)
-            # reminder: dim=1 if we calc efe for batch OR if for sample is unsqueezed ad dim=0 (else dim=0)
-            latent_cv, latent_qr = torch.chunk(joint_mu, chunks=2, dim=1)
+        # repeat latent and flatten so we call the transition nets **once**
+        mu_cv_rep = mu_cv.unsqueeze(1).expand(-1, H, -1).reshape(-1, mu_cv.size(1))
+        mu_qr_rep = mu_qr.unsqueeze(1).expand(-1, H, -1).reshape(-1, mu_qr.size(1))
+        d_cv = self.transition_model_cv(mu_cv_rep, act_cv.reshape(-1, self.action_dim_cv))["delta"]
+        d_qr = self.transition_model_qr(mu_qr_rep, act_qr.reshape(-1, self.action_dim_qr))["delta"]
+        joint_delta = torch.cat([d_cv, d_qr], 1).view(B, H, -1).sum(1)  # (B,latent)
 
-            # 2) Predict prior over next latent: p(z'|z,a)
-            action_oh_cv = self.transform_action(actions_cv, self.action_dim_cv)
-            action_oh_qr = self.transform_action(actions_qr, self.action_dim_qr)
+        mu_prior = mu + self.denormalize_deltas(joint_delta)
+        recon = self.world_model.decode(mu_prior, sample=True)["o_pred"]
+        mu_post, logvar_post = self.world_model.encode(self.normalize_obs(recon), sample=False)["s_dist_params"]
 
-            predicted_next_delta_cv = self.transition_model_cv(latent_cv, action_oh_cv)[
-                "delta"
-            ]
-            predicted_next_delta_qr = self.transition_model_qr(latent_qr, action_oh_qr)[
-                "delta"
-            ]
-            joint_deltas = torch.cat([predicted_next_delta_cv,predicted_next_delta_qr ], dim=1)
-            unnorm_predicted_next_delta_cv, unnorm_predicted_next_delta_qr = torch.chunk(self.denormalize_deltas(joint_deltas), chunks=2, dim=1)
+        efe_cv, efe_qr, *_ = calculate_expected_free_energy(
+            self.normalize_obs(recon),
+            self.preferences_cv, self.preferences_qr,
+            mu_prior, mu_post, logvar_post,
+            self.transition_model_cv, self.transition_model_qr,
+        )
+        return efe_cv, efe_qr
 
-            cv_prior = unnorm_predicted_next_delta_cv + latent_cv
-            qr_prior = unnorm_predicted_next_delta_qr + latent_qr
-            joint_mu_prior = torch.cat([cv_prior, qr_prior], dim=1)
-
-            # 3) Decode prior latent → predicted observation distribution p(o'|z')
-            recon_obs = self.world_model.decode(joint_mu_prior, sample=True)["o_pred"]
-
-            joint_recon_norm_obs = self.normalize_obs(recon_obs)
-
-            # 4) Re‐encode predicted obs → posterior q(z'|o')
-            joint_mu_post, joint_logvar_post = self.world_model.encode(
-                joint_recon_norm_obs, sample=False
-            )["s_dist_params"]
-
-            efe_cv, efe_qr, *_ = calculate_expected_free_energy(
-                joint_recon_norm_obs,
-                self.preferences_cv,
-                self.preferences_qr,
-                joint_mu_prior,
-                joint_mu_post,
-                joint_logvar_post,
-                self.transition_model_cv,
-                self.transition_model_qr,
-            )
-            total_efe_cv += efe_cv
-            total_efe_qr += efe_qr
-            obs_stacked_temp = recon_obs
-        return total_efe_cv, total_efe_qr
-
-    def select_joint_action(self, joint_obs, step, episode, horizon=2):
+    def select_joint_action(self, joint_obs, step, episode, horizon=1):
         # policies_cv = [
         #     torch.tensor(seq, dtype=torch.long)
         #     for seq in itertools.product(range(self.action_dim_cv), repeat=horizon)
@@ -334,14 +289,14 @@ class SimpleMCDACIAgent:
         return rescaled
 
     def compute_world_model_loss(
-        self,
-        iter: int,
-        obs_normalized: torch.Tensor,
-        recon_mu: torch.Tensor,
-        mu: torch.Tensor,
-        logvar: torch.Tensor,
-        pred_mu_next: torch.Tensor,
-        pred_obs_next_normalized: torch.Tensor,
+            self,
+            iter: int,
+            obs_normalized: torch.Tensor,
+            recon_mu: torch.Tensor,
+            mu: torch.Tensor,
+            logvar: torch.Tensor,
+            pred_mu_next: torch.Tensor,
+            pred_obs_next_normalized: torch.Tensor,
     ) -> Tuple[float, WorldModelLoss]:
         # velocity_weight = 1
         # obs_weight = torch.tensor([1.0, velocity_weight])
@@ -354,7 +309,7 @@ class SimpleMCDACIAgent:
 
         spread_weight = torch.clamp(torch.tensor(0.1 * iter), max=5)
         spread_loss = (
-            spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
+                spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
         )
         decoding_loss = F.mse_loss(
             pred_mu_next,
@@ -372,7 +327,7 @@ class SimpleMCDACIAgent:
         }
 
     def sample_multistep_batch(
-        self, radius: int
+            self, radius: int
     ) -> Tuple[
         torch.FloatTensor, torch.LongTensor, torch.LongTensor, torch.FloatTensor
     ]:
@@ -424,8 +379,8 @@ class SimpleMCDACIAgent:
             ).float()
             acts_cv_list.append(one_hot_cv)  # [K]
             acts_qr_list.append(one_hot_qr)  # [K]
-            next_states_cv = torch.tensor(np.stack(real_steps_cv), dtype=torch.float32)
-            next_states_qr = torch.tensor(np.stack(real_steps_qr), dtype=torch.float32)
+            next_states_cv = torch.tensor(np.stack(real_steps_cv), dtype=torch.float32, device=self.device)
+            next_states_qr = torch.tensor(np.stack(real_steps_qr), dtype=torch.float32, device=self.device)
             next_states = torch.cat([next_states_cv, next_states_qr], dim=1)
             next_state_list.append(next_states)  # [K, obs_dim]
 
@@ -435,7 +390,9 @@ class SimpleMCDACIAgent:
         acts_batch_qr = torch.stack(acts_qr_list, dim=0)  # [B, K]
         real_batch = torch.stack(next_state_list, dim=0)  # [B, K, obs_dim]
 
-        return obs0_batch.to(dtype=torch.float32), acts_batch_cv.to(dtype=torch.float32), acts_batch_qr.to(dtype=torch.float32), real_batch.to(dtype=torch.float32)
+        return obs0_batch.to(dtype=torch.float32, device=self.device), acts_batch_cv.to(dtype=torch.float32,
+                                                                                        device=self.device), acts_batch_qr.to(
+            dtype=torch.float32, device=self.device), real_batch.to(dtype=torch.float32, device=self.device)
 
     def multi_step_loss(self, p_gt: float = 0.3, radius: int = 3, alpha=0.01):
         obs, actions_cv, actions_qr, next_obs = self.sample_multistep_batch(radius)
@@ -473,11 +430,11 @@ class SimpleMCDACIAgent:
         return total_loss / radius
 
     def probe_transition(
-        self,
-        obs,
-        next_obs,
-        action,
-        service_type: str,
+            self,
+            obs,
+            next_obs,
+            action,
+            service_type: str,
     ) -> tuple:
         """Emulate environment transation for a single service
 
@@ -510,9 +467,9 @@ class SimpleMCDACIAgent:
             )
             new_data_quality = new_state[0] + delta_data_quality
             if not (
-                self.boundaries["data_quality"]["min"]
-                > new_data_quality
-                > self.boundaries["data_quality"]["max"]
+                    self.boundaries["data_quality"]["min"]
+                    > new_data_quality
+                    > self.boundaries["data_quality"]["max"]
             ):
                 new_state[0] = new_data_quality
 
@@ -529,9 +486,9 @@ class SimpleMCDACIAgent:
             new_model_s = new_state[4] + delta_model
 
             if not (
-                self.boundaries["model_size"]["min"]
-                > new_model_s
-                > self.boundaries["model_size"]["max"]
+                    self.boundaries["model_size"]["min"]
+                    > new_model_s
+                    > self.boundaries["model_size"]["max"]
             ):
                 new_state[4] = new_model_s
         new_state = self.min_max_scale(new_state)
@@ -587,7 +544,7 @@ class SimpleMCDACIAgent:
     def compute_stats(self):
         delta_mus = []
         with torch.no_grad():
-            for it in range(2000):
+            for it in range(500):
                 obs_batch = self.sample()
                 current_obs = obs_batch["states"]
                 next_obs = obs_batch["next_states"]
@@ -636,7 +593,7 @@ class SimpleMCDACIAgent:
         self.world_model.train()
         val_loss_vae_det = val_loss_vae.detach().cpu().numpy()
         if np.round(self.val_loss_enc, decimals=4) <= np.round(
-            val_loss_vae_det, decimals=4
+                val_loss_vae_det, decimals=4
         ):
             self.patience_enc_dec += 1
         else:
@@ -648,7 +605,7 @@ class SimpleMCDACIAgent:
             return False
 
     def compute_transition_loss(
-        self, next_latent_deltas, transition_latent_deltas, i, T, is_multi=False
+            self, next_latent_deltas, transition_latent_deltas, i, T, is_multi=False
     ):
         transition_loss = F.mse_loss(
             transition_latent_deltas, next_latent_deltas, reduction="mean"
@@ -735,8 +692,8 @@ class SimpleMCDACIAgent:
         # Early stopping logic (remains the same conceptually)
         # This checks if the current validation loss is NOT an improvement
         if np.round(self.val_loss_transition, decimals=4) <= np.round(
-            val_loss_transition.item(),
-            decimals=4,  # Use .item() for scalar loss tensors
+                val_loss_transition.item(),
+                decimals=4,  # Use .item() for scalar loss tensors
         ):
             self.patience_transition += 1
         else:
@@ -756,8 +713,7 @@ class SimpleMCDACIAgent:
         else:
             actions = actions.to(torch.long).to(self.device)
 
-        one_hot = F.one_hot(actions, num_classes=action_dim).float()
-        return one_hot
+        return F.one_hot(actions, num_classes=action_dim).float().to(self.device)
 
     def save_experience(self, obs, joint_action, next_obs, to_train=True):
         action_cv, action_qr = joint_action
@@ -775,11 +731,11 @@ class SimpleMCDACIAgent:
             self.val_buffer.append(sample)
 
     def fit_experience(
-        self,
-        i,
-        num_episodes,
-        lambda_trans_start: float = 0.1,
-        lambda_trans_end: float = 1.0,
+            self,
+            i,
+            num_episodes,
+            lambda_trans_start: float = 0.1,
+            lambda_trans_end: float = 1.0,
     ):
         num_epochs = 3
         end_training = False
@@ -847,9 +803,9 @@ class SimpleMCDACIAgent:
                     self.optim_world_model.step()
                     self.scheduler.step()
                     if (
-                        i > 1
-                        and self.validate_enc_dec(i)
-                        and not self.train_transition
+                            i > 1000
+                            and self.validate_enc_dec(i)
+                            and not self.train_transition
                     ):
                         # 600 does not allow transition model to start training too early, acts like a guard
                         self.train_transition = True
@@ -900,18 +856,19 @@ class SimpleMCDACIAgent:
 
                         self.optim_transition_network.step()
                         self.scheduler_trans.step()
-                        # if i > 100:
-                        if self.validate_transition_model(i):
+                        if i > 2000:
+                        # if self.validate_transition_model(i):
                             self.train_all = True
                             self.start_multi = i
                     else:
                         # train all together
+                        print("Starting joint training")
                         for p in self.world_model.parameters():
                             p.requires_grad = True
                         for m in (
-                            self.world_model,
-                            self.transition_model_cv,
-                            self.transition_model_qr,
+                                self.world_model,
+                                self.transition_model_cv,
+                                self.transition_model_qr,
                         ):
                             m.train()
 
@@ -922,8 +879,8 @@ class SimpleMCDACIAgent:
                             joint_latent_mu, joint_latent_logvar
                         )
                         joint_recon_mu, joint_recon_logvar = self.world_model.decode(
-                            joint_latent
-                        )
+                            joint_latent, sample=False
+                        )["o_dist_params"]
                         joint_recon = self.world_model.reparameterize(
                             joint_recon_mu, joint_recon_logvar
                         )
@@ -931,8 +888,8 @@ class SimpleMCDACIAgent:
                             joint_next_obs_norm, sample=True
                         )["s"]
                         recon_next_mu, recon_next_logvar = self.world_model.decode(
-                            joint_latent_next
-                        )
+                            joint_latent_next, sample=False
+                        )["o_dist_params"]
                         joint_recon_next = self.world_model.reparameterize(
                             recon_next_mu, recon_next_logvar
                         )
@@ -948,7 +905,7 @@ class SimpleMCDACIAgent:
                         )
 
                         joint_delta_latent = (
-                            joint_latent_next.detach() - joint_latent.detach()
+                                joint_latent_next.detach() - joint_latent.detach()
                         )
                         norm_target_deltas = self.normalize_deltas(joint_delta_latent)
                         cv_latent, qr_latent = torch.chunk(
@@ -973,7 +930,7 @@ class SimpleMCDACIAgent:
                         )["o_pred"]
 
                         scale = lambda_trans_start + (
-                            lambda_trans_end - lambda_trans_start
+                                lambda_trans_end - lambda_trans_start
                         ) * (i / num_episodes)
 
                         # Lpos tries to enforce better throughput prediction
@@ -990,17 +947,17 @@ class SimpleMCDACIAgent:
                             qr_recon_obs_after_transition[:, 2], qr_next_obs_norm[:, 2]
                         )
                         cv_sol_qual_recon = (
-                            0.25 * cv_recon_obs_after_transition[:, 0]
-                            + 0.75 * cv_recon_obs_after_transition[:, 4]
+                                0.25 * cv_recon_obs_after_transition[:, 0]
+                                + 0.75 * cv_recon_obs_after_transition[:, 4]
                         )
                         cv_sol_qual_next_obs = (
-                            0.25 * cv_next_obs_norm[:, 0]
-                            + 0.75 * cv_next_obs_norm[:, 4]
+                                0.25 * cv_next_obs_norm[:, 0]
+                                + 0.75 * cv_next_obs_norm[:, 4]
                         )
                         l_sol_qual_cv = F.mse_loss(
                             cv_sol_qual_recon, cv_sol_qual_next_obs
                         )
-                        l_sol_qual_qr = (
+                        l_sol_qual_qr = F.mse_loss(
                             cv_recon_obs_after_transition[:, 0],
                             cv_next_obs_norm[:, 0],
                         )
@@ -1028,8 +985,8 @@ class SimpleMCDACIAgent:
                     exit(-1)
 
                 total_loss += loss.item()
-                for k, v in loss_dict.items():
-                    total_loss_dict[k] += loss_dict[k] / num_epochs
+#                for k, v in loss_dict.items():
+#                    total_loss_dict[k] += loss_dict[k] / num_epochs
 
             print(f"Epoch {epoch + 1}, Loss: {loss:.4f}")
 
@@ -1074,7 +1031,7 @@ class SimpleMCDACIAgent:
         return actual_obs_list, recon_obs_list, next_obs
 
     def power_normalize(
-        self, x: torch.Tensor, alpha: float = 0.5, eps: float = 1e-6
+            self, x: torch.Tensor, alpha: float = 0.5, eps: float = 1e-6
     ) -> torch.Tensor:
         x_shifted = x - torch.min(x)
         x_shifted = x_shifted + eps
