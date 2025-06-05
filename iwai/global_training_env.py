@@ -10,16 +10,16 @@ from proj_types import ESServiceAction
 
 MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
 
-
 """
 Environment you can "sample" from. Gymnasium compatible
 """
+
 
 # INVALID_ACTION_PUNISHMENT = 5
 
 class GlobalTrainingEnv:
     def __init__(
-        self, env_qr: LGBNTrainingEnv, env_cv: LGBNTrainingEnv, max_cores=MAX_CORES
+            self, env_qr: LGBNTrainingEnv, env_cv: LGBNTrainingEnv, max_cores=MAX_CORES
     ):
         self.env_qr = env_qr
         self.env_cv = env_cv
@@ -43,34 +43,21 @@ class GlobalTrainingEnv:
         old_state_qr = self.env_qr.state
         old_state_cv = self.env_cv.state
 
-        # TODO: Prevent even the action if the total cores will be too high
+        total_used_cores_before = old_state_qr.cores + old_state_cv.cores
+        free_cores_before = self.max_cores - total_used_cores_before
 
         # Apply actions
+        self.env_qr.state = self.env_qr.state._replace(free_cores=free_cores_before)
         next_state_qr, reward_qr, done_qr, _, _ = self.env_qr.step(action_qr)
+        self.env_cv.state = self.env_cv.state._replace(free_cores=next_state_qr.free_cores)
         next_state_cv, reward_cv, done_cv, _, _ = self.env_cv.step(action_cv)
 
-        total_used_cores_after = next_state_qr.cores + next_state_cv.cores
-        free_cores = self.max_cores - total_used_cores_after
-
-        overuse = total_used_cores_after > self.max_cores
-
         done = done_qr or done_cv
-        # penalty = 0
-        if overuse:  # Shared penalty if resource overuse occurred
-            # penalty = INVALID_ACTION_PUNISHMENT
-            # done = True
-            free_cores = self.max_cores - (old_state_qr.cores + old_state_cv.cores)
-            next_state_qr = old_state_qr
-            next_state_cv = old_state_cv
-            # reward_qr = 0
-            # reward_cv = 0
 
-        next_state_qr = next_state_qr._replace(free_cores=free_cores)
-        next_state_cv = next_state_cv._replace(free_cores=free_cores)
-
-        joint_reward = reward_qr + reward_cv #+ penalty
+        joint_reward = reward_qr + reward_cv
 
         return (next_state_qr, next_state_cv), joint_reward, done
+
 
 if __name__ == "__main__":
     ROOT = os.path.dirname(__file__)
@@ -87,4 +74,4 @@ if __name__ == "__main__":
     joint_env.reset()
 
     for _ in range(10):
-        print(joint_env.step(ESServiceAction.INC_CORES, ESServiceAction.INC_CORES))
+        print(joint_env.step(ESServiceAction.INC_CORES, ESServiceAction.DEC_CORES))
