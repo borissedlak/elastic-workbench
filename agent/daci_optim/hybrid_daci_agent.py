@@ -39,22 +39,27 @@ class HybridMCDACIAgent:
             boundaries: Dict[str, Dict[str, float | int]],
             cv_slo_targets: dict,
             qr_slo_targets: dict,
-            lr_wm: float = 1e-4,
+            lr_wm: float = 3e-5,
             lr_tn: float = 5e-3,
             joint_obs_dim: int = 2 * 8,
             joint_latent_dim: int = 2 * 4,
             action_dim_cv: int = 7,
             action_dim_qr: int = 5,
-            width: int = 48,
-            batch_size: int = 32,  # Keep original batch size for world model phase
-            early_stopping_rounds=5000,
-            device: str = "cuda:0",
-            depth_increase: int = 0,
+            width: int = 24,
+            batch_size: int = 16,  # Keep original batch size for world model phase
+            early_stopping_rounds=1500,
+            iters_joint = 1200,
+            iters_wm = 300,
+            iters_tran = 300,
+            device: str = "cuda:1",
+            depth_increase: int = 1,
             train_transition_from_iter: int = 600,
     ):
         self.device = device
         self.boundaries = boundaries
-
+        self.iters_joint = iters_joint
+        self.iters_wm = iters_wm
+        self.iter_tran = iters_tran
         # Initialize vectorized environment (used only when beneficial)
         self.vec_env = VectorizedEnvironment(boundaries, device)
 
@@ -66,11 +71,11 @@ class HybridMCDACIAgent:
         ).to(device)
 
         self.transition_model_cv = SimpleDeltaTransitionNetwork(
-            joint_latent_dim // 2, action_dim_cv, width, depth_increase=1
+            joint_latent_dim // 2, action_dim_cv, width, depth_increase=depth_increase
         ).to(device)
 
         self.transition_model_qr = SimpleDeltaTransitionNetwork(
-            joint_latent_dim // 2, action_dim_qr, width, depth_increase=1
+            joint_latent_dim // 2, action_dim_qr, width, depth_increase=depth_increase
         ).to(device)
 
         # Training state
@@ -83,19 +88,19 @@ class HybridMCDACIAgent:
         self.patience = early_stopping_rounds
 
         # Lightweight buffer for world model phase (CPU-based for simplicity)
-        self.buffer = deque(maxlen=1000)
-        self.val_buffer = deque(maxlen=1000)
+        self.buffer = deque(maxlen=20000)
+        self.val_buffer = deque(maxlen=20000)
 
         # Heavy-duty GPU buffers for transition phase
-        self.gpu_buffer_obs = deque(maxlen=1000)
-        self.gpu_buffer_actions_cv = deque(maxlen=1000)
-        self.gpu_buffer_actions_qr = deque(maxlen=1000)
-        self.gpu_buffer_next_obs = deque(maxlen=1000)
+        self.gpu_buffer_obs = deque(maxlen=20000)
+        self.gpu_buffer_actions_cv = deque(maxlen=20000)
+        self.gpu_buffer_actions_qr = deque(maxlen=20000)
+        self.gpu_buffer_next_obs = deque(maxlen=20000)
 
-        self.gpu_val_buffer_obs = deque(maxlen=1000)
-        self.gpu_val_buffer_actions_cv = deque(maxlen=1000)
-        self.gpu_val_buffer_actions_qr = deque(maxlen=1000)
-        self.gpu_val_buffer_next_obs = deque(maxlen=1000)
+        self.gpu_val_buffer_obs = deque(maxlen=20000)
+        self.gpu_val_buffer_actions_cv = deque(maxlen=20000)
+        self.gpu_val_buffer_actions_qr = deque(maxlen=20000)
+        self.gpu_val_buffer_next_obs = deque(maxlen=20000)
 
         self.val_loss_enc = np.inf
         self.val_loss_transition = np.inf
@@ -117,10 +122,10 @@ class HybridMCDACIAgent:
         )
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optim_world_model, step_size=50, gamma=0.95,
+            self.optim_world_model, step_size=100, gamma=0.95,
         )
         self.scheduler_trans = torch.optim.lr_scheduler.StepLR(
-            self.optim_transition_network, step_size=50, gamma=0.95
+            self.optim_transition_network, step_size=100, gamma=0.95
         )
 
         self.train_transition_from_iter = train_transition_from_iter
@@ -296,11 +301,18 @@ class HybridMCDACIAgent:
     def check_reward_cv(self, state):
         """Lightweight reward calculation for CV"""
         sol_qual = 0.25 * state[0] + 0.75 * state[4]
-        return 1 if sol_qual >= self.preferences_cv[0][0].item() else -1
+        throughput = state[2]
+        reward_sol_qual = 1 if sol_qual >= self.preferences_cv[0][0].item() else -1
+        reward_tp = 1 if throughput >= self.preferences_cv[0][1].item() else -1
+        return reward_sol_qual + reward_tp
 
     def check_reward_qr(self, state):
-        """Lightweight reward calculation for QR"""
-        return 1 if state[0] >= self.preferences_qr[0][0].item() else -1
+        """Lightweight reward calculation for qr"""
+        sol_qual = state[0]
+        throughput = state[2]
+        reward_sol_qual = 1 if sol_qual >= self.preferences_qr[0][0].item() else -1
+        reward_tp = 1 if throughput >= self.preferences_qr[0][1].item() else -1
+        return reward_sol_qual + reward_tp
 
     def adaptive_save_experience(self, obs, joint_action, next_obs, to_train=True):
         """Save experience using appropriate method based on training phase"""
@@ -467,7 +479,7 @@ class HybridMCDACIAgent:
     def phase_transition_check(self, i, num_episodes):
         """Check if we should transition between training phases"""
         if self.current_phase == "world_model" and not self.train_transition:
-            if i > 500: # and self.validate_enc_dec(i):
+            if i > self.iters_wm: # and self.validate_enc_dec(i):
                 print(f"🔄 Transitioning from world_model to transition phase at iteration {i}")
                 self.current_phase = "transition"
                 self.train_transition = True
@@ -475,7 +487,7 @@ class HybridMCDACIAgent:
                 self.compute_stats()
                 return True
         elif self.current_phase == "transition" and not self.train_all:
-            if i > 1000:
+            if i - self.iters_wm >  self.iter_tran:
 #            if self.validate_transition_model(i):
                 print(f"🔄 Transitioning from transition to joint phase at iteration {i}")
                 self.train_all = True
@@ -579,7 +591,7 @@ class HybridMCDACIAgent:
         )
         return efe_cv, efe_qr
 
-    def select_joint_action(self, joint_obs, step, episode, horizon=3):
+    def select_joint_action(self, joint_obs, step, episode, horizon=5):
         """Action selection with EFE"""
         single_step_actions = list(
             itertools.product(range(self.action_dim_cv), range(self.action_dim_qr))
@@ -631,7 +643,7 @@ class HybridMCDACIAgent:
         transition_loss = F.mse_loss(transition_latent_deltas, next_latent_deltas, reduction="mean")
 
         if is_multi:
-            multi_step_loss = self.vectorized_multi_step_loss(p_gt=(i / 2000) ** 5)
+            multi_step_loss = self.vectorized_multi_step_loss(p_gt=(i / 2000) ** 5, radius=5)
         else:
             multi_step_loss = torch.tensor(0.0, device=self.device)
 
@@ -839,7 +851,13 @@ class HybridMCDACIAgent:
                 # Joint training with all optimizations
                 for p in self.world_model.parameters():
                     p.requires_grad = True
+                for p in self.transition_model_cv.parameters():
+                    p.requires_grad = True
+                for p in self.transition_model_qr.parameters():
+                    p.requires_grad = True
 
+                self.optim_world_model.zero_grad()
+                self.optim_transition_network.zero_grad()
                 # World model forward pass
                 joint_latent_mu, joint_latent_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
                 #joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
@@ -900,17 +918,22 @@ class HybridMCDACIAgent:
                 #loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
                 loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
 
+
                 if loss.item() < self.train_loss_finetune:
                     self.train_loss_finetune = loss.item()
                     self.patience_finetune = 0
                 else:
                     self.patience_finetune += 1
 
-                self.optim_world_model.zero_grad()
-                self.optim_transition_network.zero_grad()
+
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.transition_model_cv.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.transition_model_qr.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.world_model.parameters(), max_norm=1.0)
                 self.optim_world_model.step()
                 self.optim_transition_network.step()
+                self.scheduler.step()
+                self.scheduler_trans.step()
 
                 trans_dict.update(wm_loss_dict)
                 loss_dict = trans_dict
@@ -929,5 +952,6 @@ class HybridMCDACIAgent:
 
         if self.patience_finetune >= self.patience:
             end_training = True
-
+        if i - self.iters_wm - self.iter_tran > self.iters_joint:
+            end_training = True
         return avg_loss, total_loss_dict, end_training

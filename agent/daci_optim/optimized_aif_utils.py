@@ -54,11 +54,11 @@ def calculate_expected_free_energy(
     # Vectorized feature extraction for CV service
     # Interpolate solution quality: 0.25 * data_quality + 0.75 * model_size
     salient_feat_cv[:, 0] = recon_norm_obs_cv[:, 0] * 0.25 + recon_norm_obs_cv[:, 4] * 0.75
-    salient_feat_cv[:, 1] = recon_norm_obs_cv[:, 3]  # throughput
+    salient_feat_cv[:, 1] = recon_norm_obs_cv[:, 2]  # throughput
 
     # Extract features for QR service
     salient_feat_qr[:, 0] = recon_norm_obs_qr[:, 0]  # data quality (solution quality)
-    salient_feat_qr[:, 1] = recon_norm_obs_qr[:, 3]  # throughput
+    salient_feat_qr[:, 1] = recon_norm_obs_qr[:, 2]  # throughput
 
     # Variance parameters (configurable for SLO bias)
     # Higher variance = more relaxed objective
