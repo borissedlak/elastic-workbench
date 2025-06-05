@@ -236,65 +236,69 @@ class HybridMCDACIAgent:
 
     def simple_probe_transition(self, obs, next_obs, action, service_type: str) -> tuple:
         """
-        Lightweight CPU-based transition for world model phase
-        (Similar to original implementation but optimized)
+        Lightweight CPU-based transition for world-model phase.
+        Adds clamping of `data_quality` (indices 0 & 1) to service-specific thresholds.
         """
         thresholds_qr = {
-            "max":
-                {"data_quality": 1000, },
-            "min":
-                {"data_quality": 300, }
+            "max": {"data_quality": 1000},
+            "min": {"data_quality": 300},
         }
         thresholds_cv = {
-            "max":
-                {"data_quality": 320, },
-            "min":
-                {"data_quality": 128, }
+            "max": {"data_quality": 320},
+            "min": {"data_quality": 128},
         }
         thresholds = thresholds_qr if service_type == "qr" else thresholds_cv
+
         new_state = self.min_max_rescale(copy.deepcopy(obs))
+
         step_data_quality = (
             self._step_data_quality_cv
             if service_type == "cv"
             else self._step_data_quality_qr
         )
 
-        # Action 0: Do nothing
         if action == 0:
             pass
-        # Actions 1-2: Data quality changes
+
         elif 1 <= action <= 2:
-            delta_data_quality = -step_data_quality if action == 1 else step_data_quality
-            new_data_quality = new_state[0] + delta_data_quality
+            delta_dq = -step_data_quality if action == 1 else step_data_quality
+            new_dq = new_state[0] + delta_dq
+
             if not (
-                    self.boundaries["data_quality"]["min"] > new_data_quality or
-                    new_data_quality > self.boundaries["data_quality"]["max"]
+                    self.boundaries["data_quality"]["min"] > new_dq
+                    or new_dq > self.boundaries["data_quality"]["max"]
             ):
-                new_state[0] = new_data_quality
-        # Actions 3-4: Core changes
+                new_state[0] = new_dq
+
         elif 3 <= action <= 4:
             delta_cores = -self.step_cores if action == 3 else self.step_cores
             new_cores = new_state[6] + delta_cores
             if not (new_cores <= 0 or delta_cores > new_state[7]):
                 new_state[6] = new_cores
-                new_state[7] = new_state[7] - delta_cores
-        # Actions 5-6: Model size changes
+                new_state[7] -= delta_cores
+
         elif 5 <= action <= 6:
             delta_model = -self.step_model_size if action == 5 else self.step_model_size
             new_model_s = new_state[4] + delta_model
             if not (
-                    self.boundaries["model_size"]["min"] > new_model_s or
-                    new_model_s > self.boundaries["model_size"]["max"]
+                    self.boundaries["model_size"]["min"] > new_model_s
+                    or new_model_s > self.boundaries["model_size"]["max"]
             ):
                 new_state[4] = new_model_s
 
+        dq_min = thresholds["min"]["data_quality"]
+        dq_max = thresholds["max"]["data_quality"]
+
+        for idx in (0, 1):
+            new_state[idx] = max(dq_min, min(dq_max, new_state[idx]))
+
         new_state = self.min_max_scale(new_state)
 
-        # Calculate reward
-        if service_type == "cv":
-            reward = self.check_reward_cv(new_state)
-        else:
-            reward = self.check_reward_qr(new_state)
+        reward = (
+            self.check_reward_cv(new_state)
+            if service_type == "cv"
+            else self.check_reward_qr(new_state)
+        )
 
         return new_state, reward
 
