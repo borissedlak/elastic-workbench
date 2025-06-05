@@ -43,12 +43,13 @@ class HybridMCDACIAgent:
             joint_latent_dim: int = 2 * 4,
             action_dim_cv: int = 7,
             action_dim_qr: int = 5,
-            width: int = 48,
-            batch_size: int = 16,  # Keep original batch size for world model phase
-            early_stopping_rounds=60,
+            width: int = 32,
+            batch_size: int = 32,  # Keep original batch size for world model phase
+            early_stopping_rounds=100,
             device: str = "cuda:0",
-            depth_increase: int = 0,
+            depth_increase: int = 1,
             train_transition_from_iter: int = 600,
+            start_with_joint: bool = False
     ):
         self.device = device
         self.boundaries = boundaries
@@ -60,7 +61,7 @@ class HybridMCDACIAgent:
             in_dim=joint_obs_dim,
             world_latent_dim=joint_latent_dim,
             width=width,
-            depth_increase=0,
+            depth_increase=depth_increase,
         ).to(device)
 
         self.transition_model_cv = SimpleDeltaTransitionNetwork(
@@ -178,14 +179,18 @@ class HybridMCDACIAgent:
         # Update environment with preferences
         self.vec_env.preferences_cv = self.preferences_cv[0]
         self.vec_env.preferences_qr = self.preferences_qr[0]
-
-        self.train_transition = False
-        self.train_all = False
+        self.start_with_joint = start_with_joint
+        if start_with_joint:
+            self.train_transition = False
+            self.train_all = False
+            self.current_phase = "joint"
+        else:
+            self.train_transition = True
+            self.train_all = True
+            # Phase tracking for adaptive performance
+            self.current_phase = "world_model"  # "world_model", "transition", "joint"
         self.mean_deltas = None
         self.std_deltas = None
-
-        # Phase tracking for adaptive performance
-        self.current_phase = "world_model"  # "world_model", "transition", "all"
 
     def _get_feature_bounds(self):
         """Calculate feature bounds for normalization"""
@@ -452,7 +457,7 @@ class HybridMCDACIAgent:
     def phase_transition_check(self, i, num_episodes):
         """Check if we should transition between training phases"""
         if self.current_phase == "world_model" and not self.train_transition:
-            if i > 500 and self.validate_enc_dec(i):
+            if i > self.train_transition_from_iter and self.validate_enc_dec(i):
                 print(f"🔄 Transitioning from world_model to transition phase at iteration {i}")
                 self.current_phase = "transition"
                 self.train_transition = True
@@ -460,12 +465,12 @@ class HybridMCDACIAgent:
                 self.compute_stats()
                 return True
         elif self.current_phase == "transition" and not self.train_all:
-#            if i > 1:
+            #            if i > 10:
             if self.validate_transition_model(i):
                 print(f"🔄 Transitioning from transition to joint phase at iteration {i}")
                 self.train_all = True
                 self.start_multi = i
-                self.curent_phase = "joint"
+                self.current_phase = "joint"
                 return True
         return False
 
