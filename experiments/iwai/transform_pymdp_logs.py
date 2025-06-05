@@ -29,7 +29,7 @@ def import_pymdp_logs(filenames: list[str]):
             timestamp = row['timestamp']
 
             slo_f = row['reward'] / 2
-            iteration_length = row['elapsed'] / 2
+            iteration_length = (row['elapsed'] / 2) * 1000
 
             # Process QR service
             qr_state_obj = eval(row['next_state_qr'])  # or use literal_eval with a parser if needed
