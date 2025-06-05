@@ -181,11 +181,11 @@ def export_experience_buffer(rows: tuple, file_name):
     data = []
 
     if is_empty:
-        data.append(["rep", "timestamp", "service", "slo_f", "state"])
+        data.append(["rep", "timestamp", "service", "slo_f", "state", "last_iteration_length"])
 
     data.extend([
-        [prefix, timestamp, service.container_id, slo_f, service_state]
-        for service, timestamp, slo_f, prefix, service_state in rows
+        [prefix, timestamp, service.container_id, slo_f, service_state, last_iteration]
+        for service, timestamp, slo_f, prefix, service_state, last_iteration in rows
     ])
 
     with open(file_name, mode='a', newline='') as file:
