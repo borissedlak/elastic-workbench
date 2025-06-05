@@ -109,7 +109,7 @@ def parse_args() -> argparse.Namespace:
 
 
 # -----------------------------------------------------------------------------
-
+# TODO: Boris put real start states
 if __name__ == "__main__":
     torch.manual_seed(42)
     random.seed(42)
@@ -137,10 +137,10 @@ if __name__ == "__main__":
     qr_slo_targets = (
         {
             "data_quality": 900,
-            "throughput": 75,
+            "throughput": 60,
         },
     )
-    test_iters = 10
+    test_iters = 50
 
     if os.path.isfile(agent_file):
         agent = torch.load(agent_file, weights_only=False, map_location=device)["agent"]
@@ -182,8 +182,13 @@ if __name__ == "__main__":
     for _ in range(test_iters):
         norm_joint_state = scale_joint(raw=joint_state, vec_env=agent.vec_env)
         trajectory, stats, root = mcts.run_mcts(norm_joint_state)
+        # TODO: (2) run on real env
         action_cv, action_qr = trajectory[0]
+        # print(trajectory)
+        # TODO: (1) print slo-f
         state_cv, state_qr = torch.chunk(norm_joint_state, chunks=2, dim=1)
+        print(state_cv)
+        print(state_qr)
         #  note: Tensors are always shape (B, *). Since we are not training, B=1
         next_cv, _ = agent.simple_probe_transition(
             state_cv.squeeze(), None, action=action_cv, service_type="cv"
