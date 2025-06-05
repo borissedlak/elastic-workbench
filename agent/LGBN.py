@@ -18,6 +18,7 @@ ROOT = os.path.dirname(__file__)
 
 class LGBN:
     def __init__(self, show_figures=False, structural_training=False, df=None):
+
         self.show_figures = show_figures
         self.structural_training = structural_training
         self.models: Dict[ServiceType, LinearGaussianBayesianNetwork] = self.init_models(df)

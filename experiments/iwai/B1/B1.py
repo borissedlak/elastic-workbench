@@ -35,8 +35,8 @@ pymdp_files = [ROOT + "/../20250605_104110_pymdp_service_log.csv",
 
 nn_folder = "./networks"
 EXPERIMENT_REPETITIONS = 10
-EXPERIMENT_DURATION = 200
-MAX_EXPLORE = 15
+EXPERIMENT_DURATION = 250
+MAX_EXPLORE = 20
 
 ps = "http://172.20.0.2:9090"
 
@@ -46,6 +46,7 @@ cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyz
 EVALUATION_FREQUENCY = 5
 
 logging.getLogger('multiscale').setLevel(logging.INFO)
+
 
 
 def eval_scaling_agent(agent_factory, agent_type):
@@ -73,11 +74,13 @@ line_style_dict = {"DQN": "--", "RRM": "-", "AIF": "-."}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
+
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
     df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
     x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) + 1)
     # x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
     plt.figure(figsize=(6.0, 3.8))
+
 
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
