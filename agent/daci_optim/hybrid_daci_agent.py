@@ -45,7 +45,7 @@ class HybridMCDACIAgent:
             action_dim_qr: int = 5,
             width: int = 48,
             batch_size: int = 16,  # Keep original batch size for world model phase
-            early_stopping_rounds=60,
+            early_stopping_rounds=6000,
             device: str = "cuda:0",
             depth_increase: int = 0,
             train_transition_from_iter: int = 600,
@@ -60,7 +60,7 @@ class HybridMCDACIAgent:
             in_dim=joint_obs_dim,
             world_latent_dim=joint_latent_dim,
             width=width,
-            depth_increase=0,
+            depth_increase=depth_increase,
         ).to(device)
 
         self.transition_model_cv = SimpleDeltaTransitionNetwork(
@@ -111,7 +111,7 @@ class HybridMCDACIAgent:
                 {"params": self.transition_model_qr.parameters()},
             ],
             lr=lr_tn,
-            weight_decay=1e-4,
+            weight_decay=5e-4,
         )
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
@@ -452,7 +452,7 @@ class HybridMCDACIAgent:
     def phase_transition_check(self, i, num_episodes):
         """Check if we should transition between training phases"""
         if self.current_phase == "world_model" and not self.train_transition:
-            if i > 500 and self.validate_enc_dec(i):
+            if i > 600: # and self.validate_enc_dec(i):
                 print(f"🔄 Transitioning from world_model to transition phase at iteration {i}")
                 self.current_phase = "transition"
                 self.train_transition = True
@@ -460,12 +460,12 @@ class HybridMCDACIAgent:
                 self.compute_stats()
                 return True
         elif self.current_phase == "transition" and not self.train_all:
-#            if i > 1:
-            if self.validate_transition_model(i):
+            if i > 800:
+#            if self.validate_transition_model(i):
                 print(f"🔄 Transitioning from transition to joint phase at iteration {i}")
                 self.train_all = True
                 self.start_multi = i
-                self.curent_phase = "joint"
+                self.current_phase = "joint"
                 return True
         return False
 
@@ -564,7 +564,7 @@ class HybridMCDACIAgent:
         )
         return efe_cv, efe_qr
 
-    def select_joint_action(self, joint_obs, step, episode, horizon=1):
+    def select_joint_action(self, joint_obs, step, episode, horizon=3):
         """Action selection with EFE"""
         single_step_actions = list(
             itertools.product(range(self.action_dim_cv), range(self.action_dim_qr))
@@ -760,7 +760,7 @@ class HybridMCDACIAgent:
 
             joint_obs_norm = self.normalize_obs(joint_current_obs)
             joint_next_obs_norm = self.normalize_obs(joint_next_obs)
-
+            train_multi = self.current_phase == "joint"
             if self.current_phase == "world_model":
                 # Lightweight world model training
                 self.optim_world_model.zero_grad()
@@ -808,7 +808,6 @@ class HybridMCDACIAgent:
                 z_delta_pred_qr = self.transition_model_qr(qr_latent_detach, actions_qr)["delta"]
                 joint_deltas = torch.cat([z_delta_pred_cv, z_delta_pred_qr], dim=1)
 
-                train_multi = self.current_phase != "joint"
                 loss, loss_dict = self.compute_transition_loss(
                     norm_target_deltas, joint_deltas, i, num_episodes, is_multi=train_multi
                 )
