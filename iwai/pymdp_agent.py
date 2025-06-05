@@ -366,6 +366,7 @@ class pymdp_Agent(): # ScalingAgent):
 
 
 def train_pymdp_agent(action_selection, alpha, motivate_cores):
+    print(f"Training agent {action_selection} with alpha {alpha}, motivate cores: {motivate_cores}")
     # ps = "http://localhost:9090"
     # qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     # cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
