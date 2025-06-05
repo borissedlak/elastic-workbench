@@ -46,6 +46,7 @@ class ScalingAgent(Thread, ABC):
         # This is needed because the Prom becomes unavailable (i.e., deletes metrics) while we load a new model
         # It's also not possible to load the model in a new Process because the onnxruntime cannot be pickled
         self.last_known_state = {}
+        self.last_iteration_length = -1
 
     def resolve_service_state(self, service_id: ServiceID, assigned_clients: Dict[str, int]):
         """
@@ -73,6 +74,9 @@ class ScalingAgent(Thread, ABC):
         while self._running:
             start_time = time.perf_counter()
             self.orchestrate_services_optimally(self.services_monitored)
+
+            agent_iteration_time = int((time.perf_counter() - start_time) * 1000)
+            self.last_iteration_length = agent_iteration_time
 
             wait_for_remaining_interval(self.evaluation_cycle, start_time)
 
@@ -143,4 +147,5 @@ class ScalingAgent(Thread, ABC):
 
     def evaluate_slos_and_buffer(self, service_m, service_state, slos_all_clients):
         slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)
-        self.experience_buffer.append((service_m, datetime.datetime.now(), slo_f, self.log_experience, service_state))
+        self.experience_buffer.append((service_m, datetime.datetime.now(), slo_f, self.log_experience,
+                                       service_state, self.last_iteration_length))
