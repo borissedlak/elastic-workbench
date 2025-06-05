@@ -428,7 +428,8 @@ class SimpleMCDaciWorldModel(ParametricTransform):
         h = self.dec_transf(s)
         expectation, logvar = self.dec_mu(h), self.dec_logvar(h)
 
-        expectation = torch.sigmoid(expectation)
+        # expectation = torch.sigmoid(expectation)
+        expectation = torch.clamp(expectation,0, 1)
 
         logvar = torch.clamp(logvar, min=-10, max=1)
         obs_pred = self.reparameterize(expectation, logvar) if sample else None

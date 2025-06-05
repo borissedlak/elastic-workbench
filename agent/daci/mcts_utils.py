@@ -4,7 +4,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from agent.daci_optim.optimized_aif_utils import calculate_expected_free_energy
+from agent.daci.aif_utils import calculate_expected_free_energy, calculate_expected_free_energy_eh
+from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
 
 
 def _one_hot(idx: int, dim: int, device: torch.device) -> torch.Tensor:
@@ -22,12 +23,12 @@ class _Node:
     """
 
     def __init__(
-        self,
-        action_space_size: int,
-        c: float,
-        obs: torch.Tensor,  # [1, obs_dim]
-        action: int | None = None,
-        parent: "_Node | None" = None,
+            self,
+            action_space_size: int,
+            c: float,
+            obs: torch.Tensor,  # [1, obs_dim]
+            action: int | None = None,
+            parent: "_Node | None" = None,
     ) -> None:
         self.c = c
         self.obs = obs  # already on correct device, *normalised*
@@ -79,15 +80,16 @@ class MCTS:
     """
 
     def __init__(
-        self,
-        action_dim_cv: int,
-        action_dim_qr: int,
-        agent,
-        *,
-        depth: int = 5,
-        max_len: int = 10,
-        iterations: int = 500,
-        c: float = 0.5
+            self,
+            action_dim_cv: int,
+            action_dim_qr: int,
+            agent: HybridMCDACIAgent,
+            *,
+            depth: int = 5,
+            max_len: int = 10,
+            iterations: int = 500,
+            c: float = 0.5,
+            use_eh: bool = False
     ):
         self.action_dim_cv = action_dim_cv
         self.action_dim_qr = action_dim_qr
@@ -102,6 +104,7 @@ class MCTS:
         self.device = getattr(agent, "device", torch.device("cpu"))
         self.max_len = max_len
         self.root: _Node | None = None
+        self.use_eh = use_eh
 
     def run_mcts(self, start_state: np.ndarray | torch.Tensor):
         """Main entry – builds a search tree and returns the best trajectory of (cv, qr) actions."""
@@ -158,7 +161,7 @@ class MCTS:
         delta_cv = self.agent.transition_model_cv(mu_cv, a_cv)["delta"]
         delta_qr = self.agent.transition_model_qr(mu_qr, a_qr)["delta"]
         joint_delta = torch.cat([delta_cv, delta_qr], dim=1)
-        joint_delta = self.agent.denormalize_deltas(joint_delta)
+        joint_delta = joint_delta
         mu_prior = mu_joint + joint_delta
 
         # 3) project back to observation space
@@ -173,16 +176,28 @@ class MCTS:
         )["s_dist_params"]
 
         # 5) EFE for both services
-        efe_cv, efe_qr, *_ = calculate_expected_free_energy(
-            recon_norm_obs,
-            self.agent.preferences_cv,
-            self.agent.preferences_qr,
-            mu_prior,
-            mu_post,
-            logvar_post,
-            self.agent.transition_model_cv,
-            self.agent.transition_model_qr,
-        )
+        if self.use_eh:
+            efe_cv, efe_qr, *_ = calculate_expected_free_energy_eh(
+                self.agent.vec_env.min_max_rescale(recon_norm_obs),
+                self.agent.preferences_cv,
+                self.agent.preferences_qr,
+                mu_prior,
+                mu_post,
+                logvar_post,
+                self.agent.transition_model_cv,
+                self.agent.transition_model_qr,
+            )
+        else:
+            efe_cv, efe_qr, *_ = calculate_expected_free_energy(
+                recon_norm_obs,
+                self.agent.preferences_cv,
+                self.agent.preferences_qr,
+                mu_prior,
+                mu_post,
+                logvar_post,
+                self.agent.transition_model_cv,
+                self.agent.transition_model_qr,
+            )
         efe_val = (efe_cv + efe_qr).item()
         return recon_norm_obs.detach(), efe_val
 

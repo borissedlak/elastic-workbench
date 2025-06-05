@@ -168,14 +168,18 @@ if __name__ == "__main__":
     np.random.seed(42)
     device = "cpu"
     viz = True
-    depth: int = 2
-    max_length_trajectory = 5
-    iterations: int = 300
+    depth: int = 5
+    max_length_trajectory = 30
+    iterations: int = 500
     c: float = 0.5
-    agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
+    eh = True
+    if eh:
+        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_eh.pth"
+    else:
+        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
     boundaries = {
         "model_size": {"min": 1, "max": 5},
-        # "data_quality": {"min": 100, "max": 1000},
+     "data_quality": {"min": 100, "max": 1000},
         "cores": {"min": 1, "max": 8},
         "throughput": {"min": 0, "max": 100},
     }
@@ -234,6 +238,7 @@ if __name__ == "__main__":
         iterations=iterations,
         max_len=max_length_trajectory,
         c=c,
+        use_eh=eh,
     )
 
     # THIS WILL BE IN YOUR GAME LOOP
