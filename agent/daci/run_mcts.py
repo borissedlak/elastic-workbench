@@ -168,24 +168,24 @@ if __name__ == "__main__":
     agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
     boundaries = {
         "model_size": {"min": 1, "max": 5},
-        "data_quality": {"min": 100, "max": 1000},
+        # "data_quality": {"min": 100, "max": 1000},
         "cores": {"min": 1, "max": 8},
         "throughput": {"min": 0, "max": 100},
     }
     cv_slo_targets = (
         {
             "data_quality": 288,
-            "model_size": 4,
+            "model_size": 3,
             "throughput": 5,
         },
     )
     qr_slo_targets = (
         {
             "data_quality": 900,
-            "throughput": 75,
+            "throughput": 60,
         },
     )
-    test_iters = 10
+    test_iters = 100
 
     if os.path.isfile(agent_file):
         agent = torch.load(agent_file, weights_only=False, map_location=device)["agent"]
