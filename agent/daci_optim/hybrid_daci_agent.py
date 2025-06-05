@@ -234,6 +234,19 @@ class HybridMCDACIAgent:
         Lightweight CPU-based transition for world model phase
         (Similar to original implementation but optimized)
         """
+        thresholds_qr = {
+            "max":
+                {"data_quality": 1000, },
+            "min":
+                {"data_quality": 300, }
+        }
+        thresholds_cv = {
+            "max":
+                {"data_quality": 320, },
+            "min":
+                {"data_quality": 128, }
+        }
+        thresholds = thresholds_qr if service_type == "qr" else thresholds_cv
         new_state = self.min_max_rescale(copy.deepcopy(obs))
         step_data_quality = (
             self._step_data_quality_cv
