@@ -158,7 +158,7 @@ class HybridMCDaciTrainer:
 
         return np.concatenate([state_cv, state_qr])
 
-    def simple_episode_generation(self, max_steps: int = 100) -> dict:
+    def simple_episode_generation(self, max_steps: int = 200) -> dict:
         """
         Simple single episode generation for world model training phase
         (Similar to original but optimized)
