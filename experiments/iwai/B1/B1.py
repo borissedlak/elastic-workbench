@@ -83,12 +83,12 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
-        s_mean, s_std = calculate_mean_std(paired_df) if agent != "AIF" else (paired_df['slo_f'].values, 0)
+        s_mean, s_std = calculate_mean_std(paired_df) # if agent != "AIF" else (paired_df['slo_f'].values, 0)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, label=f"{agent}", color=color_dict_agent[agent], linewidth=2,
                  linestyle=line_style_dict[agent])
-        plt.fill_between(x, lower_bound, upper_bound, color=color_dict_agent[agent], alpha=0.2)
+        plt.fill_between(x, lower_bound, upper_bound, color=color_dict_agent[agent], alpha=0.1)
 
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
@@ -132,31 +132,36 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    train_joint_q_networks(nn_folder=ROOT + "/networks")
-
-    # Load the trained DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
-    dqn_qr.load("Q_QR_joint.pt")
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
-    dqn_cv.load("Q_CV_joint.pt")
-
-    agent_fact_dqn = lambda repetition: DQNAgent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        dqn_for_services=[dqn_qr, dqn_cv],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition
-    )
-
-    agent_fact_rrm = lambda repetition: RRM_Global_Agent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition,
-        max_explore=MAX_EXPLORE
-    )
-
-    eval_scaling_agent(agent_fact_dqn, "DQN")
-    eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filename = ROOT+ "/../20250605_104110_pymdp_service_log.csv")
+    # train_joint_q_networks(nn_folder=ROOT + "/networks")
+    #
+    # # Load the trained DQNs
+    # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
+    # dqn_qr.load("Q_QR_joint.pt")
+    # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
+    # dqn_cv.load("Q_CV_joint.pt")
+    #
+    # agent_fact_dqn = lambda repetition: DQNAgent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     dqn_for_services=[dqn_qr, dqn_cv],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition
+    # )
+    #
+    # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition,
+    #     max_explore=MAX_EXPLORE
+    # )
+    #
+    # eval_scaling_agent(agent_fact_dqn, "DQN")
+    # eval_scaling_agent(agent_fact_rrm, "RRM")
+    # 20250605_104110_pymdp_service_log best so far; stochastic, alpha = 8
+    # 20250605_120147_pymdp_service_log also nice; stochastic, alpha = 8
+    # 20250605_131211_pymdp_service_log also nice; stochastic, alpha = 8
+    import_pymdp_logs(filenames=[ROOT + "/../20250605_104110_pymdp_service_log.csv",
+                                 ROOT + "/../20250605_120147_pymdp_service_log.csv",
+                                 ROOT + "/../20250605_131211_pymdp_service_log.csv",])
     visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")

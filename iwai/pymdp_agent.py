@@ -491,7 +491,7 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
 
 if __name__ == "__main__":
     for i in range(5):
-        train_pymdp_agent("stochastic", 4, True)
+        # train_pymdp_agent("stochastic", 4, True)
         train_pymdp_agent("stochastic", 8, True)
-        train_pymdp_agent("deterministic", 16, True)
-        train_pymdp_agent("deterministic", 16, False)
+        # train_pymdp_agent("deterministic", 16, True)
+        # train_pymdp_agent("deterministic", 16, False)
