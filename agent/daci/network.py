@@ -147,7 +147,7 @@ class TransitionNetwork(nn.Module):  # Model Mid
         world_latent_dim: int = 4,  # s_dim
         policy_dim: int = 7,  # pi_dim,
         width: int = 32,
-        dropout: float = 0.5,
+        dropout: float = 0.0,
         depth_increase: int = 0,
     ):
         super().__init__()
@@ -262,7 +262,7 @@ class WorldModel(ParametricTransform):
         world_latent_dim: int = 4,  # s_dim
         policy_dim: int = 7,  # pi_dim,
         width: int = 32,
-        dropout: float = 0.5,
+        dropout: float = 0.0,
         depth_increase: int = 0,
     ):
         super().__init__()
@@ -355,7 +355,7 @@ class SimpleMCDaciWorldModel(ParametricTransform):
         out_dim: Optional[int] = None,
         world_latent_dim: int = 2 * 4,  # output joint latent
         width: int = 32,
-        dropout: float = 0.5,
+        dropout: float = 0.0,
         depth_increase: int = 0,
     ):
         super().__init__()

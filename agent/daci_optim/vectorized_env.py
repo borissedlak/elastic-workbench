@@ -6,7 +6,7 @@ from typing import Tuple, Dict
 class VectorizedEnvironment:
     """GPU-accelerated vectorized environment for parallel state transitions"""
 
-    def __init__(self, boundaries: Dict[str, Dict[str, float]], device: str = "cuda:0"):
+    def __init__(self, boundaries: Dict[str, Dict[str, float]], device: str = "cuda:1"):
         self.device = device
         self.boundaries = boundaries
 
@@ -219,22 +219,32 @@ class VectorizedEnvironment:
 
     def calculate_rewards_cv(self, states: torch.Tensor) -> torch.Tensor:
         sol_qual = 0.25 * states[:, 0] + 0.75 * states[:, 4]
+        tp = states[:, 2]
         # Use actual preferences if available, otherwise fallback to placeholder
-        if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
-            threshold = self.preferences_cv[0].item()
-        else:
-            threshold = 0.5  # Fallback threshold
-        rewards = torch.where(sol_qual >= threshold, 1.0, -1.0)
+        #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
+        threshold = self.preferences_cv[0].item()
+        threshold_tp = self.preferences_cv[1].item()
+        #else:
+        #    threshold = 0.5  # Fallback threshold
+        rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
+        rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
+        rewards = rewards_sol_qual + rewards_hroughputal
         return rewards
 
     def calculate_rewards_qr(self, states: torch.Tensor) -> torch.Tensor:
+        sol_qual =  states[:, 0]
+        tp = states[:, 2]
         # Use actual preferences if available, otherwise fallback to placeholder
-#        if hasattr(self, 'preferences_qr') and self.preferences_qr is not None:
+        #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
         threshold = self.preferences_qr[0].item()
-#        else:
-#            threshold = 0.5  # Fallback threshold
-        rewards = torch.where(states[:, 0] >= threshold, 1.0, -1.0)
+        threshold_tp = self.preferences_qr[1].item()
+        #else:
+        #    threshold = 0.5  # Fallback threshold
+        rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
+        rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
+        rewards = rewards_sol_qual + rewards_hroughputal
         return rewards
+
 
     def vectorized_multistep_rollout(self, initial_states: torch.Tensor,
                                      actions_cv: torch.Tensor, actions_qr: torch.Tensor,
