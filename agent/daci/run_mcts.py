@@ -163,8 +163,8 @@ if __name__ == "__main__":
         ]
 """
     # Initialize start state
-    start_state_raw_cv = torch.tensor([500, 300, 2, 5, 1, 3, 2,  4])
-    start_state_raw_qr = torch.tensor([500, 800, 2, 75, 1, 1, 2,  4])
+    start_state_raw_cv = torch.tensor([256, 288, 2, 5, 2, 3, 2, 4])
+    start_state_raw_qr = torch.tensor([700, 900, 2, 60, 1, 1, 2, 4])
     joint_state = torch.cat([start_state_raw_cv, start_state_raw_qr], dim=0).unsqueeze(0).to(dtype=torch.float32, device=device)
     joint_state = scale_joint(joint_state, agent.vec_env)
     print("Start state (raw):", joint_state.squeeze().tolist())
