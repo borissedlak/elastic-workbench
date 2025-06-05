@@ -13,16 +13,106 @@ import numpy as np
 import torch
 
 from agent.LGBN import LGBN
-from agent.agent_utils import min_max_scale
+from agent.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
+from agent.agent_utils import FullStateDQN, min_max_scale
 from agent.daci.aif_utils import calculate_expected_free_energy
 from agent.daci.network import SimpleDeltaTransitionNetwork, SimpleMCDaciWorldModel
 from agent.daci_optim.vectorized_env import VectorizedEnvironment
 from torch.nn import functional as F
 
-from agent.es_registry import ServiceType
+from agent.es_registry import ESRegistry, ServiceType
 from proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")
+ROOT = os.path.dirname(__file__)
+slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")
+es_registry = ESRegistry(ROOT + "/../../config/es_registry.json")
+client_slos_qr = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.QR, {"C_1": 100}
+)[0]
+client_slos_cv = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.CV, {"C_1": 100}
+)[0]
+
+boundaries_cv = es_registry.get_boundaries_minimalistic(ServiceType.CV, 8)
+boundaries_qr = es_registry.get_boundaries_minimalistic(ServiceType.QR, 8)
+
+
+def convert_rescaled_joint_state_to_slof(rescaled_joint_state: torch.Tensor):
+    # rescaled_joint_state: shape (B, 16)
+    normalized_slo_cv_list = []
+    normalized_slo_qr_list = []
+    for b in range(rescaled_joint_state.shape[0]):
+        state_cv = rescaled_joint_state[b][:8]
+        state_qr = rescaled_joint_state[b][8:]
+
+        full_state_cv = FullStateDQN(
+            state_cv[0],
+            state_cv[1],
+            state_cv[2],
+            state_cv[3],
+            state_cv[4],
+            state_cv[5],
+            0,  # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
+            boundaries_cv,
+        )
+
+        full_state_qr = FullStateDQN(
+            state_qr[0],
+            state_qr[1],
+            state_qr[2],
+            state_qr[3],
+            state_qr[4],
+            state_qr[5],
+            0,  # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
+            boundaries_qr,
+        )
+
+        normalized_slo_cv = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+            client_slos_cv)
+        normalized_slo_qr = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+            client_slos_qr)
+
+        normalized_slo_cv_list.append(normalized_slo_cv)
+        normalized_slo_qr_list.append(normalized_slo_qr)
+
+    # Compute mean over batch
+    batch_mean_cv = torch.mean(torch.stack(normalized_slo_cv_list), dim=0)
+    batch_mean_qr = torch.mean(torch.stack(normalized_slo_qr_list), dim=0)
+    return batch_mean_cv, batch_mean_qr
+
+
+def convert_rescaled_state_qr_to_slof(state_qr: np.ndarray):
+    """
+    state_qr: np.ndarray of shape (8,)
+    Returns the normalized SLO-F value for this sample.
+    """
+    full_state_qr = FullStateDQN(
+        state_qr[0], state_qr[1], state_qr[2], state_qr[3],
+        state_qr[4], state_qr[5], 0, 0, boundaries_qr,
+    )
+    normalized_slo_qr = to_normalized_slo_f(
+        calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+        client_slos_qr)
+    return normalized_slo_qr
+
+def convert_rescaled_state_cv_to_slof(state_cv: np.ndarray):
+    """
+    state_cv: np.ndarray of shape (8,)
+    Returns the normalized SLO-F value for this sample.
+    """
+    full_state_cv = FullStateDQN(
+        state_cv[0], state_cv[1], state_cv[2], state_cv[3],
+        state_cv[4], state_cv[5], 0, 0, boundaries_cv,
+    )
+    normalized_slo_cv = to_normalized_slo_f(
+        calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+        client_slos_cv)
+    return normalized_slo_cv
 
 
 def freeze_module_params(module):
@@ -34,14 +124,17 @@ def unfreeze_module_params(module):
     for param in module.parameters():
         param.requires_grad = True
 
+
 ROOT = os.path.dirname(__file__)
-df_t = pd.read_csv(ROOT+"/../../share/metrics/LGBN.csv")
+df_t = pd.read_csv(ROOT + "/../../share/metrics/LGBN.csv")
 lgbn = LGBN(show_figures=False, structural_training=False, df=df_t)
+
 
 def sample_throughput_from_lgbn(data_quality, cores, model_size, service_type):
     partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
     full_state = lgbn.predict_lgbn_vars(partial_state, service_type)
     return full_state['throughput']
+
 
 class HybridMCDACIAgent:
     """Hybrid agent that adapts performance strategy based on training phase"""
@@ -60,9 +153,9 @@ class HybridMCDACIAgent:
             width: int = 24,
             batch_size: int = 16,  # Keep original batch size for world model phase
             early_stopping_rounds=1500,
-            iters_joint = 1200,
-            iters_wm = 300,
-            iters_tran = 300,
+            iters_joint=1200,
+            iters_wm=10,
+            iters_tran=1,
             device: str = "cuda:1",
             depth_increase: int = 1,
             train_transition_from_iter: int = 600,
@@ -320,19 +413,17 @@ class HybridMCDACIAgent:
 
     def check_reward_cv(self, state):
         """Lightweight reward calculation for CV"""
-        sol_qual = 0.25 * state[0] + 0.75 * state[4]
-        throughput = state[2]
-        reward_sol_qual = 1 if sol_qual >= self.preferences_cv[0][0].item() else -1
-        reward_tp = 1 if throughput >= self.preferences_cv[0][1].item() else -1
-        return reward_sol_qual + reward_tp
+
+        rescaled_state = self.min_max_rescale(state)
+        reward_cv = convert_rescaled_state_cv_to_slof(state_cv=rescaled_state)
+        return reward_cv
 
     def check_reward_qr(self, state):
-        """Lightweight reward calculation for qr"""
-        sol_qual = state[0]
-        throughput = state[2]
-        reward_sol_qual = 1 if sol_qual >= self.preferences_qr[0][0].item() else -1
-        reward_tp = 1 if throughput >= self.preferences_qr[0][1].item() else -1
-        return reward_sol_qual + reward_tp
+        """Lightweight reward calculation for CV"""
+        rescaled_state = self.min_max_rescale(state)
+
+        reward_qr = convert_rescaled_state_qr_to_slof(state_qr=rescaled_state)
+        return reward_qr
 
     def adaptive_save_experience(self, obs, joint_action, next_obs, to_train=True):
         """Save experience using appropriate method based on training phase"""
@@ -499,7 +590,7 @@ class HybridMCDACIAgent:
     def phase_transition_check(self, i, num_episodes):
         """Check if we should transition between training phases"""
         if self.current_phase == "world_model" and not self.train_transition:
-            if i > self.iters_wm: # and self.validate_enc_dec(i):
+            if i > self.iters_wm:  # and self.validate_enc_dec(i):
                 print(f"🔄 Transitioning from world_model to transition phase at iteration {i}")
                 self.current_phase = "transition"
                 self.train_transition = True
@@ -507,8 +598,8 @@ class HybridMCDACIAgent:
                 self.compute_stats()
                 return True
         elif self.current_phase == "transition" and not self.train_all:
-            if i - self.iters_wm >  self.iter_tran:
-#            if self.validate_transition_model(i):
+            if i - self.iters_wm > self.iter_tran:
+                #            if self.validate_transition_model(i):
                 print(f"🔄 Transitioning from transition to joint phase at iteration {i}")
                 self.train_all = True
                 self.start_multi = i
@@ -648,15 +739,15 @@ class HybridMCDACIAgent:
         kl_loss = beta * -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
 
         spread_weight = torch.clamp(torch.tensor(0.1 * iter, device=self.device), max=5)
-        #spread_loss = spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
+        # spread_loss = spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
         # decoding_loss = F.mse_loss(pred_mu_next, pred_obs_next_normalized, reduction="mean")
 
         loss = recon_loss + kl_loss
         return loss, {
             "reconstruction loss": recon_loss.item(),
             "kl loss": kl_loss.item(),
-#            "spread loss": spread_loss.item(),
-#            "decoder loss": decoding_loss.item(),
+            #            "spread loss": spread_loss.item(),
+            #            "decoder loss": decoding_loss.item(),
         }
 
     def compute_transition_loss(self, next_latent_deltas, transition_latent_deltas, i, T, is_multi=False):
@@ -817,7 +908,7 @@ class HybridMCDACIAgent:
                 # joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
                 joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent_mu, sample=False)[
                     "o_dist_params"]
-                #joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
+                # joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
 
                 # joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
                 joint_latent_next_mu, _ = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
@@ -843,9 +934,10 @@ class HybridMCDACIAgent:
 
                 with torch.no_grad():
                     joint_mu, joint_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
-                    #joint_latent = self.world_model.reparameterize(joint_mu, joint_logvar)
-#                    joint_next_latent = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
-                    joint_next_mu, joint_next_logvar = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
+                    # joint_latent = self.world_model.reparameterize(joint_mu, joint_logvar)
+                    #                    joint_next_latent = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
+                    joint_next_mu, joint_next_logvar = self.world_model.encode(joint_next_obs_norm, sample=False)[
+                        "s_dist_params"]
 
                 self.optim_transition_network.zero_grad()
 
@@ -880,16 +972,16 @@ class HybridMCDACIAgent:
                 self.optim_transition_network.zero_grad()
                 # World model forward pass
                 joint_latent_mu, joint_latent_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
-                #joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
+                # joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
                 joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent_mu, sample=False)[
                     "o_dist_params"]
-                #joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
+                # joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
 
                 # joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
                 joint_latent_next_mu, _ = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
                 recon_next_mu, recon_next_logvar = self.world_model.decode(joint_latent_next_mu, sample=False)[
                     "o_dist_params"]
-                #joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
+                # joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
 
                 loss_vae, wm_loss_dict = self.compute_world_model_loss(
                     i, joint_obs_norm, joint_recon_mu, joint_latent_mu, joint_latent_logvar,
@@ -904,7 +996,7 @@ class HybridMCDACIAgent:
                 z_delta_pred_cv = self.transition_model_cv(cv_latent, actions_cv)["delta"]
                 z_delta_pred_qr = self.transition_model_qr(qr_latent, actions_qr)["delta"]
                 joint_pred_deltas = torch.cat([z_delta_pred_cv, z_delta_pred_qr], dim=1)
-                #joint_pred_deltas = self.normalize_deltas(joint_pred_deltas)
+                # joint_pred_deltas = self.normalize_deltas(joint_pred_deltas)
                 # joint_pred_deltas = joint_pred_deltas
                 loss_trans, trans_dict = self.compute_transition_loss(
                     norm_target_deltas, joint_pred_deltas, i, num_episodes, is_multi=True
@@ -913,7 +1005,7 @@ class HybridMCDACIAgent:
                 # Additional position losses
                 recon_obs_after_transition = self.world_model.decode(
                     joint_pred_deltas + joint_latent_mu, sample=True,
-#                    joint_pred_deltas + joint_latent_mu, sample=True,
+                    #                    joint_pred_deltas + joint_latent_mu, sample=True,
                 )["o_pred"]
 
                 scale = lambda_trans_start + (lambda_trans_end - lambda_trans_start) * (i / num_episodes)
@@ -934,17 +1026,14 @@ class HybridMCDACIAgent:
                 loss_qual = l_sol_qual_cv + l_sol_qual_qr
                 loss_tp = l_tp_cv + l_tp_qr
 
-
-                #loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
+                # loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
                 loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
-
 
                 if loss.item() < self.train_loss_finetune:
                     self.train_loss_finetune = loss.item()
                     self.patience_finetune = 0
                 else:
                     self.patience_finetune += 1
-
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.transition_model_cv.parameters(), max_norm=1.0)

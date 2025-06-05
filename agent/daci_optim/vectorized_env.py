@@ -1,6 +1,127 @@
+import pandas as pd
+import os
+
 import torch
 import numpy as np
 from typing import Tuple, Dict
+
+from agent.LGBN import LGBN
+from agent.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
+from agent.agent_utils import FullStateDQN
+from agent.es_registry import ESRegistry, ServiceType
+
+ROOT = os.path.dirname(__file__)
+slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")
+es_registry = ESRegistry(ROOT + "/../../config/es_registry.json")
+client_slos_qr = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.QR, {"C_1": 100}
+)[0]
+client_slos_cv = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.CV, {"C_1": 100}
+)[0]
+
+boundaries_cv = es_registry.get_boundaries_minimalistic(ServiceType.CV, 8)
+boundaries_qr = es_registry.get_boundaries_minimalistic(ServiceType.QR, 8)
+
+ROOT = os.path.dirname(__file__)
+df_t = pd.read_csv(ROOT + "/../../share/metrics/LGBN.csv")
+lgbn = LGBN(show_figures=False, structural_training=False, df=df_t)
+
+
+def sample_throughput_from_lgbn(data_quality, cores, model_size, service_type):
+    partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
+    full_state = lgbn.predict_lgbn_vars(partial_state, service_type)
+    return full_state['throughput']
+
+
+def convert_rescaled_state_qr_to_slof(state_qr: torch.Tensor):
+    """
+    state_qr: torch.Tensor of shape (B, 8)
+    Returns the mean normalized SLO-F values for the batch.
+    """
+    normalized_slo_qr_list = []
+    for b in range(state_qr.shape[0]):
+        s = state_qr[b]
+        full_state_qr = FullStateDQN(
+            s[0], s[1], s[2], s[3], s[4], s[5],
+            0, 0,  # cores irrelevant for SLO-F
+            boundaries_qr,
+        )
+        normalized_slo_qr = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+            client_slos_qr)
+        normalized_slo_qr_list.append(normalized_slo_qr)
+    batch_mean_qr = torch.mean(torch.stack(normalized_slo_qr_list), dim=0)
+    return batch_mean_qr
+
+
+def convert_rescaled_state_cv_to_slof(state_cv: torch.Tensor):
+    """
+    state_cv: torch.Tensor of shape (B, 8)
+    Returns the mean normalized SLO-F values for the batch.
+    """
+    normalized_slo_cv_list = []
+    for b in range(state_cv.shape[0]):
+        s = state_cv[b]
+        full_state_cv = FullStateDQN(
+            s[0], s[1], s[2], s[3], s[4], s[5],
+            0, 0,  # cores irrelevant for SLO-F
+            boundaries_cv,
+        )
+        normalized_slo_cv = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+            client_slos_cv)
+        normalized_slo_cv_list.append(normalized_slo_cv)
+    batch_mean_cv = torch.mean(torch.stack(normalized_slo_cv_list), dim=0)
+    return batch_mean_cv
+
+
+def convert_rescaled_joint_state_to_slof(rescaled_joint_state: torch.Tensor):
+    # rescaled_joint_state: shape (B, 16)
+    normalized_slo_cv_list = []
+    normalized_slo_qr_list = []
+    for b in range(rescaled_joint_state.shape[0]):
+        state_cv = rescaled_joint_state[b][:8]
+        state_qr = rescaled_joint_state[b][8:]
+
+        full_state_cv = FullStateDQN(
+            state_cv[0],
+            state_cv[1],
+            state_cv[2],
+            state_cv[3],
+            state_cv[4],
+            state_cv[5],
+            0,  # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
+            boundaries_cv,
+        )
+
+        full_state_qr = FullStateDQN(
+            state_qr[0],
+            state_qr[1],
+            state_qr[2],
+            state_qr[3],
+            state_qr[4],
+            state_qr[5],
+            0,  # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
+            boundaries_qr,
+        )
+
+        normalized_slo_cv = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+            client_slos_cv)
+        normalized_slo_qr = to_normalized_slo_f(
+            calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+            client_slos_qr)
+
+        normalized_slo_cv_list.append(normalized_slo_cv)
+        normalized_slo_qr_list.append(normalized_slo_qr)
+
+    # Compute mean over batch
+    batch_mean_cv = torch.mean(torch.stack(normalized_slo_cv_list), dim=0)
+    batch_mean_qr = torch.mean(torch.stack(normalized_slo_qr_list), dim=0)
+    return batch_mean_cv, batch_mean_qr
 
 
 class VectorizedEnvironment:
@@ -158,6 +279,14 @@ class VectorizedEnvironment:
 
         unnorm_states[:, 0] = torch.clamp(unnorm_states[:, 0], dq_min, dq_max)
         unnorm_states[:, 1] = torch.clamp(unnorm_states[:, 1], dq_min, dq_max)
+        # Compute throughput for each batch element
+        for i in range(unnorm_states.shape[0]):
+            dq = unnorm_states[i, 0].item()
+            cores = unnorm_states[i, 6].item()
+            model_size = unnorm_states[i, 4].item()
+            unnorm_states[i, 2] = sample_throughput_from_lgbn(
+                dq, cores, model_size, ServiceType.CV
+            )
 
         new_states = self.min_max_scale(unnorm_states)  # back to [0, 1]
         rewards = self.calculate_rewards_cv(new_states)
@@ -241,33 +370,36 @@ class VectorizedEnvironment:
         return new_states, rewards
 
     def calculate_rewards_cv(self, states: torch.Tensor) -> torch.Tensor:
-        sol_qual = 0.25 * states[:, 0] + 0.75 * states[:, 4]
-        tp = states[:, 2]
-        # Use actual preferences if available, otherwise fallback to placeholder
-        #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
-        threshold = self.preferences_cv[0].item()
-        threshold_tp = self.preferences_cv[1].item()
-        #else:
-        #    threshold = 0.5  # Fallback threshold
-        rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
-        rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
-        rewards = rewards_sol_qual + rewards_hroughputal
+        states_rescaled = self.min_max_rescale(states)
+        rewards = convert_rescaled_state_cv_to_slof(state_cv=states_rescaled)
+        # sol_qual = 0.25 * states[:, 0] + 0.75 * states[:, 4]
+        # tp = states[:, 2]
+        # # Use actual preferences if available, otherwise fallback to placeholder
+        # #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
+        # threshold = self.preferences_cv[0].item()
+        # threshold_tp = self.preferences_cv[1].item()
+        # #else:
+        # #    threshold = 0.5  # Fallback threshold
+        # rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
+        # rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
+        # rewards = rewards_sol_qual + rewards_hroughputal
         return rewards
 
     def calculate_rewards_qr(self, states: torch.Tensor) -> torch.Tensor:
-        sol_qual =  states[:, 0]
-        tp = states[:, 2]
-        # Use actual preferences if available, otherwise fallback to placeholder
-        #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
-        threshold = self.preferences_qr[0].item()
-        threshold_tp = self.preferences_qr[1].item()
-        #else:
-        #    threshold = 0.5  # Fallback threshold
-        rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
-        rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
-        rewards = rewards_sol_qual + rewards_hroughputal
+        states_rescaled = self.min_max_rescale(states)
+        rewards = convert_rescaled_state_qr_to_slof(state_qr=states_rescaled)
+        # sol_qual =  states[:, 0]
+        # tp = states[:, 2]
+        # # Use actual preferences if available, otherwise fallback to placeholder
+        # #if hasattr(self, 'preferences_cv') and self.preferences_cv is not None:
+        # threshold = self.preferences_qr[0].item()
+        # threshold_tp = self.preferences_qr[1].item()
+        # #else:
+        # #    threshold = 0.5  # Fallback threshold
+        # rewards_sol_qual = torch.where(sol_qual >= threshold, 1.0, -1.0)
+        # rewards_hroughputal = torch.where(tp >= threshold_tp, 1.0, -1.0)
+        # rewards = rewards_sol_qual + rewards_hroughputal
         return rewards
-
 
     def vectorized_multistep_rollout(self, initial_states: torch.Tensor,
                                      actions_cv: torch.Tensor, actions_qr: torch.Tensor,

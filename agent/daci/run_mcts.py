@@ -149,11 +149,11 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         boundaries_qr,
     )
 
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
-                              client_slos_cv))
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
-                              client_slos_qr))
-
+    normalized_slo_cv = to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+                              client_slos_cv)
+    normalized_slo_qr = to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+                              client_slos_qr)
+    return normalized_slo_cv, normalized_slo_qr
 
 # -----------------------------------------------------------------------------
 
