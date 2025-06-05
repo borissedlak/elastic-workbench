@@ -1,3 +1,5 @@
+from collections import deque
+
 import torch.nn.functional as F
 import copy
 import itertools
@@ -43,9 +45,9 @@ class HybridMCDACIAgent:
             joint_latent_dim: int = 2 * 4,
             action_dim_cv: int = 7,
             action_dim_qr: int = 5,
-            width: int = 32,
+            width: int = 48,
             batch_size: int = 32,  # Keep original batch size for world model phase
-            early_stopping_rounds=10000,
+            early_stopping_rounds=5000,
             device: str = "cuda:0",
             depth_increase: int = 0,
             train_transition_from_iter: int = 600,
@@ -81,19 +83,19 @@ class HybridMCDACIAgent:
         self.patience = early_stopping_rounds
 
         # Lightweight buffer for world model phase (CPU-based for simplicity)
-        self.buffer = []
-        self.val_buffer = []
+        self.buffer = deque(maxlen=1000)
+        self.val_buffer = deque(maxlen=1000)
 
         # Heavy-duty GPU buffers for transition phase
-        self.gpu_buffer_obs = []
-        self.gpu_buffer_actions_cv = []
-        self.gpu_buffer_actions_qr = []
-        self.gpu_buffer_next_obs = []
+        self.gpu_buffer_obs = deque(maxlen=1000)
+        self.gpu_buffer_actions_cv = deque(maxlen=1000)
+        self.gpu_buffer_actions_qr = deque(maxlen=1000)
+        self.gpu_buffer_next_obs = deque(maxlen=1000)
 
-        self.gpu_val_buffer_obs = []
-        self.gpu_val_buffer_actions_cv = []
-        self.gpu_val_buffer_actions_qr = []
-        self.gpu_val_buffer_next_obs = []
+        self.gpu_val_buffer_obs = deque(maxlen=1000)
+        self.gpu_val_buffer_actions_cv = deque(maxlen=1000)
+        self.gpu_val_buffer_actions_qr = deque(maxlen=1000)
+        self.gpu_val_buffer_next_obs = deque(maxlen=1000)
 
         self.val_loss_enc = np.inf
         self.val_loss_transition = np.inf
