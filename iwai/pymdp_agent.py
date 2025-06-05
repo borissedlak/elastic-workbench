@@ -473,9 +473,10 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
             "action_qr": action_qr.name if hasattr(action_qr, 'name') else str(action_qr),
             "action_cv": action_cv.name if hasattr(action_cv, 'name') else str(action_cv),
             "reward": joint_reward,
-            "efe":efe,
+            "efe": efe,
             "info_gain": info_gain,
             "pragmatic_value": pragmatic_value,
+            "elapsed": elapsed,
         })
         print(f"CV| {action_cv} --> {logged_data[-1]["next_state_cv"]}")
         print(f"QR| {action_qr} --> {logged_data[-1]["next_state_qr"]}")
@@ -490,8 +491,8 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
     print("done")
 
 if __name__ == "__main__":
-    for i in range(5):
-        train_pymdp_agent("stochastic", 4, True)
+    for i in range(15):
+        # train_pymdp_agent("stochastic", 4, True)
         train_pymdp_agent("stochastic", 8, True)
-        train_pymdp_agent("deterministic", 16, True)
-        train_pymdp_agent("deterministic", 16, False)
+        # train_pymdp_agent("deterministic", 16, True)
+        # train_pymdp_agent("deterministic", 16, False)
