@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Dict, List
 
 import numpy as np
@@ -129,6 +130,11 @@ class DQNAgent(ScalingAgent):
                 "data_quality": int(state_pw.data_quality + delta_data_quality)
             }
         if 3 <= action_pw <= 4:
+
+            if action_pw == 4 and free_cores <= 0:
+                logger.warning(f"{service.service_type} wants to consume cores, but none free")
+                return ESType.IDLE, {}
+
             delta_cores = -1 if action_pw == 3 else 1
             return ESType.RESOURCE_SCALE, {"cores": state_pw.cores + delta_cores}
         if 5 <= action_pw <= 6:
@@ -166,4 +172,5 @@ if __name__ == "__main__":
     )
 
     agent.reset_services_states()
+    time.sleep(3)
     agent.start()

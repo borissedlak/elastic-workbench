@@ -45,14 +45,13 @@ class LGBNTrainingEnv(gymnasium.Env):
         )[0]
 
     def step(self, action: ESServiceAction):
-        behavioral_punishment = 0
+        additional_reward_punishment = 0
         new_state = self.state._asdict()
         done = False
 
         # Do nothing at 0
         if action.value == 0:
-            pass
-            behavioral_punishment += 0.1  # Encourage the client not to oscillate
+            additional_reward_punishment += 0.1  # Encourage the client not to oscillate
 
         if 1 <= action.value <= 2:
             delta_data_quality = -self.step_data_quality if action.value == 1 else self.step_data_quality
@@ -110,7 +109,7 @@ class LGBNTrainingEnv(gymnasium.Env):
         reward = to_normalized_slo_f(
             calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
             self.client_slos,
-        )
+        ) + additional_reward_punishment
         # reward += 0.1 if action == 0 and reward > 0.8 else 0.0
 
         return self.state, reward, done, False, {}
