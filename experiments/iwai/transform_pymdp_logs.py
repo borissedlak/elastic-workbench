@@ -61,7 +61,7 @@ def import_pymdp_logs(filename):
         })
 
     # Output DataFrame
-    output_df = pd.DataFrame(rows)[:80] # As for the other two agents
+    output_df = pd.DataFrame(rows)[:50] # As for the other two agents
     output_df.to_csv(ROOT + "/B1/agent_experience_AIF.csv", index=False)
 
 if __name__ == "__main__":

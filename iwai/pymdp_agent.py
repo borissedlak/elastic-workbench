@@ -406,8 +406,6 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
     elapsed = time.time() - start_time
     print(f"Execution time: {elapsed:.4f} seconds")
 
-    joint_reward = 0
-
     logged_data = list()
 
     for steps in range(50):
@@ -479,8 +477,8 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
             "info_gain": info_gain,
             "pragmatic_value": pragmatic_value,
         })
-        print(logged_data[-1]["next_state_cv"])
-        print(logged_data[-1]["next_state_qr"])
+        print(f"CV| {action_cv} --> {logged_data[-1]["next_state_cv"]}")
+        print(f"QR| {action_qr} --> {logged_data[-1]["next_state_qr"]}")
         print(logged_data[-1]["reward"])
 
     save_agent_parameters(pymdp_agent, save_path="../experiments/iwai/saved_agent")
@@ -488,12 +486,12 @@ def train_pymdp_agent(action_selection, alpha, motivate_cores):
     log_path = f"../experiments/iwai/{timestamp}_pymdp_service_log.csv"
     df = pd.DataFrame(logged_data)
     df.to_csv(log_path, index=False, mode='a', header=not os.path.exists(log_path))
-    log_entries = []  # Clear after saving
+
     print("done")
 
 if __name__ == "__main__":
     for i in range(5):
+        train_pymdp_agent("stochastic", 4, True)
+        train_pymdp_agent("stochastic", 8, True)
         train_pymdp_agent("deterministic", 16, True)
         train_pymdp_agent("deterministic", 16, False)
-        train_pymdp_agent("stochastic", 8, True)
-        train_pymdp_agent("stochastic", 4, False)

@@ -1,4 +1,10 @@
+import os
+
+import pandas as pd
+
 import utils
+from agent.es_registry import ServiceType
+from iwai.dqn_trainer import QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP
 from iwai.lgbn_training_env import LGBNTrainingEnv, INVALID_ACTION_PUNISHMENT
 from proj_types import ESServiceAction
 
@@ -37,14 +43,14 @@ class GlobalTrainingEnv:
         old_state_qr = self.env_qr.state
         old_state_cv = self.env_cv.state
 
+        # TODO: Prevent even the action if the total cores will be too high
+
         # Apply actions
         next_state_qr, reward_qr, done_qr, _, _ = self.env_qr.step(action_qr)
         next_state_cv, reward_cv, done_cv, _, _ = self.env_cv.step(action_cv)
 
         total_used_cores_after = next_state_qr.cores + next_state_cv.cores
         free_cores = self.max_cores - total_used_cores_after
-        next_state_qr = next_state_qr._replace(free_cores=free_cores)
-        next_state_cv = next_state_cv._replace(free_cores=free_cores)
 
         overuse = total_used_cores_after > self.max_cores
 
@@ -53,11 +59,32 @@ class GlobalTrainingEnv:
         if overuse:  # Shared penalty if resource overuse occurred
             # penalty = INVALID_ACTION_PUNISHMENT
             # done = True
+            free_cores = self.max_cores - (old_state_qr.cores + old_state_cv.cores)
             next_state_qr = old_state_qr
             next_state_cv = old_state_cv
-            reward_qr = 0
-            reward_cv = 0
+            # reward_qr = 0
+            # reward_cv = 0
+
+        next_state_qr = next_state_qr._replace(free_cores=free_cores)
+        next_state_cv = next_state_cv._replace(free_cores=free_cores)
 
         joint_reward = reward_qr + reward_cv #+ penalty
 
         return (next_state_qr, next_state_cv), joint_reward, done
+
+if __name__ == "__main__":
+    ROOT = os.path.dirname(__file__)
+    df = pd.read_csv(ROOT + "/../share/metrics/LGBN.csv")
+
+    env_qr = LGBNTrainingEnv(ServiceType.QR, step_data_quality=QR_DATA_QUALITY_STEP)
+    env_qr.reload_lgbn_model(df)
+
+    env_cv = LGBNTrainingEnv(ServiceType.CV, step_data_quality=CV_DATA_QUALITY_STEP)
+    env_cv.reload_lgbn_model(df)
+
+    # Wrap in joint environment
+    joint_env = GlobalTrainingEnv(env_qr, env_cv, max_cores=8)
+    joint_env.reset()
+
+    for _ in range(10):
+        print(joint_env.step(ESServiceAction.INC_CORES, ESServiceAction.INC_CORES))
