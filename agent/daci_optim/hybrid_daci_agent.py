@@ -37,15 +37,15 @@ class HybridMCDACIAgent:
             boundaries: Dict[str, Dict[str, float | int]],
             cv_slo_targets: dict,
             qr_slo_targets: dict,
-            lr_wm: float = 1e-3,
-            lr_tn: float = 1e-4,
+            lr_wm: float = 1e-4,
+            lr_tn: float = 5e-3,
             joint_obs_dim: int = 2 * 8,
             joint_latent_dim: int = 2 * 4,
             action_dim_cv: int = 7,
             action_dim_qr: int = 5,
-            width: int = 48,
-            batch_size: int = 16,  # Keep original batch size for world model phase
-            early_stopping_rounds=6000,
+            width: int = 32,
+            batch_size: int = 32,  # Keep original batch size for world model phase
+            early_stopping_rounds=10000,
             device: str = "cuda:0",
             depth_increase: int = 0,
             train_transition_from_iter: int = 600,
@@ -64,11 +64,11 @@ class HybridMCDACIAgent:
         ).to(device)
 
         self.transition_model_cv = SimpleDeltaTransitionNetwork(
-            joint_latent_dim // 2, action_dim_cv, width, depth_increase=depth_increase
+            joint_latent_dim // 2, action_dim_cv, width, depth_increase=1
         ).to(device)
 
         self.transition_model_qr = SimpleDeltaTransitionNetwork(
-            joint_latent_dim // 2, action_dim_qr, width, depth_increase=depth_increase
+            joint_latent_dim // 2, action_dim_qr, width, depth_increase=1
         ).to(device)
 
         # Training state
@@ -115,7 +115,7 @@ class HybridMCDACIAgent:
         )
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optim_world_model, step_size=50, gamma=0.95
+            self.optim_world_model, step_size=50, gamma=0.95,
         )
         self.scheduler_trans = torch.optim.lr_scheduler.StepLR(
             self.optim_transition_network, step_size=50, gamma=0.95
@@ -407,7 +407,7 @@ class HybridMCDACIAgent:
         self.val_buffer.clear()
 
         # Increase batch size for better GPU utilization
-        self.batch_size = min(64, len(self.gpu_buffer_obs))
+        # self.batch_size = min(self.batch_size, len(self.gpu_buffer_obs))
         print(f"Updated batch size to {self.batch_size} for GPU training")
 
     def normalize_obs(self, obs: torch.Tensor):
@@ -418,7 +418,7 @@ class HybridMCDACIAgent:
         delta_mus = []
         with torch.no_grad():
             buffer_size = len(self.gpu_buffer_obs) if self.current_phase != "world_model" else len(self.buffer)
-            max_iterations = min(500, buffer_size // self.batch_size + 1)
+            max_iterations = min(2000, buffer_size // self.batch_size + 1)
 
             for it in range(max_iterations):
                 obs_batch = self.adaptive_sample()
@@ -452,7 +452,7 @@ class HybridMCDACIAgent:
     def phase_transition_check(self, i, num_episodes):
         """Check if we should transition between training phases"""
         if self.current_phase == "world_model" and not self.train_transition:
-            if i > 600: # and self.validate_enc_dec(i):
+            if i > 500: # and self.validate_enc_dec(i):
                 print(f"🔄 Transitioning from world_model to transition phase at iteration {i}")
                 self.current_phase = "transition"
                 self.train_transition = True
@@ -460,7 +460,7 @@ class HybridMCDACIAgent:
                 self.compute_stats()
                 return True
         elif self.current_phase == "transition" and not self.train_all:
-            if i > 800:
+            if i > 1000:
 #            if self.validate_transition_model(i):
                 print(f"🔄 Transitioning from transition to joint phase at iteration {i}")
                 self.train_all = True
@@ -601,15 +601,15 @@ class HybridMCDACIAgent:
         kl_loss = beta * -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
 
         spread_weight = torch.clamp(torch.tensor(0.1 * iter, device=self.device), max=5)
-        spread_loss = spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
-        decoding_loss = F.mse_loss(pred_mu_next, pred_obs_next_normalized, reduction="mean")
+        #spread_loss = spread_weight * torch.clamp(0.05 - torch.std(mu, dim=0), min=0).mean()
+        # decoding_loss = F.mse_loss(pred_mu_next, pred_obs_next_normalized, reduction="mean")
 
-        loss = recon_loss + kl_loss + spread_loss + decoding_loss
+        loss = recon_loss + kl_loss
         return loss, {
             "reconstruction loss": recon_loss.item(),
             "kl loss": kl_loss.item(),
-            "spread loss": spread_loss.item(),
-            "decoder loss": decoding_loss.item(),
+#            "spread loss": spread_loss.item(),
+#            "decoder loss": decoding_loss.item(),
         }
 
     def compute_transition_loss(self, next_latent_deltas, transition_latent_deltas, i, T, is_multi=False):
@@ -761,24 +761,26 @@ class HybridMCDACIAgent:
             joint_obs_norm = self.normalize_obs(joint_current_obs)
             joint_next_obs_norm = self.normalize_obs(joint_next_obs)
             train_multi = self.current_phase == "joint"
+            # train_multi = False
             if self.current_phase == "world_model":
                 # Lightweight world model training
                 self.optim_world_model.zero_grad()
 
                 joint_latent_mu, joint_latent_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
-                joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
-                joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent, sample=False)[
+                # joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
+                joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent_mu, sample=False)[
                     "o_dist_params"]
-                joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
+                #joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
 
-                joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
-                recon_next_mu, recon_next_logvar = self.world_model.decode(joint_latent_next, sample=False)[
+                # joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
+                joint_latent_next_mu, _ = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
+                recon_next_mu, recon_next_logvar = self.world_model.decode(joint_latent_next_mu, sample=False)[
                     "o_dist_params"]
-                joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
+                # joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
 
                 loss, loss_dict = self.compute_world_model_loss(
-                    i, joint_obs_norm, joint_recon, joint_latent_mu, joint_latent_logvar,
-                    joint_recon_next, joint_next_obs_norm,
+                    i, joint_obs_norm, joint_recon_mu, joint_latent_mu, joint_latent_logvar,
+                    recon_next_mu, joint_next_obs_norm,
                 )
 
                 loss.backward()
@@ -794,22 +796,22 @@ class HybridMCDACIAgent:
 
                 with torch.no_grad():
                     joint_mu, joint_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
-                    joint_latent = self.world_model.reparameterize(joint_mu, joint_logvar)
-                    joint_next_latent = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
+                    #joint_latent = self.world_model.reparameterize(joint_mu, joint_logvar)
+#                    joint_next_latent = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
+                    joint_next_mu, joint_next_logvar = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
 
                 self.optim_transition_network.zero_grad()
 
-                target_delta = joint_next_latent.detach() - joint_latent.detach()
+                target_delta = joint_next_mu.detach() - joint_mu.detach()
                 norm_target_deltas = self.normalize_deltas(target_delta)
 
-                cv_latent_detach, qr_latent_detach = torch.chunk(joint_latent.detach(), chunks=2, dim=1)
+                cv_latent_detach, qr_latent_detach = torch.chunk(joint_mu.detach(), chunks=2, dim=1)
 
                 z_delta_pred_cv = self.transition_model_cv(cv_latent_detach, actions_cv)["delta"]
                 z_delta_pred_qr = self.transition_model_qr(qr_latent_detach, actions_qr)["delta"]
                 joint_deltas = torch.cat([z_delta_pred_cv, z_delta_pred_qr], dim=1)
-
                 loss, loss_dict = self.compute_transition_loss(
-                    norm_target_deltas, joint_deltas, i, num_episodes, is_multi=train_multi
+                    self.denormalize_deltas(norm_target_deltas), joint_deltas, i, num_episodes, is_multi=train_multi
                 )
 
                 loss.backward()
@@ -825,37 +827,40 @@ class HybridMCDACIAgent:
 
                 # World model forward pass
                 joint_latent_mu, joint_latent_logvar = self.world_model.encode(joint_obs_norm)["s_dist_params"]
-                joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
-                joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent, sample=False)[
+                #joint_latent = self.world_model.reparameterize(joint_latent_mu, joint_latent_logvar)
+                joint_recon_mu, joint_recon_logvar = self.world_model.decode(joint_latent_mu, sample=False)[
                     "o_dist_params"]
-                joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
+                #joint_recon = self.world_model.reparameterize(joint_recon_mu, joint_recon_logvar)
 
-                joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
-                recon_next_mu, recon_next_logvar = self.world_model.decode(joint_latent_next, sample=False)[
+                # joint_latent_next = self.world_model.encode(joint_next_obs_norm, sample=True)["s"]
+                joint_latent_next_mu, _ = self.world_model.encode(joint_next_obs_norm, sample=False)["s_dist_params"]
+                recon_next_mu, recon_next_logvar = self.world_model.decode(joint_latent_next_mu, sample=False)[
                     "o_dist_params"]
-                joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
+                #joint_recon_next = self.world_model.reparameterize(recon_next_mu, recon_next_logvar)
 
                 loss_vae, wm_loss_dict = self.compute_world_model_loss(
-                    i, joint_obs_norm, joint_recon, joint_latent_mu, joint_latent_logvar,
-                    joint_recon_next, joint_next_obs_norm,
+                    i, joint_obs_norm, joint_recon_mu, joint_latent_mu, joint_latent_logvar,
+                    recon_next_mu, joint_next_obs_norm,
                 )
 
                 # Transition model forward pass
-                joint_delta_latent = joint_latent_next.detach() - joint_latent.detach()
+                joint_delta_latent = joint_latent_next_mu.detach() - joint_latent_mu.detach()
                 norm_target_deltas = self.normalize_deltas(joint_delta_latent)
 
-                cv_latent, qr_latent = torch.chunk(joint_latent, chunks=2, dim=1)
+                cv_latent, qr_latent = torch.chunk(joint_latent_mu, chunks=2, dim=1)
                 z_delta_pred_cv = self.transition_model_cv(cv_latent, actions_cv)["delta"]
                 z_delta_pred_qr = self.transition_model_qr(qr_latent, actions_qr)["delta"]
                 joint_pred_deltas = torch.cat([z_delta_pred_cv, z_delta_pred_qr], dim=1)
-
+                #joint_pred_deltas = self.normalize_deltas(joint_pred_deltas)
+                # joint_pred_deltas = joint_pred_deltas
                 loss_trans, trans_dict = self.compute_transition_loss(
                     norm_target_deltas, joint_pred_deltas, i, num_episodes, is_multi=True
                 )
 
                 # Additional position losses
                 recon_obs_after_transition = self.world_model.decode(
-                    self.denormalize_deltas(joint_pred_deltas) + joint_latent, sample=True,
+                    joint_pred_deltas + joint_latent_mu, sample=True,
+#                    joint_pred_deltas + joint_latent_mu, sample=True,
                 )["o_pred"]
 
                 scale = lambda_trans_start + (lambda_trans_end - lambda_trans_start) * (i / num_episodes)
@@ -864,8 +869,8 @@ class HybridMCDACIAgent:
                 cv_recon_obs_after_transition, qr_recon_obs_after_transition = torch.chunk(recon_obs_after_transition,
                                                                                            chunks=2, dim=1)
 
-                l_tp_cv = 5 * F.mse_loss(cv_recon_obs_after_transition[:, 2], cv_next_obs_norm[:, 2])
-                l_tp_qr = 5 * F.mse_loss(qr_recon_obs_after_transition[:, 2], qr_next_obs_norm[:, 2])
+                l_tp_cv = 1 * F.mse_loss(cv_recon_obs_after_transition[:, 2], cv_next_obs_norm[:, 2])
+                l_tp_qr = 1 * F.mse_loss(qr_recon_obs_after_transition[:, 2], qr_next_obs_norm[:, 2])
 
                 cv_sol_qual_recon = 0.25 * cv_recon_obs_after_transition[:, 0] + 0.75 * cv_recon_obs_after_transition[:,
                                                                                         4]
@@ -875,6 +880,9 @@ class HybridMCDACIAgent:
 
                 loss_qual = l_sol_qual_cv + l_sol_qual_qr
                 loss_tp = l_tp_cv + l_tp_qr
+
+
+                #loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
                 loss = loss_vae + scale * loss_trans + loss_qual + loss_tp
 
                 if loss.item() < self.train_loss_finetune:

@@ -235,13 +235,14 @@ class SimpleDeltaTransitionNetwork(nn.Module):  # Model Mid
         )
 
     def forward(
-        self, pi_t: torch.Tensor, s_t: torch.Tensor
+        self, s_t: torch.Tensor, pi_t: torch.Tensor
     ) -> SimpleDeltaTransitionNetworkOutput:
         # transition in_dim => [B, world_latent_dim + action_dim]
         t = self.norm(torch.cat([pi_t, s_t], dim=1))
         mu = self.layers(t)
         delta = self.head(mu)
         delta = torch.tanh(delta)
+        #delta = torch.clamp(delta, -2, 2)
         return SimpleDeltaTransitionNetworkOutput(delta=delta)
 
 

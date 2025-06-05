@@ -348,7 +348,7 @@ class HybridMCDaciTrainer:
             # Generate episodes based on current training phase
             if self.agent.current_phase == "world_model":
                 # Single episode generation with lightweight operations
-                episode_data = self.simple_episode_generation(max_steps=200)
+                episode_data = self.simple_episode_generation(max_steps=100)
 
                 # Convert single episode to list format for consistency
                 episode_data['total_rewards'] = [episode_data['total_reward']]
@@ -360,7 +360,7 @@ class HybridMCDaciTrainer:
             else:
                 # Parallel episode generation with vectorized operations
                 num_parallel = 8 if self.agent.current_phase == "transition" else 16
-                episode_data = self.parallel_episode_generation(max_steps=200, num_episodes=num_parallel)
+                episode_data = self.parallel_episode_generation(max_steps=100, num_episodes=num_parallel)
 
                 avg_reward = np.mean(episode_data['total_rewards'])
                 avg_length = np.mean(episode_data['episode_lengths'])
