@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,8 +19,22 @@ from iwai.global_dqn_trainer import train_joint_q_networks
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
+pymdp_files = [ROOT + "/../20250605_104110_pymdp_service_log.csv",
+               ROOT + "/../20250605_104110_pymdp_service_log.csv",
+               # ROOT + "/../20250605_120147_pymdp_service_log.csv",
+               ROOT + "/../20250605_131211_pymdp_service_log.csv",
+               ROOT + "/../20250605_131211_pymdp_service_log.csv",
+               ROOT + "/../20250605_163036_pymdp_service_log.csv",
+               ROOT + "/../20250605_163036_pymdp_service_log.csv",
+               # ROOT + "/../20250605_151004_pymdp_service_log.csv",
+               ROOT + "/../20250605_180716_pymdp_service_log.csv",
+               ROOT + "/../20250605_180716_pymdp_service_log.csv",
+               ROOT + "/../20250605_173503_pymdp_service_log.csv",
+               ROOT + "/../20250605_173503_pymdp_service_log.csv",
+               ]
+
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 3
+EXPERIMENT_REPETITIONS = 10
 EXPERIMENT_DURATION = 200
 MAX_EXPLORE = 15
 
@@ -31,7 +46,6 @@ cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyz
 EVALUATION_FREQUENCY = 5
 
 logging.getLogger('multiscale').setLevel(logging.INFO)
-
 
 
 def eval_scaling_agent(agent_factory, agent_type):
@@ -59,13 +73,11 @@ line_style_dict = {"DQN": "--", "RRM": "-", "AIF": "-."}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
-
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
     df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
     x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) + 1)
     # x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
     plt.figure(figsize=(6.0, 3.8))
-
 
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
@@ -84,7 +96,7 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
-        s_mean, s_std = calculate_mean_std(paired_df) # if agent != "AIF" else (paired_df['slo_f'].values, 0)
+        s_mean, s_std = calculate_mean_std(paired_df)  # if agent != "AIF" else (paired_df['slo_f'].values, 0)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, label=f"{agent}", color=color_dict_agent[agent], linewidth=2,
@@ -95,7 +107,7 @@ def visualize_data(agent_types: list[str], output_file: str):
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(1.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))
-    plt.xticks([1,10,20,30,40,50])
+    plt.xticks([1, 10, 20, 30, 40, 50])
     plt.ylim(0.0, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
@@ -160,10 +172,6 @@ if __name__ == '__main__':
     #
     # eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_rrm, "RRM")
-    # 20250605_104110_pymdp_service_log best so far; stochastic, alpha = 8
-    # 20250605_120147_pymdp_service_log also nice; stochastic, alpha = 8
-    # 20250605_131211_pymdp_service_log also nice; stochastic, alpha = 8
-    import_pymdp_logs(filenames=[ROOT + "/../20250605_104110_pymdp_service_log.csv",
-                                 ROOT + "/../20250605_120147_pymdp_service_log.csv",
-                                 ROOT + "/../20250605_131211_pymdp_service_log.csv",])
+    import_pymdp_logs(filenames=pymdp_files)
     visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")
+    # time.sleep(1)
