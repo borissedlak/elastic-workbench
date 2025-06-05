@@ -28,38 +28,33 @@ def import_pymdp_logs(filenames: list[str]):
         for _, row in df.iterrows():
             timestamp = row['timestamp']
 
+            slo_f = row['reward'] / 2
+            iteration_length = (row['elapsed'] / 2) * 1000
+
             # Process QR service
             qr_state_obj = eval(row['next_state_qr'])  # or use literal_eval with a parser if needed
             qr_state = qr_state_obj._asdict()
-            # qr_slo_f = to_normalized_slo_f(
-            #             calculate_slo_fulfillment(qr_state_obj.to_normalized_dict(), client_slos_qr),
-            #             client_slos_qr,
-            #         )
-            qr_slo_f = row['reward'] / 2
-            # qr_slo_f += 0.1 if row['action_qr'] == "DILLY_DALLY" else 0.0
+
             rows.append({
                 "rep": rep,
                 "timestamp": timestamp,
                 "service": "elastic-workbench-qr-detector-1",
-                "slo_f": qr_slo_f,
-                "state": str(qr_state)
+                "slo_f": slo_f,
+                "state": str(qr_state),
+                "last_iteration_length": iteration_length
             })
 
             # Process CV service
             cv_state_obj = eval(row['next_state_cv'])
             cv_state = cv_state_obj._asdict()
-            # cv_slo_f = to_normalized_slo_f(
-            #             calculate_slo_fulfillment(cv_state_obj.to_normalized_dict(), client_slos_cv),
-            #             client_slos_cv,
-            #         )
-            cv_slo_f = row['reward'] / 2
-            # cv_slo_f += 0.1 if row['action_cv'] == "DILLY_DALLY" else 0.0
+
             rows.append({
                 "rep": rep,
                 "timestamp": timestamp,
                 "service": "elastic-workbench-cv-analyzer-1",
-                "slo_f": cv_slo_f,
-                "state": str(cv_state)
+                "slo_f": slo_f,
+                "state": str(cv_state),
+                "last_iteration_length": iteration_length
             })
 
     # Output DataFrame
