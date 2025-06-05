@@ -51,15 +51,16 @@ class LGBNTrainingEnv(gymnasium.Env):
 
         # Do nothing at 0
         if action.value == 0:
-            behavioral_punishment += 0.1  # Encourage the client not to oscillate
+            pass
+            # behavioral_punishment += 0.1  # Encourage the client not to oscillate
 
         if 1 <= action.value <= 2:
             delta_data_quality = -self.step_data_quality if action.value == 1 else self.step_data_quality
             new_data_quality = self.state.data_quality + delta_data_quality
 
             if (
-                new_data_quality < self.boundaries["data_quality"]["min"]
-                or new_data_quality > self.boundaries["data_quality"]["max"]
+                    new_data_quality < self.boundaries["data_quality"]["min"]
+                    or new_data_quality > self.boundaries["data_quality"]["max"]
             ):
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -77,7 +78,7 @@ class LGBNTrainingEnv(gymnasium.Env):
                 # done = True
                 pass
             elif (
-                delta_cores > self.state.free_cores
+                    delta_cores > self.state.free_cores
             ):  # Want to consume resources that are not free
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -92,8 +93,8 @@ class LGBNTrainingEnv(gymnasium.Env):
             new_model_s = self.state.model_size + delta_model
 
             if (
-                new_model_s < self.boundaries["model_size"]["min"]
-                or new_model_s > self.boundaries["model_size"]["max"]
+                    new_model_s < self.boundaries["model_size"]["min"]
+                    or new_model_s > self.boundaries["model_size"]["max"]
             ):
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
@@ -106,13 +107,12 @@ class LGBNTrainingEnv(gymnasium.Env):
         )
         self.state = FullStateDQN(**new_state)
 
-        reward = (
-                to_normalized_slo_f(
-                calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
-                self.client_slos,
-            )
-                + behavioral_punishment
+        reward = to_normalized_slo_f(
+            calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
+            self.client_slos,
         )
+        reward += 0.1 if action == 0 and reward > 0.8 else 0.0
+
         return self.state, reward, done, False, {}
 
     def sample_throughput_from_lgbn(self, data_quality, cores, model_size):
@@ -123,23 +123,25 @@ class LGBNTrainingEnv(gymnasium.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        data_quality = randint(
-            self.boundaries["data_quality"]["min"], self.boundaries["data_quality"]["max"]
-        )
-        data_quality = round(data_quality / self.step_data_quality) * self.step_data_quality
+        # data_quality = randint(
+        #     self.boundaries["data_quality"]["min"], self.boundaries["data_quality"]["max"]
+        # )
+        # data_quality = round(data_quality / self.step_data_quality) * self.step_data_quality
+        data_quality = 256 if self.service_type == ServiceType.CV else 700
         data_quality_target = self.client_slos["data_quality"].target
 
         if self.service_type == ServiceType.CV:
-            model_size = randint(
-                self.boundaries["model_size"]["min"],
-                self.boundaries["model_size"]["max"],
-            )
+            # model_size = randint(
+            #     self.boundaries["model_size"]["min"],
+            #     self.boundaries["model_size"]["max"],
+            # )
+            model_size = 3
             model_size_target = self.client_slos["model_size"].target
         else:
             model_size = 1
             model_size_target = 1
 
-        ass_cores = randint(1, int(MAX_CORES / 2))
+        ass_cores = 2  # randint(1, int(MAX_CORES / 2))
         free_cores = MAX_CORES - ass_cores
 
         throughput = self.sample_throughput_from_lgbn(data_quality, ass_cores, model_size)
@@ -173,8 +175,8 @@ if __name__ == "__main__":
     env.reset()
 
     boundaries = env.es_registry.get_boundaries_minimalistic(ServiceType.CV, MAX_CORES)
-    env.state = FullStateDQN(192, 288, 6, 5, 1, 4, 1, 7, boundaries)
+    env.state = FullStateDQN(192, 288, 6, 5, 5, 4, 4, 7, boundaries)
     for i in range(1, 100):
-        print(env.step(ESServiceAction.DEC_CORES))
+        print(env.step(ESServiceAction.DILLY_DALLY))
         # print(env.state.discretize(ServiceType.CV))
         # print(env.state.discretize(ServiceType.QR))

@@ -53,7 +53,7 @@ def calculate_SLO_F_clients(full_state, slos_all_clients):
 def to_normalized_slo_f(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
     slo_f_single_client = sum(value for _, value in slof)
 
-    max_slo_f_single_client = sum([s.weight for s in slos.values()])
+    max_slo_f_single_client = 2 # sum([s.weight for s in slos.values()])
     scaled_reward = slo_f_single_client / max_slo_f_single_client
 
     return scaled_reward

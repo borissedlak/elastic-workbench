@@ -13,6 +13,7 @@ from agent.es_registry import ServiceID, ServiceType
 from experiments.iwai.transform_pymdp_logs import import_pymdp_logs
 from iwai.dqn_agent import DQNAgent
 from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
+from iwai.global_dqn_trainer import train_joint_q_networks
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -131,12 +132,12 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    #train_joint_q_networks(nn_folder=ROOT + "/networks")
+    # train_joint_q_networks(nn_folder=ROOT + "/networks")
 
     # Load the trained DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR)
+    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
     dqn_qr.load("Q_QR_joint.pt")
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV)
+    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
     dqn_cv.load("Q_CV_joint.pt")
 
     agent_fact_dqn = lambda repetition: DQNAgent(
@@ -157,5 +158,5 @@ if __name__ == '__main__':
 
     #eval_scaling_agent(agent_fact_dqn, "DQN")
     #eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filename = ROOT+ "/../20250604_165223_pymdp_service_log.csv")
+    import_pymdp_logs(filename = ROOT+ "/../20250604_220708_pymdp_service_log.csv")
     visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")

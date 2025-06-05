@@ -1,20 +1,19 @@
 import logging
 import os
-from typing import Dict
+import sys
+import time
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from pymdp import utils as mdp_utils
 from pymdp.agent import Agent
-import time
-import sys
-from datetime import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from proj_types import ESServiceAction
 import utils
-from agent.es_registry import ServiceID, ServiceType
-from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY
+from agent.es_registry import ServiceType
 from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP
 from iwai.global_training_env import GlobalTrainingEnv
 
@@ -69,10 +68,10 @@ class pymdp_Agent(): # ScalingAgent):
         self.throughput_cv = np.arange(0, 6, 1)
         self.quality_cv = np.arange(128, 352, 32)
         self.model_size = np.arange(1, 6, 1)
-        self.cores_cv = np.arange(1, 9, 1)
+        self.cores_cv = np.arange(1, 8, 1)  # Should use 7 cores max per service
         self.throughput_qr = np.arange(0, 101, 20)
         self.quality_qr = np.arange(300, 1100, 100)
-        self.cores_qr = np.arange(1, 9, 1)
+        self.cores_qr = np.arange(1, 8, 1)  # Should use 7 cores max per service
 
         self.num_states = [len(self.throughput_cv), len(self.quality_cv), len(self.model_size), len(self.cores_cv) ,len(self.throughput_qr),
                            len(self.quality_qr), len(self.cores_qr)]
@@ -213,7 +212,7 @@ class pymdp_Agent(): # ScalingAgent):
                         new_cv = from_cv + delta_cv
                         new_qr = qr + delta_qr
                         # Check if transition is valid
-                        if (1 <= new_cv <= 8) and (1 <= new_qr <= 8) and (new_cv + new_qr <= PHYSICAL_CORES):
+                        if (1 <= new_cv <= 7) and (1 <= new_qr <= 7) and (new_cv + new_qr <= PHYSICAL_CORES):
                             to_cv_idx = new_cv - 1
                         else:
                             # Invalid → stay in same state
@@ -267,7 +266,7 @@ class pymdp_Agent(): # ScalingAgent):
                         new_cv = cv + delta_cv
                         new_qr = from_qr + delta_qr
                         # Validate transition
-                        if (1 <= new_cv <= 8) and (1 <= new_qr <= 8) and (new_cv + new_qr <= PHYSICAL_CORES):
+                        if (1 <= new_cv <= 7) and (1 <= new_qr <= 7) and (new_cv + new_qr <= PHYSICAL_CORES):
                             to_qr_idx = new_qr - 1
                         else:
                             to_qr_idx = from_qr_idx  # Stay in same state
@@ -276,27 +275,31 @@ class pymdp_Agent(): # ScalingAgent):
         #print("B6: " + str(B6))
         self.B[6] = B6
 
+    # TODO: Change to other SLOs
     def generate_C(self):
         # Preferred outcomes, this could be updated at "runtime"
-        # throughput_cv has to be above as high as possible.
-        self.C[0] = np.zeros(self.num_states[0])
-        smooth_values = np.linspace(0.1, 3.0, self.num_states[0] - 1)
-        self.C[0][1:] = smooth_values
-        # quality_cv as high as possible, last 3 values are valuable.
-        self.C[1] = np.zeros(self.num_states[1])
-        self.C[1][-3:] = [0.75, 1.5, 3]
-        # model_size as high as possible, last 3 values are valuable.
-        self.C[2] = np.zeros(self.num_states[2])
-        self.C[2][-3:] = [0.75, 1.5, 3]
+        # throughput_cv >= 5
+        # self.C[0] = np.zeros(self.num_states[0])
+        self.C[0][0] = -5
+        self.C[0][1:] = np.linspace(0.1, 4.0, self.num_states[0] - 1)
+        # quality_cv as high as possible, last two states best
+        # self.C[1] = np.zeros(self.num_states[1])
+        self.C[1][:6] = np.linspace(0.1, 1.0, self.num_states[1] - 1)
+        self.C[1][6] = 1.0
+        # model_size as high as possible, last two states best
+        # self.C[2] = np.zeros(self.num_states[2])
+        self.C[2] = np.array([0.75, 1.5, 2.25, 3, 3])
+        # self.C[2][4] = 3.0
         # cores_cv
         self.C[3] = np.zeros(self.num_states[3])
-        # Throughput_qr as high as possible
-        self.C[4] = np.zeros(self.num_states[4])
-        smooth_values = np.linspace(0.1, 3.0, self.num_states[4] - 1)
-        self.C[4][1:] = smooth_values
-        # quality_qr as high as possible
+        # Throughput_qr >= 60
+        # self.C[4] = np.zeros(self.num_states[4])
+        self.C[4][0] = -5
+        self.C[4][1:] = [1.25, 2.5, 4, 4, 4]
+        # quality_qr as high as possible, last two states best
         self.C[5] = np.zeros(self.num_states[5])
-        self.C[5][-3:] = [0.75, 1.5, 3]
+        self.C[5][:7] = np.linspace(0.1, 4.0, self.num_states[5] - 1)
+        self.C[5][7] = 4.0
         # Cores_qr
         self.C[6] = np.zeros(self.num_states[6])
         # print("Preferred Outcomes (C)")
@@ -310,12 +313,12 @@ class pymdp_Agent(): # ScalingAgent):
         self.D[1][4] = 1  # Quality_cv at 256
         self.D[2] = np.zeros(self.num_states[2])
         self.D[2][2] = 1  # Model_size at 3
-        self.D[3] = np.zeros(self.num_states[5])
+        self.D[3] = np.zeros(self.num_states[3])
         self.D[3][1] = 1  # Cores at 2
         self.D[4] = np.zeros(self.num_states[4])
         self.D[4][1] = 1  # Throughput_qr at 5
         self.D[5] = np.zeros(self.num_states[5])
-        self.D[5][4] = 1  # Quality_qr at 256
+        self.D[5][4] = 1  # Quality_qr at 700
         self.D[6] = np.zeros(self.num_states[6])
         self.D[6][1] = 1  # Cores at 2
 
@@ -389,7 +392,7 @@ if __name__ == '__main__':
     start_time = time.time()
     p_agent = pymdp_Agent()
 
-    learning_agent = False
+    learning_agent = True
 
     if learning_agent:
         pymdp_agent = p_agent.generate_agent(policy_length=1, learning_rate=1)
@@ -403,15 +406,15 @@ if __name__ == '__main__':
 
     logged_data = list()
 
-    for steps in range(50):
+    for steps in range(40):
         start_time_loop = time.time()
 
         a_s = pymdp_agent.infer_states(pymdp_state)
         elapsed = time.time() - start_time_loop
-        if steps & learning_agent> 0:
+        if steps & learning_agent > 0:
             pymdp_agent.update_B(a_s)
 
-        q_pi, G, G_sub = pymdp_agent.infer_policies()
+        q_pi, G = pymdp_agent.infer_policies()
 
         chosen_action_id = pymdp_agent.sample_action()
 
@@ -429,8 +432,8 @@ if __name__ == '__main__':
 
         # Extract metrics
         efe = G[policy_index]
-        info_gain = G_sub["ig_s"][policy_index]  # usually epistemic value
-        pragmatic_value = G_sub["r"][policy_index]  # usually extrinsic value
+        info_gain = 1# G_sub["ig_s"][policy_index]  # usually epistemic value
+        pragmatic_value = 1# G_sub["r"][policy_index]  # usually extrinsic value
 
         action_cv = ESServiceAction(int(chosen_action_id[0]))
         action_qr = ESServiceAction(int(chosen_action_id[1]))
@@ -439,7 +442,7 @@ if __name__ == '__main__':
         (next_state_qr, next_state_cv), joint_reward, done = joint_env.step(action_qr=action_qr, action_cv=action_cv)
 
         elapsed = time.time() - start_time_loop
-        print(f"Loop time: {elapsed:.4f} seconds")
+        print(f"{steps}| Loop time: {elapsed:.4f} seconds")
 
         timestamp = datetime.now().isoformat()
 
@@ -454,6 +457,7 @@ if __name__ == '__main__':
             "info_gain": info_gain,
             "pragmatic_value": pragmatic_value,
         })
+        print(logged_data[-1])
 
     save_agent_parameters(pymdp_agent, save_path="../experiments/iwai/saved_agent")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
