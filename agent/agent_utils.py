@@ -51,7 +51,7 @@ def get_random_parameter_assignments(parameters):
     return random_params
 
 
-def min_max_scale(value: float | int, min_val: float , max_val: float) -> float:
+def min_max_scale(value: float | int, min_val: float, max_val: float) -> float:
     """Min max scale to 0 and 1"""
     if min_val == max_val:
         return 1.0  # Should only happen for QR service model_size
@@ -82,8 +82,8 @@ class FullStateDQN(NamedTuple):
     data_quality_target: int
     throughput: int
     throughput_target: int
-    model_size: int # only for CV!
-    model_size_target: int # only for CV!
+    model_size: int  # only for CV!
+    model_size_target: int  # only for CV!
     cores: int
     free_cores: int
     bounds: Dict[str, Dict]
@@ -143,17 +143,22 @@ class FullStateDQN(NamedTuple):
         }
         return state_dict
 
-    def to_np_ndarray(self, normalized: bool) -> np.ndarray[float]:
+    def to_np_ndarray(self, normalized: bool = True) -> np.ndarray[float]:
         if normalized:
             return np.asarray([
-                min_max_scale(self.data_quality, min_val=self.bounds["data_quality"]["min"], max_val=self.bounds["data_quality"]["max"]),
-                min_max_scale(self.data_quality_target, min_val=self.bounds["data_quality"]["min"], max_val=self.bounds["data_quality"]["max"]),
+                min_max_scale(self.data_quality, min_val=self.bounds["data_quality"]["min"],
+                              max_val=self.bounds["data_quality"]["max"]),
+                min_max_scale(self.data_quality_target, min_val=self.bounds["data_quality"]["min"],
+                              max_val=self.bounds["data_quality"]["max"]),
                 min_max_scale(self.throughput, min_val=0, max_val=100),
                 min_max_scale(self.throughput_target, min_val=0, max_val=100),
-                min_max_scale(self.model_size, min_val=self.bounds["model_size"]["min"], max_val=self.bounds["model_size"]["max"]) if 'model_size' in self.bounds else 1.0,
-                min_max_scale(self.model_size_target, min_val=self.bounds["model_size"]["min"], max_val=self.bounds["model_size"]["max"]) if 'model_size' in self.bounds else 1.0,
-                min_max_scale(self.cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
-                min_max_scale(self.free_cores, min_val=self.bounds["cores"]["min"],  max_val=self.bounds["cores"]["max"]),
+                min_max_scale(self.model_size, min_val=self.bounds["model_size"]["min"],
+                              max_val=self.bounds["model_size"]["max"]) if 'model_size' in self.bounds else 1.0,
+                min_max_scale(self.model_size_target, min_val=self.bounds["model_size"]["min"],
+                              max_val=self.bounds["model_size"]["max"]) if 'model_size' in self.bounds else 1.0,
+                min_max_scale(self.cores, min_val=self.bounds["cores"]["min"], max_val=self.bounds["cores"]["max"]),
+                min_max_scale(self.free_cores, min_val=self.bounds["cores"]["min"],
+                              max_val=self.bounds["cores"]["max"]),
             ])
         else:
             return np.asarray([
@@ -166,9 +171,10 @@ class FullStateDQN(NamedTuple):
                 self.cores,
                 self.free_cores,
             ])
+
+
 # @utils.print_execution_time
 def export_experience_buffer(rows: tuple, file_name):
-
     file_exists = os.path.isfile(file_name)
     is_empty = not file_exists or os.path.getsize(file_name) == 0
 

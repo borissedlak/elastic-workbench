@@ -13,6 +13,7 @@ logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)
 es_registry = ESRegistry(ROOT + "/../config/es_registry.json")
 
+
 class SLO(NamedTuple):
     var: str
     larger: bool
@@ -29,8 +30,8 @@ def calculate_SLO_F_clients(full_state, slos_all_clients):
     slo_f_all_clients = 0.0
 
     for slos_single_client in slos_all_clients:
-
-        boundaries = es_registry.get_boundaries_minimalistic(ServiceType.CV if 'model_size' in slos_single_client else ServiceType.QR, 8)
+        boundaries = es_registry.get_boundaries_minimalistic(
+            ServiceType.CV if 'model_size' in slos_single_client else ServiceType.QR, 8)
         full_state_tensor = FullStateDQN(
             full_state["data_quality"],
             slos_single_client['data_quality'].target,
@@ -38,8 +39,8 @@ def calculate_SLO_F_clients(full_state, slos_all_clients):
             slos_single_client['throughput'].target,
             full_state['model_size'] if 'model_size' in slos_single_client else 0,
             slos_single_client['model_size'].target if 'model_size' in slos_single_client else 0,
-            0, # cores irrelevant for SLO-F
-            0, # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
+            0,  # cores irrelevant for SLO-F
             boundaries,
         )
 
@@ -62,17 +63,15 @@ def to_normalized_slo_f(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> 
 # TODO: Calculate overall streaming latency and place into state
 #  I might also add a flag to use either the soft clip or the hard np.clip
 def calculate_slo_fulfillment(
-    full_state: Dict[str, Any], slos: Dict[str, SLO]
+        full_state: Dict[str, Any], slos: Dict[str, SLO]
 ) -> List[Tuple[str, float]]:
-
-
-    if 'model_size' in slos: # === service_type.CV
+    if 'model_size' in slos:  # === service_type.CV
         quality = full_state["data_quality"] * 0.25 + full_state["model_size"] * 0.75
         quality_target = (
-            full_state["data_quality_target"] * 0.25
-            + full_state["model_size_target"] * 0.75
+                full_state["data_quality_target"] * 0.25
+                + full_state["model_size_target"] * 0.75
         )
-    else: # === service_type.QR
+    else:  # === service_type.QR
         quality = full_state["data_quality"]
         quality_target = full_state["data_quality_target"]
 
@@ -80,7 +79,7 @@ def calculate_slo_fulfillment(
     throughput_target = full_state["throughput_target"]
 
     slo_trace = [
-        ("quality", smoothstep((quality / quality_target))  if throughput > 0.0 else 0.0),
+        ("quality", smoothstep((quality / quality_target)) if throughput > 0.0 else 0.0),
         ("throughput", smoothstep((throughput / throughput_target))),
     ]
     # slo_trace = []
@@ -110,7 +109,7 @@ class SLO_Registry:
             self.slo_lib = json.load(f)
 
     def get_all_SLOs_for_assigned_clients(
-        self, service_type: ServiceType, assigned_clients: Dict[str, int]
+            self, service_type: ServiceType, assigned_clients: Dict[str, int]
     ):
         all_client_slos = []
 
@@ -121,13 +120,13 @@ class SLO_Registry:
         return all_client_slos
 
     def get_SLOs_for_client(
-        self, client_id, service_type: ServiceType
+            self, client_id, service_type: ServiceType
     ) -> Dict[str, SLO]:
         result = {}
         for entry in self.slo_lib["clientSLOs"]:
             if (
-                entry["client_id"] == client_id
-                and entry["service_type"] == service_type.value
+                    entry["client_id"] == client_id
+                    and entry["service_type"] == service_type.value
             ):
                 for slo in entry["SLOs"]:
                     result = result | {slo["var"]: SLO(**slo)}
