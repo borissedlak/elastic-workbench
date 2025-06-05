@@ -120,6 +120,7 @@ client_slos_cv = slo_registry.get_all_SLOs_for_assigned_clients(
 boundaries_cv = es_registry.get_boundaries_minimalistic(ServiceType.CV, 8)
 boundaries_qr = es_registry.get_boundaries_minimalistic(ServiceType.QR, 8)
 
+
 def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
     state_cv = rescaled_joint_state[0][:8]
     state_qr = rescaled_joint_state[0][8:]
@@ -148,9 +149,10 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         boundaries_qr,
     )
 
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv), client_slos_cv))
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr), client_slos_qr))
-
+    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+                              client_slos_cv))
+    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+                              client_slos_qr))
 
 
 # -----------------------------------------------------------------------------
@@ -214,7 +216,8 @@ if __name__ == "__main__":
     # Initialize start state
     start_state_raw_cv = torch.tensor([256, 288, 2, 5, 2, 3, 2, 4])
     start_state_raw_qr = torch.tensor([700, 900, 2, 60, 1, 1, 2, 4])
-    joint_state = torch.cat([start_state_raw_cv, start_state_raw_qr], dim=0).unsqueeze(0).to(dtype=torch.float32, device=device)
+    joint_state = torch.cat([start_state_raw_cv, start_state_raw_qr], dim=0).unsqueeze(0).to(dtype=torch.float32,
+                                                                                             device=device)
     joint_state = scale_joint(joint_state, agent.vec_env)
     print("Start state (raw):", joint_state.squeeze().tolist())
     # 1) Initialize mcts
@@ -255,7 +258,7 @@ if __name__ == "__main__":
             None,
         ]
         # Note: if you need the recsaled state (original value range):
-        rescaled_joint_state =rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
+        rescaled_joint_state = rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
         convert_rescaled_joint_state_to_slof(rescaled_joint_state)
         print(rescaled_joint_state)
 

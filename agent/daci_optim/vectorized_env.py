@@ -70,47 +70,48 @@ class VectorizedEnvironment:
             )
         return rescaled
 
-    def vectorized_transition_cv(self, states: torch.Tensor, actions: torch.Tensor) -> Tuple[
-        torch.Tensor, torch.Tensor]:
+    def vectorized_transition_cv(
+            self,
+            states: torch.Tensor,
+            actions: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Vectorized state transitions for CV service
-        states: [batch_size, 8] - normalized states
-        actions: [batch_size] - action indices
-        Returns: (next_states, rewards)
+        states  : [batch_size, 8] – normalized
+        actions : [batch_size]    – action indices
+        Returns : (next_states, rewards)
         """
-        batch_size = states.shape[0]
-        new_states = states.clone()
-
-        # Convert to unnormalized for easier manipulation
-        unnorm_states = self.min_max_rescale(new_states)
-
-        # Action 0: Do nothing (already handled by cloning)
-
-        # Actions 1-2: Data quality changes
-        data_quality_mask_down = (actions == 1)
-        data_quality_mask_up = (actions == 2)
-
-        delta_data_quality_down = -self.step_data_quality_cv
-        delta_data_quality_up = self.step_data_quality_cv
-
-        # Apply data quality changes
-        new_data_quality = unnorm_states[:, 0].clone()
-        new_data_quality[data_quality_mask_down] += delta_data_quality_down
-        new_data_quality[data_quality_mask_up] += delta_data_quality_up
-
-        # Check bounds
-        valid_quality_mask = (
-                (new_data_quality >= self.boundaries["data_quality"]["min"]) &
-                (new_data_quality <= self.boundaries["data_quality"]["max"])
+        thresholds_cv = {
+            "max": {"data_quality": 320},
+            "min": {"data_quality": 128},
+        }
+        dq_min, dq_max = (
+            thresholds_cv["min"]["data_quality"],
+            thresholds_cv["max"]["data_quality"],
         )
 
-        # Only update if within bounds
-        quality_update_mask = (data_quality_mask_down | data_quality_mask_up) & valid_quality_mask
-        unnorm_states[quality_update_mask, 0] = new_data_quality[quality_update_mask]
+        new_states = states.clone()
+        unnorm_states = self.min_max_rescale(new_states)  # to un-scaled space
 
-        # Actions 3-4: Core changes
-        cores_mask_down = (actions == 3)
-        cores_mask_up = (actions == 4)
+        dq_mask_down = actions == 1
+        dq_mask_up = actions == 2
+
+        delta_dq_down = -self.step_data_quality_cv
+        delta_dq_up = self.step_data_quality_cv
+
+        new_dq = unnorm_states[:, 0].clone()
+        new_dq[dq_mask_down] += delta_dq_down
+        new_dq[dq_mask_up] += delta_dq_up
+
+        valid_q_mask = (
+                (new_dq >= self.boundaries["data_quality"]["min"])
+                & (new_dq <= self.boundaries["data_quality"]["max"])
+        )
+        update_q_mask = (dq_mask_down | dq_mask_up) & valid_q_mask
+        unnorm_states[update_q_mask, 0] = new_dq[update_q_mask]
+
+        cores_mask_down = actions == 3
+        cores_mask_up = actions == 4
 
         delta_cores_down = -self.step_cores
         delta_cores_up = self.step_cores
@@ -119,85 +120,92 @@ class VectorizedEnvironment:
         new_cores[cores_mask_down] += delta_cores_down
         new_cores[cores_mask_up] += delta_cores_up
 
-        # Check core constraints
-        valid_cores_mask = (new_cores > 0) & (new_cores <= unnorm_states[:, 7] + torch.abs(
-            torch.where(cores_mask_down, delta_cores_down, torch.where(cores_mask_up, delta_cores_up, 0))))
+        valid_cores_mask = (
+                (new_cores > 0)
+                & (
+                        new_cores
+                        <= unnorm_states[:, 7]
+                        + torch.abs(
+                    torch.where(
+                        cores_mask_down,
+                        delta_cores_down,
+                        torch.where(cores_mask_up, delta_cores_up, 0),
+                    )
+                )
+                )
+        )
+        cores_upd_mask = (cores_mask_down | cores_mask_up) & valid_cores_mask
+        old_cores = unnorm_states[cores_upd_mask, 6].clone()
+        unnorm_states[cores_upd_mask, 6] = new_cores[cores_upd_mask]
+        unnorm_states[cores_upd_mask, 7] -= new_cores[cores_upd_mask] - old_cores
 
-        cores_update_mask = (cores_mask_down | cores_mask_up) & valid_cores_mask
-        old_cores = unnorm_states[cores_update_mask, 6].clone()
-        unnorm_states[cores_update_mask, 6] = new_cores[cores_update_mask]
-        unnorm_states[cores_update_mask, 7] = unnorm_states[cores_update_mask, 6] - (
-                    unnorm_states[cores_update_mask, 6] - old_cores)
-
-        # Actions 5-6: Model size changes
-        model_mask_down = (actions == 5)
-        model_mask_up = (actions == 6)
+        model_mask_down = actions == 5
+        model_mask_up = actions == 6
 
         delta_model_down = -self.step_model_size
         delta_model_up = self.step_model_size
 
-        new_model_size = unnorm_states[:, 4].clone()
-        new_model_size[model_mask_down] += delta_model_down
-        new_model_size[model_mask_up] += delta_model_up
+        new_model = unnorm_states[:, 4].clone()
+        new_model[model_mask_down] += delta_model_down
+        new_model[model_mask_up] += delta_model_up
 
-        # Check model size bounds
         valid_model_mask = (
-                (new_model_size >= self.boundaries["model_size"]["min"]) &
-                (new_model_size <= self.boundaries["model_size"]["max"])
+                (new_model >= self.boundaries["model_size"]["min"])
+                & (new_model <= self.boundaries["model_size"]["max"])
         )
+        model_upd_mask = (model_mask_down | model_mask_up) & valid_model_mask
+        unnorm_states[model_upd_mask, 4] = new_model[model_upd_mask]
 
-        model_update_mask = (model_mask_down | model_mask_up) & valid_model_mask
-        unnorm_states[model_update_mask, 4] = new_model_size[model_update_mask]
+        unnorm_states[:, 0] = torch.clamp(unnorm_states[:, 0], dq_min, dq_max)
+        unnorm_states[:, 1] = torch.clamp(unnorm_states[:, 1], dq_min, dq_max)
 
-        # Convert back to normalized
-        new_states = self.min_max_scale(unnorm_states)
-
-        # Calculate rewards (vectorized)
+        new_states = self.min_max_scale(unnorm_states)  # back to [0, 1]
         rewards = self.calculate_rewards_cv(new_states)
-
         return new_states, rewards
 
-    def vectorized_transition_qr(self, states: torch.Tensor, actions: torch.Tensor) -> Tuple[
-        torch.Tensor, torch.Tensor]:
+    def vectorized_transition_qr(
+            self,
+            states: torch.Tensor,
+            actions: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Vectorized state transitions for QR service
-        states: [batch_size, 8] - normalized states
-        actions: [batch_size] - action indices
-        Returns: (next_states, rewards)
+        states  : [batch_size, 8] – normalized
+        actions : [batch_size]    – action indices
+        Returns : (next_states, rewards)
         """
-        batch_size = states.shape[0]
-        new_states = states.clone()
-
-        # Convert to unnormalized for easier manipulation
-        unnorm_states = self.min_max_rescale(new_states)
-
-        # Action 0: Do nothing (already handled by cloning)
-
-        # Actions 1-2: Data quality changes
-        data_quality_mask_down = (actions == 1)
-        data_quality_mask_up = (actions == 2)
-
-        delta_data_quality_down = -self.step_data_quality_qr
-        delta_data_quality_up = self.step_data_quality_qr
-
-        # Apply data quality changes
-        new_data_quality = unnorm_states[:, 0].clone()
-        new_data_quality[data_quality_mask_down] += delta_data_quality_down
-        new_data_quality[data_quality_mask_up] += delta_data_quality_up
-
-        # Check bounds
-        valid_quality_mask = (
-                (new_data_quality >= self.boundaries["data_quality"]["min"]) &
-                (new_data_quality <= self.boundaries["data_quality"]["max"])
+        # ⇢ NEW — service-specific thresholds
+        thresholds_qr = {
+            "max": {"data_quality": 1000},
+            "min": {"data_quality": 300},
+        }
+        dq_min, dq_max = (
+            thresholds_qr["min"]["data_quality"],
+            thresholds_qr["max"]["data_quality"],
         )
 
-        # Only update if within bounds
-        quality_update_mask = (data_quality_mask_down | data_quality_mask_up) & valid_quality_mask
-        unnorm_states[quality_update_mask, 0] = new_data_quality[quality_update_mask]
+        new_states = states.clone()
+        unnorm_states = self.min_max_rescale(new_states)
 
-        # Actions 3-4: Core changes (same as CV)
-        cores_mask_down = (actions == 3)
-        cores_mask_up = (actions == 4)
+        dq_mask_down = actions == 1
+        dq_mask_up = actions == 2
+
+        delta_dq_down = -self.step_data_quality_qr
+        delta_dq_up = self.step_data_quality_qr
+
+        new_dq = unnorm_states[:, 0].clone()
+        new_dq[dq_mask_down] += delta_dq_down
+        new_dq[dq_mask_up] += delta_dq_up
+
+        valid_q_mask = (
+                (new_dq >= self.boundaries["data_quality"]["min"])
+                & (new_dq <= self.boundaries["data_quality"]["max"])
+        )
+        update_q_mask = (dq_mask_down | dq_mask_up) & valid_q_mask
+        unnorm_states[update_q_mask, 0] = new_dq[update_q_mask]
+
+        cores_mask_down = actions == 3
+        cores_mask_up = actions == 4
 
         delta_cores_down = -self.step_cores
         delta_cores_up = self.step_cores
@@ -206,22 +214,30 @@ class VectorizedEnvironment:
         new_cores[cores_mask_down] += delta_cores_down
         new_cores[cores_mask_up] += delta_cores_up
 
-        # Check core constraints
-        valid_cores_mask = (new_cores > 0) & (new_cores <= unnorm_states[:, 7] + torch.abs(
-            torch.where(cores_mask_down, delta_cores_down, torch.where(cores_mask_up, delta_cores_up, 0))))
+        valid_cores_mask = (
+                (new_cores > 0)
+                & (
+                        new_cores
+                        <= unnorm_states[:, 7]
+                        + torch.abs(
+                    torch.where(
+                        cores_mask_down,
+                        delta_cores_down,
+                        torch.where(cores_mask_up, delta_cores_up, 0),
+                    )
+                )
+                )
+        )
+        cores_upd_mask = (cores_mask_down | cores_mask_up) & valid_cores_mask
+        old_cores = unnorm_states[cores_upd_mask, 6].clone()
+        unnorm_states[cores_upd_mask, 6] = new_cores[cores_upd_mask]
+        unnorm_states[cores_upd_mask, 7] -= new_cores[cores_upd_mask] - old_cores
 
-        cores_update_mask = (cores_mask_down | cores_mask_up) & valid_cores_mask
-        old_cores = unnorm_states[cores_update_mask, 6].clone()
-        unnorm_states[cores_update_mask, 6] = new_cores[cores_update_mask]
-        unnorm_states[cores_update_mask, 7] = unnorm_states[cores_update_mask, 6] - (
-                    unnorm_states[cores_update_mask, 6] - old_cores)
+        unnorm_states[:, 0] = torch.clamp(unnorm_states[:, 0], dq_min, dq_max)
+        unnorm_states[:, 1] = torch.clamp(unnorm_states[:, 1], dq_min, dq_max)
 
-        # Convert back to normalized
         new_states = self.min_max_scale(unnorm_states)
-
-        # Calculate rewards (vectorized)
         rewards = self.calculate_rewards_qr(new_states)
-
         return new_states, rewards
 
     def calculate_rewards_cv(self, states: torch.Tensor) -> torch.Tensor:
