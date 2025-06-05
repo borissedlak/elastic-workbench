@@ -1,259 +1,217 @@
-import torch
+import itertools
 import numpy as np
-from agent.daci.aif_utils import (
-    denormalize_obs,
-    normalize_obs,
-    calculate_expected_free_energy,
-)
-import copy
+import torch
+from torch import nn
+import torch.nn.functional as F
+
+from agent.daci_optim.optimized_aif_utils import calculate_expected_free_energy
+
+
+def _one_hot(idx: int, dim: int, device: torch.device) -> torch.Tensor:
+    """Utility for fast one‑hot creation (B=1)."""
+    return F.one_hot(
+        torch.tensor([idx], device=device, dtype=torch.long), num_classes=dim
+    ).float()
+
+
+class _Node:
+    """A single node for the joint‑action MCTS (CV × QR).
+
+    * ``action`` holds the **index** inside ``MCTS.action_pairs``; use
+      ``mcts.action_pairs[action]`` to recover the actual (cv, qr) tuple.
+    """
+
+    def __init__(
+        self,
+        action_space_size: int,
+        c: float,
+        obs: torch.Tensor,  # [1, obs_dim]
+        action: int | None = None,
+        parent: "_Node | None" = None,
+    ) -> None:
+        self.c = c
+        self.obs = obs  # already on correct device, *normalised*
+        self.parent = parent
+        self.action = action
+
+        self.visit_count: int = 0
+        self.accum_value: float = 0.0  # lower = better (EFE)
+
+        self.children: dict[int, _Node] = {}
+        self.available_actions = list(
+            range(action_space_size)
+        )  # indices that are not expanded yet
+
+    # ――― UCT helpers ――― ---------------------------------------------------------------------
+    def _ucb(self, child: "_Node") -> float:
+        if child.visit_count == 0:
+            return float("inf")
+        exploit = -child.accum_value / child.visit_count  # we *minimise* EFE
+        explore = self.c * np.sqrt(np.log(self.visit_count + 1) / child.visit_count)
+        return exploit + explore
+
+    def select_child(self) -> "_Node":
+        """Select the child with maximal UCB."""
+        best_score = -float("inf")
+        best_child: _Node | None = None
+        for child in self.children.values():
+            score = self._ucb(child)
+            if score > best_score:
+                best_score = score
+                best_child = child
+        # The tree policy only calls this when *some* child exists.
+        assert best_child is not None
+        return best_child
+
+    def update(self, value: float):
+        self.visit_count += 1
+        self.accum_value += value
+
+    def is_fully_expanded(self) -> bool:
+        return len(self.available_actions) == 0
 
 
 class MCTS:
-    def __init__(self, actions_dim, agent) -> None:
-        self.depth = 5  # 15
-        self.iterations = 500
-        self.c = 0.5
-        self.action_space = actions_dim
-        self.agent = agent
-        self.root_node = None
-        self.logs = []
-        self.mu_target = torch.tensor([0.55, 0.07]).unsqueeze(0)
-        self.gaus_nll = torch.nn.GaussianNLLLoss()
+    """Monte‑Carlo Tree Search for the *joint* CV/QR agent.
 
-    def init_root_node(self, start_obs):
-        self.root_node = Node(self.action_space, self.c, start_obs)
+    The class assumes **two** independent transition models and therefore keeps them separate
+    throughout planning, while still expanding over the joint action space (Cartesian product).
+    """
 
-    def apply_action(self, obs, action):
-        with torch.no_grad():
-            norm_obs = normalize_obs(obs)
-            mu, logvar = self.agent.encoder(norm_obs)
-            action_oh = self.agent.transform_action(action)
-            predicted_next_mu_delta = self.agent.transition_model_qr(
-                mu, action_oh.unsqueeze(0)
-            )
-            unnorm_predicted_next_mu_delta = self.agent.denormalize_deltas(
-                predicted_next_mu_delta
-            )
-            mu_d, logvar_d = self.agent.decoder(mu + unnorm_predicted_next_mu_delta)
-            next_obs = denormalize_obs(mu_d)
-        return next_obs
-
-    def expand_node(self, node):
-        if len(node.available_actions) > 0:
-            action = node.available_actions.pop()
-            new_obs = self.apply_action(node.obs, action)
-            child_node = Node(
-                self.action_space,
-                self.c,
-                new_obs,
-                action,
-                parent=node,
-            )
-            node.children.update({action: child_node})
-        else:
-            child_node = node.return_child()
-        return child_node
-
-    def rollout(self, obs):
-        # TODO: For joint service
-        total_efe = 0
-        for i in range(self.depth):
-            action = np.random.choice(
-                self.action_space, size=1
-            )  # you policy network could be here
-            with torch.no_grad():
-                # reminder (Alireza): vq-VAE
-
-                # 1) Encode current obs → posterior q(z|o)
-                norm_obs = normalize_obs(obs)
-                mu, logvar = self.agent.encoder(norm_obs)
-
-                # 2) Predict prior over next latent: p(z'|z,a)
-                action_oh = self.agent.transform_action(action)
-                (predicted_next_delta) = self.agent.transition_model_qr(
-                    mu, action_oh.unsqueeze(0)
-                )
-                unnorm_predicted_next_mu_delta = self.agent.denormalize_deltas(
-                    predicted_next_delta
-                )
-                mu_prior = unnorm_predicted_next_mu_delta + mu
-
-                # 3) Decode prior latent → predicted observation distribution p(o'|z')
-                recon_state, recon_logvar = self.agent.decoder(mu_prior)
-                recon_obs = denormalize_obs(recon_state)
-                recon_norm_obs = normalize_obs(recon_obs)
-
-                # 4) Re‐encode predicted obs → posterior q(z'|o')
-                mu_post, logvar_post = self.agent.encoder(recon_norm_obs)
-
-            efe_cv, efe_qr, ig_cv, ig_qr, prag_value_cv, prag_value_qr = calculate_expected_free_energy(
-                recon_norm_obs, self.mu_target, mu_prior, mu_post, logvar_post
-            )
-            self.logs.append((obs, action, recon_obs, prag_value_cv, prag_value_qr, ig_cv, efe_cv, ig_qr, efe_qr))
-            total_efe += efe_cv.item() + efe_qr.item()
-            obs = recon_obs.detach()
-        return total_efe
-
-    def select_best_action(self, node):
-        best_value = np.inf
-        chosen_action = -1
-        for action, child in node.children.items():
-            if child.visit_count != 0:
-                val = child.accumulated_value / child.visit_count
-            else:
-                val = 1e6
-            if val < best_value:
-                best_value = val
-                chosen_action = action
-        return chosen_action
-
-    def generate_best_trajectory(self, root_node, max_depth=30):
-        trajectory = []
-        current_node = root_node
-        depth = 0
-
-        while current_node.children and depth < max_depth:
-            best_value = np.inf
-            chosen_action = None
-            next_node = None
-
-            for action, child in current_node.children.items():
-                if child.visit_count > 0:
-                    val = child.accumulated_value / child.visit_count
-                else:
-                    val = 1e6
-
-                if val < best_value:
-                    best_value = val
-                    chosen_action = action
-                    next_node = child
-
-            if chosen_action is None or next_node is None:
-                break  # No valid children to follow
-
-            trajectory.append(chosen_action)
-            current_node = next_node
-            depth += 1
-
-        return trajectory
-
-    def transform_state(self, start_state):
-        obs = torch.tensor(start_state).unsqueeze(0)
-        return obs
-
-    def tree_policy(self, node):
-        while not node.has_available_actions() and node.children:
-            node = node.return_child()
-        return node
-
-    def find_closest_node(self, node, target_obs, threshold=0.01):
-        stack = [node]
-        best_node = None
-        min_dist = float("inf")
-
-        while stack:
-            current = stack.pop()
-            dist = torch.norm(current.obs[0] - target_obs[0])
-            if dist < min_dist:
-                min_dist = dist
-                best_node = current
-
-            for child in current.children.values():
-                stack.append(child)
-
-        if min_dist < threshold:
-            return best_node
-        else:
-            return None
-
-    def advance_root_with_env_obs(self, new_obs):
-
-        best_node = self.find_closest_node(self.root_node, new_obs)
-
-        if best_node is not None:
-            self.root_node = best_node
-            self.root_node.parent = None
-        else:
-            self.root_node = Node(self.action_space, self.c, new_obs)
-
-    def run_mcts(self, start_obs):
-        efe_values = []
-        if self.root_node:
-            start_obs = self.transform_state(start_obs)
-            if not torch.equal(self.root_node.obs, start_obs):
-                self.advance_root_with_env_obs(start_obs)
-        else:
-            start_obs = self.transform_state(start_obs)
-            self.init_root_node(start_obs)
-
-        for i in range(self.iterations):
-            # select
-            node_to_expand = self.tree_policy(self.root_node)
-
-            # expand
-            node = self.expand_node(node_to_expand)
-
-            # simulate
-            reward = self.rollout(node.obs)
-            efe_values.append(reward)
-
-            # backprop
-            while node is not None:
-                node.visit_count += 1
-                node.accumulated_value += reward
-                node = node.parent
-
-        if efe_values:
-            print(f"\n[MCTS Summary]")
-            print(f"- Min EFE: {np.min(efe_values):.4f}")
-            print(f"- Max EFE: {np.max(efe_values):.4f}")
-            print(f"- Mean EFE: {np.mean(efe_values):.4f}")
-            print(f"- Std EFE: {np.std(efe_values):.4f}")
-        trajectory = self.generate_best_trajectory(self.root_node)  # [best_action]
-        print(f"- Best action: {trajectory[0]} (Trajectory length: {len(trajectory)})")
-        stats = {
-            "min_efe": float(np.min(efe_values)),
-            "max_efe": float(np.max(efe_values)),
-            "mean_efe": float(np.mean(efe_values)),
-            "std_efe": float(np.std(efe_values)),
-            "trajectory_length": len(trajectory),
-            "best_action": trajectory[0] if trajectory else -1,
-        }
-
-        return trajectory, stats, self.root_node
-
-
-#
-
-
-class Node:
     def __init__(
-        self, action_space, exploration_constant, obs, action=None, parent=None
+        self,
+        action_dim_cv: int,
+        action_dim_qr: int,
+        agent,
+        *,
+        depth: int = 5,
+        max_len: int = 10,
+        iterations: int = 500,
+        c: float = 0.5
     ):
-        self.visit_count = 0
-        self.accumulated_value = 0
-        self.parent = parent
-        self.available_actions = set(range(action_space))
-        self.action_space = action_space
-        self.children = {}
-        self.action = action
-        self.obs = obs
-        self.exploration_constant = exploration_constant
-
-    def has_available_actions(self):
-        return len(self.available_actions) != 0
-
-    def return_child(self):
-        return max(
-            self.children.values(),
-            key=lambda child: child.ucb(self.exploration_constant, self.visit_count),
+        self.action_dim_cv = action_dim_cv
+        self.action_dim_qr = action_dim_qr
+        self.action_pairs = list(
+            itertools.product(range(action_dim_cv), range(action_dim_qr))
         )
 
-    def ucb(self, exploration_constant, visit_count):
-        if self.visit_count > 0:
+        self.depth = depth
+        self.iterations = iterations
+        self.c = c
+        self.agent = agent
+        self.device = getattr(agent, "device", torch.device("cpu"))
+        self.max_len = max_len
+        self.root: _Node | None = None
+
+    def run_mcts(self, start_state: np.ndarray | torch.Tensor):
+        """Main entry – builds a search tree and returns the best trajectory of (cv, qr) actions."""
+        start_obs = self._to_tensor(start_state)
+        self.root = _Node(len(self.action_pairs), self.c, start_obs)
+
+        for _ in range(self.iterations):
+            node = self._tree_policy(self.root)
+            value = self._rollout(node.obs.clone())
+            self._backprop(node, value)
+
+        best_traj = self._extract_best_trajectory(self.root)
+        return best_traj, None, self.root  # placeholder for stats (None for now)
+
+    def _tree_policy(self, node: _Node) -> _Node:
+        """Select a node for rollout using the usual *selection → expansion* strategy."""
+        while True:
+            if not node.is_fully_expanded():
+                return self._expand(node)
+            # fully expanded – descend
+            node = node.select_child()
+
+    def _expand(self, node: _Node) -> _Node:
+        action_idx = node.available_actions.pop(
+            np.random.randint(len(node.available_actions))
+        )
+        next_obs = self._apply_action(node.obs, action_idx)
+        child = _Node(len(self.action_pairs), self.c, next_obs, action_idx, parent=node)
+        node.children[action_idx] = child
+        return child
+
+    def _rollout(self, obs: torch.Tensor) -> float:
+        total_efe = 0.0
+        for _ in range(self.depth):
+            action_idx = np.random.randint(len(self.action_pairs))
+            obs, efe_val = self._step_dynamics(obs, action_idx)
+            total_efe += efe_val
+        return total_efe
+
+    def _step_dynamics(self, norm_obs: torch.Tensor, action_idx: int):
+        """One predictive step *without* modifying any tree structures."""
+        action_cv, action_qr = self.action_pairs[action_idx]
+
+        # 1) encode current observation
+        mu_joint, logvar_joint = self.agent.world_model.encode(norm_obs, sample=False)[
+            "s_dist_params"
+        ]
+        mu_cv, mu_qr = torch.chunk(mu_joint, 2, dim=1)
+
+        # 2) delta z predictions from the separate transition nets
+        a_cv = _one_hot(action_cv, self.action_dim_cv, self.device)
+        a_qr = _one_hot(action_qr, self.action_dim_qr, self.device)
+
+        delta_cv = self.agent.transition_model_cv(mu_cv, a_cv)["delta"]
+        delta_qr = self.agent.transition_model_qr(mu_qr, a_qr)["delta"]
+        joint_delta = torch.cat([delta_cv, delta_qr], dim=1)
+        joint_delta = self.agent.denormalize_deltas(joint_delta)
+        mu_prior = mu_joint + joint_delta
+
+        # 3) project back to observation space
+        recon_mu, _ = self.agent.world_model.decode(mu_prior, sample=False)[
+            "o_dist_params"
+        ]
+        recon_norm_obs = recon_mu  # already sigmoid‑ed → within [0,1]
+
+        # 4) posterior over z′
+        mu_post, logvar_post = self.agent.world_model.encode(
+            recon_norm_obs, sample=False
+        )["s_dist_params"]
+
+        # 5) EFE for both services
+        efe_cv, efe_qr, *_ = calculate_expected_free_energy(
+            recon_norm_obs,
+            self.agent.preferences_cv,
+            self.agent.preferences_qr,
+            mu_prior,
+            mu_post,
+            logvar_post,
+            self.agent.transition_model_cv,
+            self.agent.transition_model_qr,
+        )
+        efe_val = (efe_cv + efe_qr).item()
+        return recon_norm_obs.detach(), efe_val
+
+    def _apply_action(self, norm_obs: torch.Tensor, action_idx: int) -> torch.Tensor:
+        """Wrapper used during tree expansion – identical to the rollout step but returns only obs."""
+        next_obs, _ = self._step_dynamics(norm_obs, action_idx)
+        return next_obs
+
+    def _backprop(self, node: _Node, value: float):
+        while node is not None:
+            node.update(value)
+            node = node.parent
+
+    def _to_tensor(self, arr: np.ndarray | torch.Tensor) -> torch.Tensor:
+        if isinstance(arr, torch.Tensor):
             return (
-                self.accumulated_value / self.visit_count
-                + exploration_constant * np.sqrt(np.log(visit_count) / self.visit_count)
+                arr.to(self.device).unsqueeze(0)
+                if arr.dim() == 1
+                else arr.to(self.device)
             )
-        else:
-            return np.inf
+        return torch.tensor(arr, device=self.device, dtype=torch.float32).unsqueeze(0)
+
+    def _extract_best_trajectory(self, node: _Node):
+        traj: list[tuple[int, int]] = []
+        depth = 0
+        while node.children and depth < self.max_len:
+            # pick the *most‑visited* child
+            best_child = max(node.children.values(), key=lambda n: n.visit_count)
+            traj.append(self.action_pairs[best_child.action])
+            node = best_child
+            depth += 1
+        return traj
