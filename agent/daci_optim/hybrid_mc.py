@@ -50,7 +50,7 @@ class HybridMCDaciTrainer:
             qr_slo_targets: dict,
             action_dim_cv: int = 7,
             action_dim_qr: int = 5,
-            device: str = "cuda:0",
+            device: str = "cuda:1",
     ):
         self.boundaries = boundaries
         self.qr_slo_targets = qr_slo_targets
@@ -528,7 +528,7 @@ if __name__ == "__main__":
 
     # Ensure CUDA is available
     if torch.cuda.is_available():
-        device = "cuda:0"
+        device = "cuda:1"
         print(f"Using GPU: {torch.cuda.get_device_name(0)}")
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
     else:
