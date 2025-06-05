@@ -1,5 +1,7 @@
+import os
 from collections import deque
 
+import pandas as pd
 import torch.nn.functional as F
 import copy
 import itertools
@@ -10,12 +12,14 @@ from typing import Dict, Tuple
 import numpy as np
 import torch
 
+from agent.LGBN import LGBN
 from agent.agent_utils import min_max_scale
 from agent.daci.aif_utils import calculate_expected_free_energy
 from agent.daci.network import SimpleDeltaTransitionNetwork, SimpleMCDaciWorldModel
 from agent.daci_optim.vectorized_env import VectorizedEnvironment
 from torch.nn import functional as F
 
+from agent.es_registry import ServiceType
 from proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")
@@ -30,6 +34,14 @@ def unfreeze_module_params(module):
     for param in module.parameters():
         param.requires_grad = True
 
+ROOT = os.path.dirname(__file__)
+df_t = pd.read_csv(ROOT+"/../../share/metrics/LGBN.csv")
+lgbn = LGBN(show_figures=False, structural_training=False, df=df_t)
+
+def sample_throughput_from_lgbn(data_quality, cores, model_size, service_type):
+    partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
+    full_state = lgbn.predict_lgbn_vars(partial_state, service_type)
+    return full_state['throughput']
 
 class HybridMCDACIAgent:
     """Hybrid agent that adapts performance strategy based on training phase"""
@@ -288,6 +300,10 @@ class HybridMCDACIAgent:
 
         dq_min = thresholds["min"]["data_quality"]
         dq_max = thresholds["max"]["data_quality"]
+
+        # set throughput according to current env
+        service_type_obj = ServiceType.CV if service_type == "cv" else ServiceType.QR
+        new_state[2] = sample_throughput_from_lgbn(new_state[0], new_state[6], new_state[4], service_type_obj)
 
         for idx in (0, 1):
             new_state[idx] = max(dq_min, min(dq_max, new_state[idx]))
