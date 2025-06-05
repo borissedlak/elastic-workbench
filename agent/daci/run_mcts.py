@@ -132,8 +132,8 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         state_cv[3],
         state_cv[4],
         state_cv[5],
-        0,  # cores irrelevant for SLO-F
-        0,  # cores irrelevant for SLO-F
+        state_cv[6],  # cores irrelevant for SLO-F
+        state_cv[7],  # cores irrelevant for SLO-F
         boundaries_cv,
     )
 
@@ -144,14 +144,15 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         state_qr[3],
         state_qr[4],
         state_qr[5],
-        0,  # cores irrelevant for SLO-F
-        0,  # cores irrelevant for SLO-F
+        state_qr[6],  # cores irrelevant for SLO-F
+        state_qr[7],  # cores irrelevant for SLO-F
         boundaries_qr,
     )
-
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
+    print("CV| ", full_state_cv)
+    print("CV| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
                               client_slos_cv))
-    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
+    print("QR| ", full_state_qr)
+    print("QR| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
                               client_slos_qr))
 
 
@@ -257,10 +258,10 @@ if __name__ == "__main__":
         )[
             None,
         ]
-        # Note: if you need the recsaled state (original value range):
+        # Note: if you need the rescaled state (original value range):
         rescaled_joint_state = rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
         convert_rescaled_joint_state_to_slof(rescaled_joint_state)
-        print(rescaled_joint_state)
+        # print(rescaled_joint_state)
 
     if viz:
         visualise_tree(root)
