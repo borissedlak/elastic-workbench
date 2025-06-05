@@ -19,9 +19,9 @@ ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 200
-MAX_EXPLORE = 15
+EXPERIMENT_REPETITIONS = 10
+EXPERIMENT_DURATION = 250
+MAX_EXPLORE = 20
 
 ps = "http://172.20.0.2:9090"
 
@@ -132,7 +132,7 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    train_joint_q_networks(nn_folder=ROOT + "/networks")
+    #train_joint_q_networks(nn_folder=ROOT + "/networks")
 
     # Load the trained DQNs
     dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
@@ -158,5 +158,5 @@ if __name__ == '__main__':
 
     eval_scaling_agent(agent_fact_dqn, "DQN")
     eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filename = ROOT+ "/../20250605_104110_pymdp_service_log.csv")
-    visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")
+    # import_pymdp_logs(filename = ROOT+ "/../20250605_104110_pymdp_service_log.csv")
+    visualize_data(["RRM", "DQN"], ROOT + "/plots/slo_f.png")
