@@ -285,10 +285,10 @@ class pymdp_Agent(): # ScalingAgent):
         # quality_cv as high as possible, last two states best
         # self.C[1] = np.zeros(self.num_states[1])
         self.C[1][:6] = np.linspace(0.1, 1.0, self.num_states[1] - 1)
-        self.C[1][6] = 1.0
+        self.C[1][6] = 0.5
         # model_size as high as possible, last two states best
         # self.C[2] = np.zeros(self.num_states[2])
-        self.C[2] = np.array([0.75, 1.5, 2.25, 3, 3])
+        self.C[2] = np.array([1, 2, 3, 1.5, 1])
         # self.C[2][4] = 3.0
         # cores_cv
         self.C[3] = np.zeros(self.num_states[3])
@@ -297,7 +297,7 @@ class pymdp_Agent(): # ScalingAgent):
         self.C[4][0] = -5
         self.C[4][1:] = [1.25, 2.5, 4, 4, 4]
         # quality_qr as high as possible, last two states best
-        self.C[5] = np.zeros(self.num_states[5])
+        # self.C[5] = np.zeros(self.num_states[5])
         self.C[5][:7] = np.linspace(0.1, 4.0, self.num_states[5] - 1)
         self.C[5][7] = 4.0
         # Cores_qr
@@ -308,11 +308,12 @@ class pymdp_Agent(): # ScalingAgent):
     def generate_D(self):
         # Initial states
         self.D[0] = np.zeros(self.num_states[0])
-        self.D[0][1] = 1  # Throughput_cv at 1
+        self.D[0][2] = 0.5  # Throughput_cv at 3
+        self.D[0][3] = 0.5  # Throughput_cv at 4
         self.D[1] = np.zeros(self.num_states[1])
         self.D[1][4] = 1  # Quality_cv at 256
         self.D[2] = np.zeros(self.num_states[2])
-        self.D[2][2] = 1  # Model_size at 3
+        self.D[2][1] = 1  # Model_size at 2
         self.D[3] = np.zeros(self.num_states[3])
         self.D[3][1] = 1  # Cores at 2
         self.D[4] = np.zeros(self.num_states[4])
@@ -327,7 +328,7 @@ class pymdp_Agent(): # ScalingAgent):
         pB = mdp_utils.dirichlet_like(self.B)
         return pA, pB
 
-    def generate_agent(self, policy_length, learning_rate):
+    def generate_agent(self, policy_length, learning_rate, action_selection, alpha):
         # Added only 2 parameters: Policy length: number of steps ahead to compute (high values exponentially affect computing time)
         # learning_rate: How fast the B matrices are learnt.
         # There are more parameters, such as gamma or alpha, but for now with these 2 should be fine.
@@ -340,7 +341,8 @@ class pymdp_Agent(): # ScalingAgent):
 
         return Agent(A=self.A, B=self.B, C=self.C, D=self.D, pA=pA, pB=pB, policy_len=policy_length,
                      num_controls=self.num_controls, B_factor_list=self.B_factor_list,
-                     B_factor_control_list=self.B_factor_control_list,action_selection='deterministic',
+                     B_factor_control_list=self.B_factor_control_list,action_selection=action_selection,
+                     alpha=alpha,
                      inference_algo='VANILLA', lr_pB=learning_rate, use_param_info_gain=True, use_states_info_gain=True)
 
     def load_agent_parameters(self, save_path="../experiments/iwai/saved_agent", policy_len=1, lr_pB=1.0):
@@ -363,7 +365,7 @@ class pymdp_Agent(): # ScalingAgent):
         pass
 
 
-if __name__ == '__main__':
+def train_pymdp_agent(action_selection, alpha, motivate_cores):
     # ps = "http://localhost:9090"
     # qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     # cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
@@ -395,7 +397,8 @@ if __name__ == '__main__':
     learning_agent = True
 
     if learning_agent:
-        pymdp_agent = p_agent.generate_agent(policy_length=1, learning_rate=1)
+        pymdp_agent = p_agent.generate_agent(policy_length=1, learning_rate=1,
+                                             alpha=alpha, action_selection=action_selection)
     else:
         pymdp_agent = p_agent.load_agent_parameters(save_path="../experiments/iwai/saved_agent", policy_len=1)
     print("Agent ready.")
@@ -406,7 +409,7 @@ if __name__ == '__main__':
 
     logged_data = list()
 
-    for steps in range(40):
+    for steps in range(50):
         start_time_loop = time.time()
 
         a_s = pymdp_agent.infer_states(pymdp_state)
@@ -414,7 +417,7 @@ if __name__ == '__main__':
         if steps & learning_agent > 0:
             pymdp_agent.update_B(a_s)
 
-        q_pi, G = pymdp_agent.infer_policies()
+        q_pi, G, G_sub = pymdp_agent.infer_policies()
 
         chosen_action_id = pymdp_agent.sample_action()
 
@@ -432,14 +435,32 @@ if __name__ == '__main__':
 
         # Extract metrics
         efe = G[policy_index]
-        info_gain = 1# G_sub["ig_s"][policy_index]  # usually epistemic value
-        pragmatic_value = 1# G_sub["r"][policy_index]  # usually extrinsic value
+        info_gain = G_sub["ig_s"][policy_index]  # usually epistemic value
+        pragmatic_value = G_sub["r"][policy_index]  # usually extrinsic value
 
         action_cv = ESServiceAction(int(chosen_action_id[0]))
         action_qr = ESServiceAction(int(chosen_action_id[1]))
 
         #print("applying actions.")
         (next_state_qr, next_state_cv), joint_reward, done = joint_env.step(action_qr=action_qr, action_cv=action_cv)
+
+        # Preference to maximize the usage of cores.
+        if motivate_cores:
+            if next_state_cv.free_cores > 1:
+                pymdp_agent.C[3][next_state_cv.cores:] = 3
+                pymdp_agent.C[6][next_state_qr.cores:] = 1
+            elif next_state_cv.free_cores == 1:
+                if next_state_cv.cores > next_state_qr.cores:
+                    pymdp_agent.C[6][next_state_qr.cores:] = 3
+                    pymdp_agent.C[3] = np.zeros(PHYSICAL_CORES -1)
+                    pymdp_agent.C[3][next_state_cv.cores - 1] = 1
+                else:
+                    pymdp_agent.C[3][next_state_cv.cores:] = 3
+                    pymdp_agent.C[6] = np.zeros(PHYSICAL_CORES -1)
+                    pymdp_agent.C[6][next_state_qr.cores - 1] = 1
+            else:
+                pymdp_agent.C[3] = np.zeros(PHYSICAL_CORES -1)
+                pymdp_agent.C[6] = np.zeros(PHYSICAL_CORES -1)
 
         elapsed = time.time() - start_time_loop
         print(f"{steps}| Loop time: {elapsed:.4f} seconds")
@@ -457,7 +478,9 @@ if __name__ == '__main__':
             "info_gain": info_gain,
             "pragmatic_value": pragmatic_value,
         })
-        print(logged_data[-1])
+        print(logged_data[-1]["next_state_cv"])
+        print(logged_data[-1]["next_state_qr"])
+        print(logged_data[-1]["reward"])
 
     save_agent_parameters(pymdp_agent, save_path="../experiments/iwai/saved_agent")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -467,3 +490,9 @@ if __name__ == '__main__':
     log_entries = []  # Clear after saving
     print("done")
 
+if __name__ == "__main__":
+    for i in range(5):
+        train_pymdp_agent("deterministic", 16, True)
+        train_pymdp_agent("deterministic", 16, False)
+        train_pymdp_agent("stochastic", 8, True)
+        train_pymdp_agent("stochastic", 4, False)

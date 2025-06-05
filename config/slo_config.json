@@ -31,7 +31,7 @@
         {
           "var": "model_size",
           "larger": true,
-          "target": 4,
+          "target": 3,
           "weight": 0.2
         },
         {

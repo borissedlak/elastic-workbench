@@ -175,7 +175,7 @@ if __name__ == "__main__":
     env.reset()
 
     boundaries = env.es_registry.get_boundaries_minimalistic(ServiceType.CV, MAX_CORES)
-    env.state = FullStateDQN(192, 288, 6, 5, 5, 4, 4, 7, boundaries)
+    env.state = FullStateDQN(256, 288, 0, 2, 3, 5, 2, 6, boundaries)
     for i in range(1, 100):
         print(env.step(ESServiceAction.DILLY_DALLY))
         # print(env.state.discretize(ServiceType.CV))

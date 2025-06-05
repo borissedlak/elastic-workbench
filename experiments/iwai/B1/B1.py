@@ -135,28 +135,28 @@ if __name__ == '__main__':
     # train_joint_q_networks(nn_folder=ROOT + "/networks")
 
     # Load the trained DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
-    dqn_qr.load("Q_QR_joint.pt")
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
-    dqn_cv.load("Q_CV_joint.pt")
+    # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
+    # dqn_qr.load("Q_QR_joint.pt")
+    # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
+    # dqn_cv.load("Q_CV_joint.pt")
 
-    agent_fact_dqn = lambda repetition: DQNAgent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        dqn_for_services=[dqn_qr, dqn_cv],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition
-    )
-
-    agent_fact_rrm = lambda repetition: RRM_Global_Agent(
-        prom_server=ps,
-        services_monitored=[qr_local, cv_local],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition,
-        max_explore=MAX_EXPLORE
-    )
+    # agent_fact_dqn = lambda repetition: DQNAgent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     dqn_for_services=[dqn_qr, dqn_cv],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition
+    # )
+    #
+    # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition,
+    #     max_explore=MAX_EXPLORE
+    # )
 
     #eval_scaling_agent(agent_fact_dqn, "DQN")
     #eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filename = ROOT+ "/../20250604_220708_pymdp_service_log.csv")
+    import_pymdp_logs(filename = ROOT+ "/../20250604_165223_pymdp_service_log.csv")
     visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")
