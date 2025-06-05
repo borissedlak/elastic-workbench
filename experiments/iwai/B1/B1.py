@@ -62,7 +62,8 @@ def visualize_data(agent_types: list[str], output_file: str):
 
     # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
     df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
-    x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
+    x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) + 1)
+    # x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
     plt.figure(figsize=(6.0, 3.8))
 
 
@@ -93,11 +94,12 @@ def visualize_data(agent_types: list[str], output_file: str):
     # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
     # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
-    plt.xlim(0.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) - 1)
+    plt.xlim(1.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))
+    plt.xticks([1,10,20,30,40,50])
     plt.ylim(0.0, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
-    plt.ylabel('SLO Fulfillment')
+    plt.ylabel('Global SLO Fulfillment')
     plt.legend()
     plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
     plt.show()
