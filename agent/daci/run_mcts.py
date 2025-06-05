@@ -59,10 +59,6 @@ def visualise_tree(root, max_depth: int = 2):
     plt.show()
 
 
-# -----------------------------------------------------------------------------
-# Example main -------------------------------------------------------------------
-
-
 def build_default_boundaries() -> dict:
     """Returns a *tiny* set of reasonable boundaries for a quick demo."""
 
@@ -153,10 +149,24 @@ if __name__ == "__main__":
             device=device,
         )
 
+    """
+            obs: [
+            data_quality,
+            data_quality_target,
+            throughput,
+            throughput_target,
+            model_size
+            model_size_target,
+            cores,
+            free_cores
+
+        ]
+"""
     # Initialize start state
-    start_state_raw1 = build_midpoint_state(boundaries).to(device)
-    start_state_raw2 = build_midpoint_state(boundaries).to(device)
-    joint_state = torch.cat([start_state_raw1, start_state_raw2], dim=1)
+    start_state_raw_cv = torch.tensor([500, 300, 2, 5, 1, 3, 2,  4])
+    start_state_raw_qr = torch.tensor([500, 800, 2, 75, 1, 1, 2,  4])
+    joint_state = torch.cat([start_state_raw_cv, start_state_raw_qr], dim=0).unsqueeze(0).to(dtype=torch.float32, device=device)
+    joint_state = scale_joint(joint_state, agent.vec_env)
     print("Start state (raw):", joint_state.squeeze().tolist())
     # 1) Initialize mcts
     mcts = MCTS(
@@ -180,10 +190,9 @@ if __name__ == "__main__":
     #      b) apply only trajectory[0]
     #   4) to get the next state call
     for _ in range(test_iters):
-        norm_joint_state = scale_joint(raw=joint_state, vec_env=agent.vec_env)
-        trajectory, stats, root = mcts.run_mcts(norm_joint_state)
+        trajectory, stats, root = mcts.run_mcts(joint_state)
         action_cv, action_qr = trajectory[0]
-        state_cv, state_qr = torch.chunk(norm_joint_state, chunks=2, dim=1)
+        state_cv, state_qr = torch.chunk(joint_state, chunks=2, dim=1)
         #  note: Tensors are always shape (B, *). Since we are not training, B=1
         next_cv, _ = agent.simple_probe_transition(
             state_cv.squeeze(), None, action=action_cv, service_type="cv"
@@ -196,6 +205,9 @@ if __name__ == "__main__":
         )[
             None,
         ]
+        # Note: if you need the recsaled state (original value range):
+        rescaled_joint_state =rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
+        print(rescaled_joint_state)
 
     if viz:
         visualise_tree(root)

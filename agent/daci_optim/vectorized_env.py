@@ -56,11 +56,18 @@ class VectorizedEnvironment:
 
     def min_max_rescale(self, scaled_vals: torch.Tensor) -> torch.Tensor:
         """Vectorized min-max rescaling on GPU"""
-        rescaled = torch.where(
-            self.min_vals == self.max_vals,
-            self.min_vals,
-            scaled_vals * (self.max_vals - self.min_vals) + self.min_vals,
-        )
+        if scaled_vals.shape != self.max_vals.shape[0]:
+            rescaled = torch.where(
+                self.min_vals.repeat(2) == self.max_vals.repeat(2),
+                self.min_vals.repeat(2),
+                scaled_vals * (self.max_vals.repeat(2) - self.min_vals.repeat(2)) + self.min_vals.repeat(2),
+            )
+        else:
+            rescaled = torch.where(
+                self.min_vals == self.max_vals,
+                self.min_vals,
+                scaled_vals * (self.max_vals - self.min_vals) + self.min_vals,
+            )
         return rescaled
 
     def vectorized_transition_cv(self, states: torch.Tensor, actions: torch.Tensor) -> Tuple[
