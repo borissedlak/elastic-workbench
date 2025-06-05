@@ -9,7 +9,10 @@ import torch
 import networkx as nx
 import matplotlib.pyplot as plt
 
+from agent.SLORegistry import calculate_slo_fulfillment, SLO_Registry, to_normalized_slo_f
+from agent.agent_utils import FullStateDQN
 from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
+from agent.es_registry import ServiceType, ESRegistry
 
 from mcts_utils import MCTS
 
@@ -102,6 +105,52 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--viz", action="store_true", help="Visualise a slice of the tree")
     return p.parse_args()
+
+
+ROOT = os.path.dirname(__file__)
+slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")
+es_registry = ESRegistry(ROOT + "/../../config/es_registry.json")
+client_slos_qr = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.QR, {"C_1": 100}
+)[0]
+client_slos_cv = slo_registry.get_all_SLOs_for_assigned_clients(
+    ServiceType.CV, {"C_1": 100}
+)[0]
+
+boundaries_cv = es_registry.get_boundaries_minimalistic(ServiceType.CV, 8)
+boundaries_qr = es_registry.get_boundaries_minimalistic(ServiceType.QR, 8)
+
+def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
+    state_cv = rescaled_joint_state[0][:8]
+    state_qr = rescaled_joint_state[0][8:]
+
+    full_state_cv = FullStateDQN(
+        state_cv[0],
+        state_cv[1],
+        state_cv[2],
+        state_cv[3],
+        state_cv[4],
+        state_cv[5],
+        0,  # cores irrelevant for SLO-F
+        0,  # cores irrelevant for SLO-F
+        boundaries_cv,
+    )
+
+    full_state_qr = FullStateDQN(
+        state_qr[0],
+        state_qr[1],
+        state_qr[2],
+        state_qr[3],
+        state_qr[4],
+        state_qr[5],
+        0,  # cores irrelevant for SLO-F
+        0,  # cores irrelevant for SLO-F
+        boundaries_qr,
+    )
+
+    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv), client_slos_cv))
+    print(to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr), client_slos_qr))
+
 
 
 # -----------------------------------------------------------------------------
@@ -207,6 +256,7 @@ if __name__ == "__main__":
         ]
         # Note: if you need the recsaled state (original value range):
         rescaled_joint_state =rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
+        convert_rescaled_joint_state_to_slof(rescaled_joint_state)
         print(rescaled_joint_state)
 
     if viz:
