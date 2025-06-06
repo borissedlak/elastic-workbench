@@ -45,6 +45,8 @@ def main():
     for agent in AGENT_TYPES:
         results = load_and_process_experience(agent)
         data.update(results)
+    # With log10 data - so we do not need to have a log-axis, and we show the variance properly
+    # data = {agent: np.log10(values) for agent, values in data.items()}
 
     # Define plotting order
     plot_labels = ["DQN", "RRM (expl.)", "RRM (inf)", "AIF"]
@@ -70,7 +72,7 @@ def main():
     plt.yticks([10, 100, 1000, 10000])
 
     plt.tight_layout()
-    plt.savefig(os.path.join(ROOT, "plots", "iteration_time.png"), dpi=600)
+    # plt.savefig(os.path.join(ROOT, "plots", "iteration_time.png"), dpi=600)
     plt.show()
 
 
