@@ -391,15 +391,15 @@ class HybridMCDACIAgent:
             ):
                 new_state[4] = new_model_s
 
-        dq_min = thresholds["min"]["data_quality"]
-        dq_max = thresholds["max"]["data_quality"]
+        data_quality_min = thresholds["min"]["data_quality"]
+        data_quality_max = thresholds["max"]["data_quality"]
 
         # set throughput according to current env
         service_type_obj = ServiceType.CV if service_type == "cv" else ServiceType.QR
         new_state[2] = sample_throughput_from_lgbn(new_state[0], new_state[6], new_state[4], service_type_obj)
 
         for idx in (0, 1):
-            new_state[idx] = max(dq_min, min(dq_max, new_state[idx]))
+            new_state[idx] = max(data_quality_min, min(data_quality_max, new_state[idx]))
 
         new_state = self.min_max_scale(new_state)
 

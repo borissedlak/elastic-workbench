@@ -1,8 +1,6 @@
 import argparse
 import os.path
 import random
-from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import torch
@@ -13,9 +11,9 @@ from agent.SLORegistry import calculate_slo_fulfillment, SLO_Registry, to_normal
 from agent.agent_utils import FullStateDQN
 from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
 from agent.es_registry import ServiceType, ESRegistry
+from agent.daci.mcts_utils import MCTS
 
-from mcts_utils import MCTS
-
+print("Uses other file")
 
 def scale_joint(raw: torch.Tensor, vec_env) -> torch.Tensor:
     """Scale an 8‑D raw joint observation to 0‑1 using the env’s helper."""
@@ -62,39 +60,39 @@ def visualise_tree(root, max_depth: int = 2):
     plt.show()
 
 
-def build_default_boundaries() -> dict:
-    """Returns a *tiny* set of reasonable boundaries for a quick demo."""
+# def build_default_boundaries() -> dict:
+#     """Returns a *tiny* set of reasonable boundaries for a quick demo."""
+#
+#     return {
+#         "data_quality": {"min": 0, "max": 100},
+#         "model_size": {"min": 0, "max": 150},
+#         "cores": {"min": 0, "max": 64},
+#     }
 
-    return {
-        "data_quality": {"min": 0, "max": 100},
-        "model_size": {"min": 0, "max": 150},
-        "cores": {"min": 0, "max": 64},
-    }
 
-
-def build_midpoint_state(boundaries: dict) -> torch.Tensor:
-    """Produces an 8‑D tensor located roughly in the middle of each range."""
-
-    def mid(key):
-        return 0.5 * (boundaries[key]["min"] + boundaries[key]["max"])
-
-    # [dq_cv, dq_qr, unused, unused, ms_cv, ms_qr, cores_cv, cores_qr]
-    state = torch.tensor(
-        [
-            mid("data_quality"),
-            mid("data_quality"),
-            0.0,
-            0.0,
-            mid("model_size"),
-            mid("model_size"),
-            mid("cores"),
-            mid("cores"),
-        ],
-        dtype=torch.float32,
-    ).unsqueeze(
-        0
-    )  # (1, 8)
-    return state
+# def build_midpoint_state(boundaries: dict) -> torch.Tensor:
+#     """Produces an 8‑D tensor located roughly in the middle of each range."""
+#
+#     def mid(key):
+#         return 0.5 * (boundaries[key]["min"] + boundaries[key]["max"])
+#
+#     # [dq_cv, dq_qr, unused, unused, ms_cv, ms_qr, cores_cv, cores_qr]
+#     state = torch.tensor(
+#         [
+#             mid("data_quality"),
+#             mid("data_quality"),
+#             0.0,
+#             0.0,
+#             mid("model_size"),
+#             mid("model_size"),
+#             mid("cores"),
+#             mid("cores"),
+#         ],
+#         dtype=torch.float32,
+#     ).unsqueeze(
+#         0
+#     )  # (1, 8)
+#     return state
 
 
 def parse_args() -> argparse.Namespace:
@@ -125,6 +123,8 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
     state_cv = rescaled_joint_state[0][:8]
     state_qr = rescaled_joint_state[0][8:]
 
+    free_cores = 8 - (state_cv[6] + state_qr[6])
+
     full_state_cv = FullStateDQN(
         state_cv[0],
         state_cv[1],
@@ -133,7 +133,7 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         state_cv[4],
         state_cv[5],
         state_cv[6],  # cores irrelevant for SLO-F
-        state_cv[7],  # cores irrelevant for SLO-F
+        free_cores,  # cores irrelevant for SLO-F
         boundaries_cv,
     )
 
@@ -145,19 +145,15 @@ def convert_rescaled_joint_state_to_slof(rescaled_joint_state):
         state_qr[4],
         state_qr[5],
         state_qr[6],  # cores irrelevant for SLO-F
-        state_qr[7],  # cores irrelevant for SLO-F
+        free_cores,  # cores irrelevant for SLO-F
         boundaries_qr,
     )
     print("CV| ", full_state_cv)
-    print("CV| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
-                              client_slos_cv))
+    print("CV| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv), client_slos_cv))
     print("QR| ", full_state_qr)
-    print("QR| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
-                              client_slos_qr))
-    normalized_slo_cv = to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv),
-                              client_slos_cv)
-    normalized_slo_qr = to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr),
-                              client_slos_qr)
+    print("QR| ", to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr), client_slos_qr))
+    normalized_slo_cv = to_normalized_slo_f(calculate_slo_fulfillment(full_state_cv.to_normalized_dict(), client_slos_cv), client_slos_cv)
+    normalized_slo_qr = to_normalized_slo_f(calculate_slo_fulfillment(full_state_qr.to_normalized_dict(), client_slos_qr), client_slos_qr)
     return normalized_slo_cv, normalized_slo_qr
 
 # -----------------------------------------------------------------------------
@@ -170,7 +166,7 @@ if __name__ == "__main__":
     viz = True
     depth: int = 5
     max_length_trajectory = 30
-    iterations: int = 500
+    iterations: int = 50
     c: float = 0.5
     eh = True
     if eh:
@@ -179,9 +175,9 @@ if __name__ == "__main__":
         agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
     boundaries = {
         "model_size": {"min": 1, "max": 5},
-     "data_quality": {"min": 100, "max": 1000},
+        # "data_quality": {"min": 100, "max": 1000},
         "cores": {"min": 1, "max": 8},
-        "throughput": {"min": 0, "max": 100},
+        # "throughput": {"min": 0, "max": 100},
     }
     cv_slo_targets = (
         {
@@ -228,7 +224,7 @@ if __name__ == "__main__":
     joint_state = torch.cat([start_state_raw_cv, start_state_raw_qr], dim=0).unsqueeze(0).to(dtype=torch.float32,
                                                                                              device=device)
     joint_state = scale_joint(joint_state, agent.vec_env)
-    print("Start state (raw):", joint_state.squeeze().tolist())
+    # print("Start state (raw):", joint_state.squeeze().tolist())
     # 1) Initialize mcts
     mcts = MCTS(
         action_dim_qr=agent.action_dim_qr,
@@ -259,9 +255,18 @@ if __name__ == "__main__":
         next_cv, _ = agent.simple_probe_transition(
             state_cv.squeeze(), None, action=action_cv, service_type="cv"
         )
+
+        # TODO: Two problems: (1) the free cores change between cv and qr, and (2) the free cores must be correctly set afterwards
+        # free_cores = 1 - (state_qr[0][6] + next_cv[6])  # In scaled format!
+
         next_qr, _ = agent.simple_probe_transition(
             state_qr.squeeze(), None, action=action_qr, service_type="qr"
         )
+
+        # free_cores = 1 - (next_qr[6] + next_cv[6]) # In scaled format!
+        # next_qr[7] = free_cores
+        # next_cv[7] = free_cores
+
         joint_state = torch.tensor(
             np.concatenate([next_cv, next_qr]), dtype=torch.float32, device=device
         )[
@@ -270,7 +275,7 @@ if __name__ == "__main__":
         # Note: if you need the rescaled state (original value range):
         rescaled_joint_state = rescale_joint(scaled=joint_state, vec_env=agent.vec_env)
         convert_rescaled_joint_state_to_slof(rescaled_joint_state)
-        # print(rescaled_joint_state)
+        print(rescaled_joint_state)
 
     if viz:
         visualise_tree(root)
