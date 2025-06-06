@@ -165,14 +165,17 @@ if __name__ == "__main__":
     device = "cpu"
     viz = True
     depth: int = 5
-    max_length_trajectory = 30
-    iterations: int = 50
+    max_length_trajectory = 6
+    iterations: int = 300
     c: float = 0.5
-    eh = True
-    if eh:
-        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_eh.pth"
+    mode: str = "enhanced"
+    if mode == "eh":
+        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_ehv2.pth"
+    elif mode == "enhanced":
+        # agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_slim_iter=200.pth"
+        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_chonker.pth"
     else:
-        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
+        agent_file =  "hybrid_agent_checkpoint__hybrid_adaptive.pth"
     boundaries = {
         "model_size": {"min": 1, "max": 5},
         # "data_quality": {"min": 100, "max": 1000},
@@ -234,7 +237,7 @@ if __name__ == "__main__":
         iterations=iterations,
         max_len=max_length_trajectory,
         c=c,
-        use_eh=eh,
+        mode=mode,
     )
 
     # THIS WILL BE IN YOUR GAME LOOP

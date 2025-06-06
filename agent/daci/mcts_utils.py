@@ -5,7 +5,8 @@ from torch import nn
 import torch.nn.functional as F
 
 import utils
-from agent.daci.aif_utils import calculate_expected_free_energy, calculate_expected_free_energy_eh
+from agent.daci.aif_utils import calculate_expected_free_energy, calculate_expected_free_energy_eh, \
+    calculate_expected_free_energy_enhanced
 from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
 
 
@@ -90,7 +91,7 @@ class MCTS:
             max_len: int = 10,
             iterations: int = 500,
             c: float = 0.5,
-            use_eh: bool = False
+            mode: str = "enhanced"
     ):
         self.action_dim_cv = action_dim_cv
         self.action_dim_qr = action_dim_qr
@@ -105,7 +106,7 @@ class MCTS:
         self.device = getattr(agent, "device", torch.device("cpu"))
         self.max_len = max_len
         self.root: _Node | None = None
-        self.use_eh = use_eh
+        self.mode = mode
 
     @utils.print_execution_time
     def run_mcts(self, start_state: np.ndarray | torch.Tensor):
@@ -178,7 +179,7 @@ class MCTS:
         )["s_dist_params"]
 
         # 5) EFE for both services
-        if self.use_eh:
+        if self.mode == "eh":
             efe_cv, efe_qr, *_ = calculate_expected_free_energy_eh(
                 self.agent.vec_env.min_max_rescale(recon_norm_obs),
                 self.agent.preferences_cv,
@@ -189,6 +190,30 @@ class MCTS:
                 self.agent.transition_model_cv,
                 self.agent.transition_model_qr,
             )
+            efe_val = (efe_cv + efe_qr).item()
+        elif self.mode == "enhanced":
+            efe_val, *_ = calculate_expected_free_energy_enhanced(
+                recon_norm_obs,
+                self.agent.preferences_cv,
+                self.agent.preferences_qr,
+                mu_prior,
+                mu_post,
+                logvar_post,
+                self.agent.transition_model_cv,
+                self.agent.transition_model_qr,
+            )
+        elif self.mode == "reg":
+            efe_val, *_ = calculate_expected_free_energy(
+                recon_norm_obs,
+                self.agent.preferences_cv,
+                self.agent.preferences_qr,
+                mu_prior,
+                mu_post,
+                logvar_post,
+                self.agent.transition_model_cv,
+                self.agent.transition_model_qr,
+            )
+
         else:
             efe_cv, efe_qr, *_ = calculate_expected_free_energy(
                 recon_norm_obs,
@@ -200,8 +225,8 @@ class MCTS:
                 self.agent.transition_model_cv,
                 self.agent.transition_model_qr,
             )
-        efe_val = (efe_cv + efe_qr).item()
-        return recon_norm_obs.detach(), efe_val
+            efe_val = (efe_cv + efe_qr)
+        return recon_norm_obs.detach(), efe_val.item()
 
     def _apply_action(self, norm_obs: torch.Tensor, action_idx: int) -> torch.Tensor:
         """Wrapper used during tree expansion – identical to the rollout step but returns only obs."""
