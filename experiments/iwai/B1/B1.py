@@ -174,15 +174,15 @@ if __name__ == '__main__':
     #     log_experience=repetition,
     #     max_explore=MAX_EXPLORE
     # )
-    # agent_fact_daci = lambda repetition: DAIAgent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition,
-    #     iterations=25,
-    #     depth=5,
-    #     eh = True
-    # )
+    agent_fact_daci = lambda repetition: DAIAgent(
+        prom_server=ps,
+        services_monitored=[qr_local, cv_local],
+        evaluation_cycle=EVALUATION_FREQUENCY,
+        log_experience=repetition,
+        iterations=20,
+        depth=5,
+        eh = False
+    )
     #
     # eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_rrm, "RRM")

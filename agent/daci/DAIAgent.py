@@ -63,7 +63,7 @@ class DAIAgent(ScalingAgent):
         if self.eh:
             agent_file = ROOT + "/hybrid_agent_checkpoint__hybrid_adaptive_ehv2.pth"
         else:
-            agent_file = ROOT + "/hybrid_agent_checkpoint__hybrid_adaptive.pth"
+            agent_file = ROOT + "/hybrid_agent_checkpoint__hybrid_adaptive_slim_chonker_i=500+500+50.pth"
 
         self.agent = torch.load(agent_file, weights_only=False, map_location=self.device)["agent"]
         self.agent.device = self.device
@@ -76,7 +76,6 @@ class DAIAgent(ScalingAgent):
             iterations=self.iterations,
             max_len=self.max_length_trajectory,
             c=self.c,
-            use_eh=self.eh,
         )
 
     def get_raw_state_for_service(self, service: ServiceID):
@@ -172,7 +171,7 @@ class DAIAgent(ScalingAgent):
         free_cores = self.get_free_cores()
         es_cv, params_qr = convert_action_to_real_ES(services_m[1], start_state_full_cv, action_cv, free_cores)
         wants_to_die = (start_state_full_cv.cores <= 4 and action_cv == 3 ) or \
-                       (start_state_full_cv.model_size >= 3 and action_cv == 6) or \
+                       (start_state_full_cv.model_size >= 2 and action_cv == 6) or \
                        (start_state_full_cv.data_quality >= 288 and action_cv == 2)
         if es_cv == ESType.IDLE:
             logger.info("Agent decided to do nothing for service %s", services_m[1])
@@ -194,7 +193,7 @@ if __name__ == "__main__":
         evaluation_cycle=10,
         iterations=70,
         depth=5,
-        eh = True
+        eh = False
     )
     dai_agent.reset_services_states()
     dai_agent.start()
