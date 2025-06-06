@@ -10,6 +10,7 @@ from pandas import DataFrame
 
 from agent.RRMGlobalAgent import RRM_Global_Agent
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
+from agent.daci.DAIAgent import DAIAgent
 from agent.es_registry import ServiceID, ServiceType
 from experiments.iwai.transform_pymdp_logs import import_pymdp_logs
 from iwai.dqn_agent import DQNAgent
@@ -50,8 +51,9 @@ logging.getLogger('multiscale').setLevel(logging.INFO)
 
 
 def eval_scaling_agent(agent_factory, agent_type):
-    delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
-    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+    #delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
+    if agent_type == "RRM":
+        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for {agent_type} agent")
 
@@ -69,8 +71,8 @@ def eval_scaling_agent(agent_factory, agent_type):
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
-COLOR_DICT_AGENT = {"DQN": "red", "RRM": "green", "AIF": "blue"}
-LINE_STYLE_DICT = {"DQN": "--", "RRM": "-", "AIF": "-."}
+COLOR_DICT_AGENT = {"DQN": "red", "RRM": "green", "AIF": "blue",  "DACI": "grey"}
+LINE_STYLE_DICT = {"DQN": "--", "RRM": "-", "AIF": "-.", "DACI": ':'}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
@@ -172,9 +174,19 @@ if __name__ == '__main__':
     #     log_experience=repetition,
     #     max_explore=MAX_EXPLORE
     # )
+    # agent_fact_daci = lambda repetition: DAIAgent(
+    #     prom_server=ps,
+    #     services_monitored=[qr_local, cv_local],
+    #     evaluation_cycle=EVALUATION_FREQUENCY,
+    #     log_experience=repetition,
+    #     iterations=25,
+    #     depth=5,
+    #     eh = True
+    # )
     #
     # eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_rrm, "RRM")
-    import_pymdp_logs(filenames=pymdp_files)
-    visualize_data(["RRM", "DQN", "AIF"], ROOT + "/plots/slo_f.png")
+    # eval_scaling_agent(agent_fact_daci, "DACI")
+    # import_pymdp_logs(filenames=pymdp_files)
+    visualize_data(["RRM", "DQN", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
     # time.sleep(1)

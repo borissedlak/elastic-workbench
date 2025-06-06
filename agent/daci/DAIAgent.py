@@ -61,9 +61,9 @@ class DAIAgent(ScalingAgent):
         self.eh = eh
 
         if self.eh:
-            agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_eh.pth"
+            agent_file = ROOT + "/hybrid_agent_checkpoint__hybrid_adaptive_ehv2.pth"
         else:
-            agent_file = "hybrid_agent_checkpoint__hybrid_adaptive.pth"
+            agent_file = ROOT + "/hybrid_agent_checkpoint__hybrid_adaptive.pth"
 
         self.agent = torch.load(agent_file, weights_only=False, map_location=self.device)["agent"]
         self.agent.device = self.device
@@ -73,7 +73,7 @@ class DAIAgent(ScalingAgent):
             action_dim_cv=self.agent.action_dim_cv,
             agent=self.agent,
             depth=self.depth,
-            iterations=100,
+            iterations=self.iterations,
             max_len=self.max_length_trajectory,
             c=self.c,
             use_eh=self.eh,
@@ -89,8 +89,8 @@ class DAIAgent(ScalingAgent):
             self.evaluate_slos_and_buffer(service, service_state, all_client_slos)
 
             # TODO: Remove for real experiment
-            export_experience_buffer(self.experience_buffer, ROOT + f"/agent_experience_DACI.csv")
-            self.experience_buffer = []
+            # export_experience_buffer(self.experience_buffer, ROOT + f"/agent_experience_DACI.csv")
+            # self.experience_buffer = []
 
         model_size, model_size_t = 1, 1
         if "model_size" in service_state or "model_size" in all_client_slos[0]:
@@ -137,21 +137,33 @@ class DAIAgent(ScalingAgent):
         return joint_state
 
     def orchestrate_services_optimally(self, services_m):
-
-        start_state_raw_qr, start_state_full_qr = self.get_raw_state_for_service(services_m[0])
-        start_state_raw_cv, start_state_full_cv = self.get_raw_state_for_service(services_m[1])
-        joint_state = self.convert_to_joint_state(start_state_raw_qr, start_state_raw_cv)
+        try:
+            start_state_raw_qr, start_state_full_qr = self.get_raw_state_for_service(services_m[0])
+            start_state_raw_cv, start_state_full_cv = self.get_raw_state_for_service(services_m[1])
+            joint_state = self.convert_to_joint_state(start_state_raw_qr, start_state_raw_cv)
+        except KeyError as e:
+            logger.error("Could not resolve state, need to retry due to ", e)
+            time.sleep(0.5)
+            self.orchestrate_services_optimally(services_m)
+            return
 
         print(joint_state)
+        print(start_state_full_qr)
+        print(start_state_full_cv)
 
         trajectory, stats, root = self.mcts.run_mcts(joint_state)
         action_cv, action_qr = trajectory[0]
 
         free_cores = self.get_free_cores()
         es_qr, params_qr = convert_action_to_real_ES(services_m[0], start_state_full_qr, action_qr, free_cores)
+        wants_to_die = (start_state_full_qr.cores <= 4 and action_qr == 3 ) or \
+                       (start_state_full_qr.data_quality >= 900 and action_qr == 2) or \
+                       (start_state_full_qr.data_quality <= 500 and action_qr == 1)
 
         if es_qr == ESType.IDLE:
             logger.info("Agent decided to do nothing for service %s", services_m[0])
+        elif wants_to_die:
+            logger.info("Preventing the agent to act stupid for service %s", services_m[0])
         else:
             self.execute_ES(services_m[0].host, services_m[0], es_qr, params_qr, respect_cooldown=False,)
 
@@ -159,9 +171,13 @@ class DAIAgent(ScalingAgent):
 
         free_cores = self.get_free_cores()
         es_cv, params_qr = convert_action_to_real_ES(services_m[1], start_state_full_cv, action_cv, free_cores)
-
+        wants_to_die = (start_state_full_cv.cores <= 4 and action_cv == 3 ) or \
+                       (start_state_full_cv.model_size >= 3 and action_cv == 6) or \
+                       (start_state_full_cv.data_quality >= 288 and action_cv == 2)
         if es_cv == ESType.IDLE:
             logger.info("Agent decided to do nothing for service %s", services_m[1])
+        elif wants_to_die:
+            logger.info("Preventing the agent to act stupid for service %s", services_m[1])
         else:
             self.execute_ES(services_m[1].host, services_m[1], es_cv, params_qr, respect_cooldown=False,)
         print(action_cv, action_qr)
@@ -176,9 +192,9 @@ if __name__ == "__main__":
         services_monitored=[qr_local, cv_local],
         prom_server=ps,
         evaluation_cycle=10,
-        iterations=50,
+        iterations=70,
         depth=5,
-        log_experience="#"
+        eh = True
     )
     dai_agent.reset_services_states()
     dai_agent.start()

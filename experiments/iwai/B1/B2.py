@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from experiments.iwai.B1.B1 import COLOR_DICT_AGENT
 
 ROOT = os.path.dirname(__file__)
-AGENT_TYPES = ["DQN", "RRM", "AIF"]
+AGENT_TYPES = ["DQN", "RRM", "AIF", "DACI"]
 plt.rcParams.update({'font.size': 12})
 
 
@@ -49,7 +49,7 @@ def main():
     # data = {agent: np.log10(values) for agent, values in data.items()}
 
     # Define plotting order
-    plot_labels = ["DQN", "RRM (expl.)", "RRM (inf)", "AIF"]
+    plot_labels = ["DQN", "RRM (expl.)", "RRM (inf)", "AIF", "DACI"]
     plot_data = [data[label] for label in plot_labels]
 
     # Create the boxplot
@@ -72,7 +72,7 @@ def main():
     plt.yticks([10, 100, 1000, 10000])
 
     plt.tight_layout()
-    # plt.savefig(os.path.join(ROOT, "plots", "iteration_time.png"), dpi=600)
+    plt.savefig(os.path.join(ROOT, "plots", "iteration_time.png"), dpi=600)
     plt.show()
 
 
