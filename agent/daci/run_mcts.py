@@ -173,7 +173,9 @@ if __name__ == "__main__":
         agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_ehv2.pth"
     elif mode == "enhanced":
         # agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_slim_iter=200.pth"
-        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_chonker.pth"
+        # agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_chonker.pth"
+        # agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_slim_slim_i=500+500+50.pth"
+        agent_file = "hybrid_agent_checkpoint__hybrid_adaptive_slim_chonker_i=500+500+50.pth"
     else:
         agent_file =  "hybrid_agent_checkpoint__hybrid_adaptive.pth"
     boundaries = {
