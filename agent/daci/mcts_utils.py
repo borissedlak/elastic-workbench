@@ -4,6 +4,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+import utils
 from agent.daci.aif_utils import calculate_expected_free_energy, calculate_expected_free_energy_eh
 from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
 
@@ -106,6 +107,7 @@ class MCTS:
         self.root: _Node | None = None
         self.use_eh = use_eh
 
+    @utils.print_execution_time
     def run_mcts(self, start_state: np.ndarray | torch.Tensor):
         """Main entry – builds a search tree and returns the best trajectory of (cv, qr) actions."""
         start_obs = self._to_tensor(start_state)

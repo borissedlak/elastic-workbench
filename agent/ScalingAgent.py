@@ -3,7 +3,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any
 
 import utils
 from DockerClient import DockerClient
@@ -13,7 +13,8 @@ from RedisClient import RedisClient
 from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 from agent.LGBN import calculate_missing_vars
 from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
-from agent.agent_utils import wait_for_remaining_interval
+from agent.agent_utils import wait_for_remaining_interval, FullStateDQN
+from iwai.dqn_trainer import QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP
 
 CV_DATA_QUALITY_DEFAULT = 256
 CV_M_SIZE_DEFAULT = 3
@@ -23,6 +24,34 @@ logger = logging.getLogger("multiscale")
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
+
+
+def convert_action_to_real_ES(service:ServiceID, state_pw:FullStateDQN, action_pw: int, free_cores):
+    step_data_quality = (
+        QR_DATA_QUALITY_STEP
+        if service.service_type == ServiceType.QR
+        else CV_DATA_QUALITY_STEP
+    )
+    if 1 <= action_pw <= 2:
+        delta_data_quality = -step_data_quality if action_pw == 1 else step_data_quality
+        return ESType.QUALITY_SCALE, {
+            "data_quality": int(state_pw.data_quality + delta_data_quality)
+        }
+    if 3 <= action_pw <= 4:
+
+        if action_pw == 4 and free_cores <= 0:
+            logger.warning(f"{service.service_type} wants to consume cores, but none free")
+            return ESType.IDLE, {}
+
+        delta_cores = -1 if action_pw == 3 else 1
+        return ESType.RESOURCE_SCALE, {"cores": state_pw.cores + delta_cores}
+    if 5 <= action_pw <= 6:
+        delta_model_size = -1 if action_pw == 5 else 1
+        return ESType.MODEL_SCALE, {
+            "model_size": int(state_pw.model_size + delta_model_size)
+        }
+
+    return ESType.IDLE, {}
 
 
 class ScalingAgent(Thread, ABC):
@@ -60,7 +89,7 @@ class ScalingAgent(Thread, ABC):
         parameter_ass = self.prom_client.get_metrics(["data_quality", "cores", "model_size"], service_id)
 
         if parameter_ass == {} or metric_values == {}:
-            logger.warning(f"No metrics found for service {service_id}") # Remove if never happens
+            logger.warning(f"No metrics found for service {service_id}")  # Remove if never happens
             return self.last_known_state
 
         missing_vars = calculate_missing_vars(metric_values, utils.to_absolut_rps(assigned_clients))
