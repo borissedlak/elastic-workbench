@@ -11,6 +11,7 @@ from pandas import DataFrame
 from agent.RRMGlobalAgent import RRM_Global_Agent
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from agent.daci.DAIAgent import DAIAgent
+from agent.AIF_agent import AIF_agent
 from agent.es_registry import ServiceID, ServiceType
 from experiments.iwai.transform_pymdp_logs import import_pymdp_logs
 from iwai.dqn_agent import DQNAgent
@@ -35,7 +36,7 @@ pymdp_files = [ROOT + "/../20250605_104110_pymdp_service_log.csv",
                ]
 
 nn_folder = "./networks"
-EXPERIMENT_REPETITIONS = 10
+EXPERIMENT_REPETITIONS = 1
 EXPERIMENT_DURATION = 250
 MAX_EXPLORE = 20
 
@@ -151,21 +152,21 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    # train_joint_q_networks(nn_folder=ROOT + "/networks")
-    #
-    # # Load the trained DQNs
-    # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
-    # dqn_qr.load("Q_QR_joint.pt")
-    # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
-    # dqn_cv.load("Q_CV_joint.pt")
-    #
-    # agent_fact_dqn = lambda repetition: DQNAgent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     dqn_for_services=[dqn_qr, dqn_cv],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition
-    # )
+    #train_joint_q_networks(nn_folder=ROOT + "/networks")
+    
+    # Load the trained DQNs
+    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
+    dqn_qr.load("Q_QR_joint.pt")
+    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
+    dqn_cv.load("Q_CV_joint.pt")
+    
+    agent_fact_dqn = lambda repetition: DQNAgent(
+        prom_server=ps,
+        services_monitored=[qr_local, cv_local],
+        dqn_for_services=[dqn_qr, dqn_cv],
+        evaluation_cycle=EVALUATION_FREQUENCY,
+        log_experience=repetition
+    )
     #
     # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
     #     prom_server=ps,
@@ -183,10 +184,20 @@ if __name__ == '__main__':
         depth=5,
         eh = False
     )
-    #
-    # eval_scaling_agent(agent_fact_dqn, "DQN")
+    
+    agent_fact_aif = lambda repetition: AIF_agent(
+        prom_server=ps,
+        services_monitored=[qr_local, cv_local],
+        evaluation_cycle=EVALUATION_FREQUENCY,
+        log_experience=repetition,
+        alpha=8,
+        motivate_cores=True,
+        action_selection="stochastic"
+    )
+    #eval_scaling_agent(agent_fact_aif, "AIF")
+    #eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_rrm, "RRM")
-    # eval_scaling_agent(agent_fact_daci, "DACI")
+    #eval_scaling_agent(agent_fact_daci, "DACI")
     # import_pymdp_logs(filenames=pymdp_files)
-    visualize_data(["RRM", "DQN", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
+    visualize_data(["AIF"], ROOT + "/plots/slo_f.png")
     # time.sleep(1)
