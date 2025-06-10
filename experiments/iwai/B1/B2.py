@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from experiments.iwai.B1.B1 import COLOR_DICT_AGENT
 
 ROOT = os.path.dirname(__file__)
-AGENT_TYPES = ["DQN", "RRM", "AIF", "DACI"]
+AGENT_TYPES = ["DQN", "SKRA", "AIF", "DACI"]
 plt.rcParams.update({'font.size': 12})
 
 
@@ -24,10 +24,10 @@ def load_and_process_experience(agent_type):
         'last_iteration_length': 'sum'
     })
 
-    if agent_type != "RRM":
+    if agent_type != "SKRA":
         return {agent_type: paired_df['last_iteration_length'].values}
 
-    # Special handling for RRM: split into warmup and main
+    # Special handling for SKRA: split into warmup and main
     warmup, main = [], []
     for rep in paired_df['rep'].unique():
         rep_data = paired_df[paired_df['rep'] == rep]['last_iteration_length'].values
@@ -35,8 +35,8 @@ def load_and_process_experience(agent_type):
         main.extend(rep_data[40:])
 
     return {
-        "RRM (expl.)": warmup,
-        "RRM (inf)": main
+        "SKRA (expl.)": warmup,
+        "SKRA (inf)": main
     }
 
 
@@ -49,7 +49,7 @@ def main():
     # data = {agent: np.log10(values) for agent, values in data.items()}
 
     # Define plotting order
-    plot_labels = ["DQN", "RRM (expl.)", "RRM (inf)", "AIF", "DACI"]
+    plot_labels = ["DQN", "SKRA (expl.)", "SKRA (inf)", "AIF", "DACI"]
     plot_data = [data[label] for label in plot_labels]
 
     # Create the boxplot
@@ -62,7 +62,7 @@ def main():
 
     # Custom coloring
     for patch, label in zip(box['boxes'], plot_labels):
-        base_label = label.split(' ')[0]  # e.g., "RRM" from "RRM_main"
+        base_label = label.split(' ')[0]  # e.g., "SKRA" from "SKRA_main"
         patch.set_facecolor(COLOR_DICT_AGENT[base_label])
 
     plt.ylabel("Agent Cycle Duration (ms)")
