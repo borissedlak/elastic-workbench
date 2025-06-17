@@ -53,7 +53,7 @@ logging.getLogger('multiscale').setLevel(logging.INFO)
 
 def eval_scaling_agent(agent_factory, agent_type):
     #delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
-    if agent_type == "RASK":
+    if agent_type == "ASK":
         delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
     print(f"Starting experiment for {agent_type} agent")
@@ -72,8 +72,8 @@ def eval_scaling_agent(agent_factory, agent_type):
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
-COLOR_DICT_AGENT = {"DQN": "red", "RASK": "green", "AIF": "blue",  "DACI": "grey"}
-LINE_STYLE_DICT = {"DQN": "--", "RASK": "-", "AIF": "-.", "DACI": ':'}
+COLOR_DICT_AGENT = {"DQN": "red", "ASK": "green", "AIF": "blue",  "DACI": "grey"}
+LINE_STYLE_DICT = {"DQN": "--", "ASK": "-", "AIF": "-.", "DACI": ':'}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
@@ -194,10 +194,10 @@ if __name__ == '__main__':
         motivate_cores=True,
         action_selection="stochastic"
     )
-    # eval_scaling_agent(agent_fact_RASK, "RASK")
+    # eval_scaling_agent(agent_fact_ASK, "ASK")
     # eval_scaling_agent(agent_fact_dqn, "DQN")
     # eval_scaling_agent(agent_fact_aif, "AIF")
     # eval_scaling_agent(agent_fact_daci, "DACI")
     # import_pymdp_logs(filenames=pymdp_files)
 
-    visualize_data(["RASK", "DQN", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
+    visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
