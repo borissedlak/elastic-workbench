@@ -1,11 +1,9 @@
-import concurrent.futures
 import logging
 import os
 import time
 from typing import Any
 
 import cv2
-import numpy as np
 from pyzbar.pyzbar import decode
 
 import utils
@@ -16,8 +14,8 @@ from iot_services.VideoReader import VideoReader
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 QR_DATA_QUALITY_DEFAULT = 700
+
 
 class QrDetector(IoTService):
 
@@ -26,7 +24,10 @@ class QrDetector(IoTService):
         self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
-        self.video_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
+        self.data_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
+
+    def get_service_parallelism(self) -> int:
+        return utils.cores_to_threads(self.cores_reserved)
 
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
@@ -42,53 +43,6 @@ class QrDetector(IoTService):
         combined_img = utils.highlight_qr_codes(frame, decoded_objects)
         duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
-
-    def process_loop(self):
-
-        while self._running:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=utils.cores_to_threads(self.cores_reserved)) as tpex:
-                start_time = time.perf_counter()
-                buffer = self.video_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
-                future_dict = {tpex.submit(self.process_one_iteration, frame): frame for frame in buffer}
-
-                processed_item_counter = 0
-                processed_item_durations = []
-
-                while future_dict:
-                    # Poll with a short timeout to allow frequent timeout checks
-                    done, _ = concurrent.futures.wait(
-                        future_dict,
-                        timeout=0.05,  # 50ms polling interval
-                        return_when=concurrent.futures.FIRST_COMPLETED
-                    )
-
-                    for future in done:
-                        result = future.result()
-                        processed_item_durations.append(np.abs(result[1]))
-                        processed_item_counter += 1
-                        del future_dict[future] # Remove completed futures
-
-                    if self.has_processing_timeout(start_time):
-                        # TODO: This faces the same problem as in CV, that this is till blocking after > 1s
-                        tpex.shutdown(wait=False, cancel_futures=True)
-                        break
-
-                # for future in concurrent.futures.as_completed(future_dict):
-                #     processed_item_durations.append(future.result()[1])
-                #     processed_item_counter += 1
-                #
-                #     if self.has_processing_timeout(start_time):
-                #         tpex.shutdown(wait=False, cancel_futures=True)
-                #         break
-
-            # This is only executed once after the batch is processed
-            self.export_processing_metrics(processed_item_counter, processed_item_durations)
-
-            if self.simulate_arrival_interval:
-                self.simulate_interval(start_time)
-
-        self._terminated = True
-        logger.info(f"{self.service_type.value} stopped")
 
 
 if __name__ == '__main__':

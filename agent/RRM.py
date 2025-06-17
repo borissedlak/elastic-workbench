@@ -7,7 +7,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import train_test_split
 
 import utils
 from agent import agent_utils
@@ -28,7 +30,7 @@ class RRM:
             df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
-        self.models = train_rrn_models(df_cleared, self.show_figures)
+        self.models = train_rrm_models(df_cleared, self.show_figures)
 
     def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
         dependent_variables = list(get_dependent_variable_mapping(service_type).keys())
@@ -91,36 +93,43 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 
 
 # @print_execution_time  # Roughly 10ms
-def train_rrn_models(df, show_result=False):
+def train_rrm_models(df, show_result=False):
     service_models = {}
 
-    for service_type_s in df['service_type'].unique():
-        df_service = df[df['service_type'] == service_type_s]
-        service_models[ServiceType(service_type_s)] = {}
+    for degree in range(1,10):
+        for service_type_s in ['elastic-workbench-qr-detector']:
+            df_service = df[df['service_type'] == service_type_s]
+            service_models[ServiceType(service_type_s)] = {}
 
-        dependent_variables = get_dependent_variable_mapping(ServiceType(service_type_s))
-        for var, deps in dependent_variables.items():
-            Y = df_service[var]  # dependent variable
-            X = df_service[deps]  # independent variables
+            dependent_variables = get_dependent_variable_mapping(ServiceType(service_type_s))
+            for var, deps in dependent_variables.items():
+                Y = df_service[var]  # dependent variable
+                X = df_service[deps]  # independent variables
 
-            # TODO: Find best degree for variable and run on test split
-            poly = PolynomialFeatures(degree=2, include_bias=False)  # degree 2, can be higher or lower (linear)
-            X_poly = poly.fit_transform(X)
+                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+                poly = PolynomialFeatures(degree=degree, include_bias=False)
+                X_poly_train = poly.fit_transform(X_train)
+                X_poly_test = poly.transform(X_test)
 
-            # Fit the model
-            model = LinearRegression()
-            model.fit(X_poly, Y)
+                model = LinearRegression()
+                model.fit(X_poly_train, Y_train)
 
-            # Inspect learned coefficients
-            logger.debug(f"Polynomial feature names: {poly.get_feature_names_out(deps)}")
-            logger.debug(f"Coefficients: {model.coef_}")
-            logger.debug(f"Intercept: {model.intercept_}")
+                # MSE on test data
+                y_test_pred = model.predict(X_poly_test)
+                mse_test = mean_squared_error(Y_test, y_test_pred)
+                logger.info(f"Test MSE for {var} in {service_type_s}: {mse_test:.4f}, with degree {degree}")
 
-            service_models[ServiceType(service_type_s)] |= {var: (poly, model)}
-            if show_result:
-                draw_3d_plot(df_service, var, deps, poly, model)
+                # Inspect learned coefficients
+                logger.debug(f"Polynomial feature names: {poly.get_feature_names_out(deps)}")
+                logger.debug(f"Coefficients: {model.coef_}")
+                logger.debug(f"Intercept: {model.intercept_}")
+
+                service_models[ServiceType(service_type_s)] |= {var: (poly, model)}
+                if show_result:
+                    draw_3d_plot(df_service, var, deps, poly, model)
 
     return service_models
+
 
 
 def get_dependent_variable_mapping(service_type: ServiceType):
@@ -147,26 +156,41 @@ def calculate_missing_vars(partial_state, total_rps: int):
 
 def draw_3d_plot(df, var, deps, poly, model):
     if len(deps) != 2:
-        logger.info(f"3D plot not supported for more than 3 dimensions!!")
+        logger.info(f"3D plot not supported for more than 3 dimensions!")
         return
 
-    # Create a meshgrid as before
     x1_range = np.linspace(df[deps[0]].min(), df[deps[0]].max(), 50)
     x2_range = np.linspace(df[deps[1]].min(), df[deps[1]].max(), 50)
     x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
 
-    # Predict on the grid
     X_grid = np.column_stack((x1_grid.ravel(), x2_grid.ravel()))
-    X_poly_grid = poly.transform(X_grid)
-    y_pred_grid = model.predict(X_poly_grid).reshape(x1_grid.shape)
+    X_grid_df = pd.DataFrame(X_grid, columns=deps)
 
-    # Create the surface plot
+    # Use transformer if needed
+    if poly is not None:
+        X_transformed = poly.transform(X_grid_df)
+    else:
+        X_transformed = X_grid_df.values
+
+    # Predict on grid
+    try:
+        y_pred_grid = model.predict(X_transformed).reshape(x1_grid.shape)
+    except Exception as e:
+        logger.error(f"Failed to evaluate model on grid for {var}: {e}")
+        return
+
+    # Actual data
+    x_actual = df[deps[0]]
+    y_actual = df[deps[1]]
+    z_actual = df[var]
+
+    # Plot
     fig = go.Figure(data=[
-        go.Surface(x=x1_grid, y=x2_grid, z=y_pred_grid, colorscale='Viridis', opacity=0.7),
+        go.Surface(x=x1_grid, y=x2_grid, z=y_pred_grid, colorscale='Viridis', opacity=0.7, name='Model'),
         go.Scatter3d(
-            x=df[deps[0]],
-            y=df[deps[1]],
-            z=df[var],
+            x=x_actual,
+            y=y_actual,
+            z=z_actual,
             mode='markers',
             marker=dict(size=4, color='red'),
             name='Actual Data'
@@ -174,7 +198,7 @@ def draw_3d_plot(df, var, deps, poly, model):
     ])
 
     fig.update_layout(
-        title='Interactive 3D Polynomial Regression Surface',
+        title=f'3D Surface for {var}',
         scene=dict(
             xaxis_title=deps[0],
             yaxis_title=deps[1],
@@ -185,6 +209,7 @@ def draw_3d_plot(df, var, deps, poly, model):
     )
 
     fig.show()
+
 
 
 if __name__ == "__main__":
@@ -198,5 +223,5 @@ if __name__ == "__main__":
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    rrm = RRM(show_figures=True)
+    rrm = RRM(show_figures=False)
     rrm.init_models()

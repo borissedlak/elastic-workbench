@@ -19,7 +19,9 @@ python3 -m pip install -r ./requirements.txt
 
 ### Start processing environment 
 
-with Docker installed, start all processing services
+with Docker installed, start all processing services. This requires you to first install the quite heavy `ultralytics`
+dependency and then execute the [model_loader.py](iot_services/CvAnalyzer_Yolo/models/model_loader.py) script in the respective
+directory. This fetches and converts the models for the CV service. Afterward, you can build and start all containers with
 
 ```bash
 docker compose up -d

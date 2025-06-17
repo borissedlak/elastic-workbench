@@ -1,3 +1,4 @@
+import concurrent.futures
 import datetime
 import logging
 import threading
@@ -29,6 +30,7 @@ class IoTService(ABC):
         self.cores_reserved: float = 2.0
         self.es_registry = ESRegistry("./config/es_registry.json")
         self.store_to_csv = store_to_csv
+        self.data_stream = None
 
         self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms
@@ -41,8 +43,10 @@ class IoTService(ABC):
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
-        self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item', ['service_type', 'container_id', 'metric_id'])
-        self.prom_quality = Gauge('data_quality', 'Current configured quality', ['service_type', 'container_id', 'metric_id'])
+        self.prom_avg_p_latency = Gauge('avg_p_latency', 'Processing latency / item',
+                                        ['service_type', 'container_id', 'metric_id'])
+        self.prom_quality = Gauge('data_quality', 'Current configured quality',
+                                  ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
 
@@ -62,7 +66,6 @@ class IoTService(ABC):
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
 
-
         if self.store_to_csv:
             metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
                               self.service_conf, self.cores_reserved, utils.to_absolut_rps(self.client_arrivals),
@@ -73,6 +76,10 @@ class IoTService(ABC):
 
     @abstractmethod
     def process_one_iteration(self, frame) -> None:
+        pass
+
+    @abstractmethod
+    def get_service_parallelism(self) -> int:
         pass
 
     def start_process(self):
@@ -89,9 +96,41 @@ class IoTService(ABC):
     def is_running(self):
         return self._running
 
-    @abstractmethod
     def process_loop(self):
-        pass
+        while self._running:
+
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.get_service_parallelism())
+            start_time = time.perf_counter()
+            processed_item_counter = 0
+            processed_item_durations = []
+
+            try:
+                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
+                future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
+
+                while future_dict:
+                    done, _ = concurrent.futures.wait(
+                        future_dict,
+                        timeout=0.015,
+                        return_when=concurrent.futures.FIRST_COMPLETED
+                    )
+
+                    for future in done:
+                        result = future.result()
+                        processed_item_durations.append(np.abs(result[1]))
+                        processed_item_counter += 1
+                        del future_dict[future]
+
+                    if self.has_processing_timeout(start_time):
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        break
+            finally:
+                self.export_processing_metrics(processed_item_counter, processed_item_durations)
+                if self.simulate_arrival_interval:
+                    self.simulate_interval(start_time)
+
+        self._terminated = True
+        logger.info(f"{self.service_type.value} stopped")
 
     def change_config(self, config):
         self.service_conf = config

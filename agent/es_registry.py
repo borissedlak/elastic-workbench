@@ -36,7 +36,6 @@ class ServiceID(NamedTuple):
 class ESRegistry:
 
     def __init__(self, es_registry_path: PathLike):
-        # self.http_client = HttpClient()
 
         with open(es_registry_path, 'r') as f:
             self.es_api = json.load(f)

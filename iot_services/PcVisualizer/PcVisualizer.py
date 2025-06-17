@@ -13,9 +13,9 @@ eagle = o3d.data.EaglePointCloud()
 pcd_1 = o3d.io.read_point_cloud(eagle.path)
 
 # Downsample to speed up
-pcd_2 = pcd_1.voxel_down_sample(voxel_size=0.002)
+pcd_2 = pcd_1.voxel_down_sample(voxel_size=0.015)
 
-pcd_3 = pcd_1.voxel_down_sample(voxel_size=0.5)
+pcd_3 = pcd_1.voxel_down_sample(voxel_size=0.03)
 
 time.sleep(0.1)
 
@@ -53,7 +53,7 @@ def export_img(data):
 
     # Perspective projection using the correct method
     camera.set_projection(
-        field_of_view=300.0,  # Field of view in degrees
+        field_of_view=1000.0,  # Field of view in degrees
         aspect_ratio=800 / 600,  # Aspect ratio
         near_plane=0.1,  # Near plane
         far_plane=1000.0,  # Far plane
@@ -64,7 +64,7 @@ def export_img(data):
     image = renderer.render_to_image()
 
     # Save the image to disk
-    output_path = "eagle_offscreen.png"
+    output_path = f"eagle_offscreen_{time.time()}.png"
     o3d.io.write_image(output_path, image)
 
     print(f"Saved image to {output_path}")
