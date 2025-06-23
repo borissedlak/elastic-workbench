@@ -1,74 +1,60 @@
 import logging
-
-import open3d as o3d
-import numpy as np
+import os
 import time
+from typing import Any
 
-import utils
+from agent.es_registry import ServiceType
+from iot_services.IoTService import IoTService
+from iot_services.KittiReader import KittiReader
+from lidar_utils import parse_tracklets, fuse_pointclouds, point_cloud_to_bev, draw_bev_box
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("multiscale")
 
-# Load Eagle example point cloud
-eagle = o3d.data.EaglePointCloud()
-pcd_1 = o3d.io.read_point_cloud(eagle.path)
+ROOT = os.path.dirname(__file__)
+PV_DISTANCE_DEFAULT = 50
+PV_FUSION_DEFAULT = 3
 
-# Downsample to speed up
-pcd_2 = pcd_1.voxel_down_sample(voxel_size=0.015)
+class PcVisualizer(IoTService):
 
-pcd_3 = pcd_1.voxel_down_sample(voxel_size=0.03)
+    def __init__(self, store_to_csv=True):
+        super().__init__()
+        self.service_conf = {'data_quality': PV_DISTANCE_DEFAULT, 'model_size': PV_FUSION_DEFAULT}
+        self.store_to_csv = store_to_csv
+        self.service_type = ServiceType.PV
+        self.data_stream = KittiReader(ROOT + "/data", "2011_09_26", "0001")
+        self.fusion_buffer = []
 
-time.sleep(0.1)
+    def get_service_parallelism(self) -> int:
+        return 1
 
-@utils.print_execution_time
-def export_img(data):
-    # Set colors (optional, but improves visibility)
-    # pcd.paint_uniform_color([1.0, 0.0, 0.0])  # Red points
+    def process_one_iteration(self, frame) -> (Any, int):
+        start = time.perf_counter()
 
-    # Create OffscreenRenderer
-    renderer = o3d.visualization.rendering.OffscreenRenderer(800, 600)
+        tracklets = parse_tracklets(ROOT + "/data/2011_09_26/tracklet_labels.xml")
 
-    # Get the scene from the renderer
-    scene = renderer.scene
+        self.fusion_buffer.append(frame)
+        if len(self.fusion_buffer) > self.service_conf['model_size']:
+            self.fusion_buffer.pop(0)
 
-    # Setup material for the point cloud
-    material = o3d.visualization.rendering.MaterialRecord()
-    material.shader = "defaultUnlit"  # no lighting for faster rendering
-    # material.point_size = 5.0         # Make points bigger
+        fused_points = fuse_pointclouds(self.fusion_buffer)
+        bev = point_cloud_to_bev(fused_points, self.service_conf['data_quality'])
 
-    # Add the point cloud to the scene
-    scene.add_geometry("eagle", data, material)
+        # Overlay 3D boxes
+        i = self.data_stream.get_current_index() # TODO: Get index correctly
+        for obj in tracklets:
+            if i < obj["first_frame"] or i - obj["first_frame"] >= len(obj["poses"]):
+                continue
+            pose = obj["poses"][i - obj["first_frame"]]
+            draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
 
-    # Set the background color (black in this case)
-    scene.set_background([0, 0, 0, 1])  # RGBA black
+        duration = (time.perf_counter() - start) * 1000
+        return bev, duration
 
-    # Setup camera view (for visualization)
-    bounds = data.get_axis_aligned_bounding_box()
-    center = bounds.get_center()
-    # extent = bounds.get_extent()
-    # diameter = np.linalg.norm(extent)
-    camera = scene.camera
 
-    # Camera parameters
-    camera.look_at(center, center + [0, 0, 1], [0, -1, 0])  # Look at the center
+if __name__ == '__main__':
+    qd = PcVisualizer(store_to_csv=True)
+    qd.client_arrivals = {'C1': 40, 'C2': 30}
+    qd.start_process()
 
-    # Perspective projection using the correct method
-    camera.set_projection(
-        field_of_view=1000.0,  # Field of view in degrees
-        aspect_ratio=800 / 600,  # Aspect ratio
-        near_plane=0.1,  # Near plane
-        far_plane=1000.0,  # Far plane
-        field_of_view_type=o3d.visualization.rendering.Camera.FovType.Horizontal  # Specify the FOV type
-    )
-
-    # Render the scene to an image
-    image = renderer.render_to_image()
-
-    # Save the image to disk
-    output_path = f"eagle_offscreen_{time.time()}.png"
-    o3d.io.write_image(output_path, image)
-
-    print(f"Saved image to {output_path}")
-
-export_img(pcd_1)
-export_img(pcd_2)
-export_img(pcd_3)
+    while True:
+        time.sleep(1000)

@@ -1,10 +1,12 @@
 import cv2
 
+from iot_services.IoTService import DataReader
 
-class VideoReader:
+
+class VideoReader(DataReader):
     def __init__(self, path, buffer_size=200):
 
-        self.video_path = path #"/data/CV_Video.mp4"
+        self.video_path = path
         self.buffer_size = buffer_size
         self.buffer = []
 

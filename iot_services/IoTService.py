@@ -62,7 +62,7 @@ class IoTService(ABC):
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="data_quality").set(self.service_conf['data_quality'])
 
-        if self.service_type == ServiceType.CV:
+        if self.service_type == ServiceType.CV or self.service_type == ServiceType.PV:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
 
@@ -168,3 +168,9 @@ class IoTService(ABC):
     def set_flag_and_cooldown(self, es_type: ESType):
         self.flag_metric_cooldown = self.es_registry.get_es_cooldown(self.service_type, es_type)
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)
+
+class DataReader(ABC):
+
+    @abstractmethod
+    def get_batch(self, batch_size):
+        pass

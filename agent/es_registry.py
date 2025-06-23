@@ -13,6 +13,7 @@ logger = logging.getLogger("multiscale")
 class ServiceType(Enum):
     QR = "elastic-workbench-qr-detector"
     CV = "elastic-workbench-cv-analyzer"
+    PV = "elastic-workbench-pv-visualizer"
     UNKNOWN = "unknown"
 
 
