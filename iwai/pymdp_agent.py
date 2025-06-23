@@ -11,7 +11,7 @@ from pymdp.agent import Agent
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from proj_types import ESServiceAction
+from iwai.proj_types import ESServiceAction
 import utils
 from agent.es_registry import ServiceType
 from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP

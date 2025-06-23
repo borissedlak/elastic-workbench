@@ -9,7 +9,7 @@ from torch.nn import functional as F
 
 from torch.nn.init import trunc_normal_
 
-from proj_types import (
+from iwai.proj_types import (
     HabitualNetworkOutput,
     MCDaciWorldModelDecOutput,
     SimpleDeltaTransitionNetworkOutput,

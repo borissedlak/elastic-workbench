@@ -15,7 +15,7 @@ from agent.ScalingAgent import ScalingAgent, convert_action_to_real_ES
 from agent.agent_utils import FullStateDQN
 from agent.es_registry import ServiceID, ServiceType, ESType
 from iwai.fast_pymdp_agent import FastPymdpAgent
-from proj_types import ESServiceAction
+from iwai.proj_types import ESServiceAction
 import utils
 
 logger = logging.getLogger("multiscale")

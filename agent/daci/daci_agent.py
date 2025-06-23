@@ -13,7 +13,7 @@ from agent.daci.aif_utils import calculate_expected_free_energy
 from agent.daci.network import SimpleDeltaTransitionNetwork, SimpleMCDaciWorldModel
 from torch.nn import functional as F
 
-from proj_types import WorldModelLoss
+from iwai.proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")
 

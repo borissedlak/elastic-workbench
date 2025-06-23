@@ -22,7 +22,7 @@ from iwai.optimized_pymdp_agent import OptimizedPymdpAgent
 from iwai.vectorized_policy_inference import VectorizedPolicyInference
 
 # 导入训练相关的模块
-from proj_types import ESServiceAction
+from iwai.proj_types import ESServiceAction
 import utils
 from agent.es_registry import ServiceType
 from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP

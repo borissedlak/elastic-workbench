@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import utils
 from agent.es_registry import ServiceType
 from iwai.lgbn_training_env import LGBNTrainingEnv
-from proj_types import ESServiceAction
+from iwai.proj_types import ESServiceAction
 
 ROOT = os.path.dirname(__file__)
 logger = logging.getLogger("multiscale")

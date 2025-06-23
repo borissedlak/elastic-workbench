@@ -1,9 +1,7 @@
 import logging
 import os
-from random import randint
 
 import gymnasium
-import numpy as np
 import pandas as pd
 
 import utils
@@ -15,7 +13,7 @@ from agent.SLORegistry import (
     SLO_Registry,
 )
 from agent.agent_utils import FullStateDQN
-from proj_types import ESServiceAction
+from iwai.proj_types import ESServiceAction
 
 logger = logging.getLogger("multiscale")
 

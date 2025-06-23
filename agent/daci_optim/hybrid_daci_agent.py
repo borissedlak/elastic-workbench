@@ -21,7 +21,7 @@ from agent.daci_optim.vectorized_env import VectorizedEnvironment
 from torch.nn import functional as F
 
 from agent.es_registry import ESRegistry, ServiceType
-from proj_types import WorldModelLoss
+from iwai.proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)

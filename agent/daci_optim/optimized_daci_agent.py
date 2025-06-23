@@ -14,7 +14,7 @@ from agent.daci.network import SimpleDeltaTransitionNetwork, SimpleMCDaciWorldMo
 from agent.daci_optim.vectorized_env import VectorizedEnvironment
 from torch.nn import functional as F
 
-from proj_types import WorldModelLoss
+from iwai.proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")
 

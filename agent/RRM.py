@@ -84,7 +84,8 @@ def collect_all_metric_files():
     return combined_df
 
 
-def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
+# noinspection PyPackageRequirements
+def get_local_metric_file(path=ROOT + "/../share/metrics/LGBN.csv"):
     try:
         df = pd.read_csv(path)
         return "local", df
@@ -223,5 +224,5 @@ if __name__ == "__main__":
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    rrm = RRM(show_figures=False)
+    rrm = RRM(show_figures=True)
     rrm.init_models()
