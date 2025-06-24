@@ -50,6 +50,30 @@ services:
       - grafana
       - prometheus
 
+  pc-visualizer:
+    container_name: elastic-workbench-pc-visualizer-1
+    build:
+      context: .
+      dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.15
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-pc-visualizer-1
+      - REDIS_INSTANCE=172.20.0.4
+      - CONTAINER_IP=172.20.0.15
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+    volumes:
+      - ./share:/src/share # Linux
+      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+    ports:
+      - "8082:8080" # Only needed on Windows
+    depends_on:
+      - redis
+      - grafana
+      - prometheus
 
   prometheus:
     image: prom/prometheus

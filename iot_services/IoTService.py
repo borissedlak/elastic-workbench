@@ -62,7 +62,7 @@ class IoTService(ABC):
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="data_quality").set(self.service_conf['data_quality'])
 
-        if self.service_type == ServiceType.CV or self.service_type == ServiceType.PV:
+        if self.service_type == ServiceType.CV or self.service_type == ServiceType.PC:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
 
@@ -170,7 +170,12 @@ class IoTService(ABC):
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)
 
 class DataReader(ABC):
+    def __init__(self, buffer_size=200):
+        self.buffer_size = buffer_size
+        self.buffer = []
 
-    @abstractmethod
     def get_batch(self, batch_size):
-        pass
+        full_repeats = batch_size // self.buffer_size
+        remainder = batch_size % self.buffer_size
+
+        return (self.buffer * full_repeats) + self.buffer[:remainder]

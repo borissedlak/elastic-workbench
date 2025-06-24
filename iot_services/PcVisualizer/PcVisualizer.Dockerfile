@@ -1,14 +1,16 @@
-# This could also be another Ubuntu or Debian based distribution
-FROM ubuntu:22.04
+FROM python:3.12-slim-bookworm
 
-# Install Open3D system dependencies and pip
-RUN apt-get update && apt-get install --no-install-recommends -y \
-    libegl1 \
-    libgl1 \
-    libgomp1 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+RUN apt-get install ffmpeg libsm6 libxext6  -y
+RUN apt-get install zbar-tools -y
 
-# Install Open3D from the PyPI repositories
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir --upgrade open3d
+WORKDIR /src
+COPY ./iot_services/PcVisualizer/requirements.txt /src/iot_services/PcVisualizer/
+RUN pip install -r ./iot_services/PcVisualizer/requirements.txt
+
+COPY . /src/
+
+ENV SERVICE_TYPE PC
+
+EXPOSE 8080
+CMD [ "python", "-m", "iot_services.Service_Wrapper" ]

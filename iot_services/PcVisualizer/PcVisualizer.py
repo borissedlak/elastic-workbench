@@ -20,7 +20,7 @@ class PcVisualizer(IoTService):
         super().__init__()
         self.service_conf = {'data_quality': PV_DISTANCE_DEFAULT, 'model_size': PV_FUSION_DEFAULT}
         self.store_to_csv = store_to_csv
-        self.service_type = ServiceType.PV
+        self.service_type = ServiceType.PC
         self.data_stream = KittiReader(ROOT + "/data", "2011_09_26", "0001")
         self.fusion_buffer = []
 
@@ -46,6 +46,10 @@ class PcVisualizer(IoTService):
                 continue
             pose = obj["poses"][i - obj["first_frame"]]
             draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
+
+        # cv2.imshow("LIDAR BEV with Fused Frames", bev)
+        # if cv2.waitKey(10) == 27:
+        #     pass
 
         duration = (time.perf_counter() - start) * 1000
         return bev, duration

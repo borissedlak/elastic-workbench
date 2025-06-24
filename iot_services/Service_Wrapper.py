@@ -28,6 +28,9 @@ def init_service(s_type):
     if s_type == "CV":
         from iot_services.CvAnalyzer_Yolo.CvAnalyzer import CvAnalyzer
         return CvAnalyzer()
+    if s_type == "PC":
+        from iot_services.PcVisualizer.PcVisualizer import PcVisualizer
+        return PcVisualizer()
     else:
         raise RuntimeError("Must pass type!")
 
