@@ -3,6 +3,8 @@ import os
 import time
 from typing import Any
 
+import cv2
+
 from agent.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.KittiReader import KittiReader
@@ -11,8 +13,8 @@ from lidar_utils import parse_tracklets, fuse_pointclouds, point_cloud_to_bev, d
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-PV_DISTANCE_DEFAULT = 50
-PV_FUSION_DEFAULT = 3
+PV_DISTANCE_DEFAULT = 30
+PV_FUSION_DEFAULT = 1
 
 class PcVisualizer(IoTService):
 
@@ -40,16 +42,17 @@ class PcVisualizer(IoTService):
         bev = point_cloud_to_bev(fused_points, self.service_conf['data_quality'])
 
         # Overlay 3D boxes
-        i = self.data_stream.get_current_index() # TODO: Get index correctly
+        i = self.data_stream.get_current_index()
         for obj in tracklets:
             if i < obj["first_frame"] or i - obj["first_frame"] >= len(obj["poses"]):
                 continue
             pose = obj["poses"][i - obj["first_frame"]]
             draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
 
-        # cv2.imshow("LIDAR BEV with Fused Frames", bev)
-        # if cv2.waitKey(10) == 27:
-        #     pass
+        cv2.imshow("LIDAR BEV with Fused Frames", bev)
+        if cv2.waitKey(10) == 27:
+            pass
+        time.sleep(0.1)
 
         duration = (time.perf_counter() - start) * 1000
         return bev, duration

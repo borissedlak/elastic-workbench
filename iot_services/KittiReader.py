@@ -14,6 +14,6 @@ class KittiReader(DataReader):
     def init_buffer(self):
         self.buffer = list(itertools.islice(self.kitti_data.velo, self.buffer_size))
 
-    # @utils.print_execution_time
+    # TODO: Get index correctly
     def get_current_index(self):
         return 0

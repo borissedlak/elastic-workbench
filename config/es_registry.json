@@ -52,5 +52,37 @@
         }
       }
     }
+  },
+  "elastic-workbench-pc-visualizer": {
+    "model_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/model_scaling",
+      "parameters": {
+        "model_size": {
+          "min": 1,
+          "max": 10
+        }
+      }
+    },
+    "quality_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/quality_scaling",
+      "parameters": {
+        "data_quality": {
+          "min": 6,
+          "max": 60
+        }
+      }
+    },
+    "resource_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/resource_scaling",
+      "parameters": {
+        "cores": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    }
   }
 }
