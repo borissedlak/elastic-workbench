@@ -41,6 +41,24 @@
           "weight": 1.0
         }
       ]
+    },
+    {
+      "client_id": "C_1",
+      "service_type": "elastic-workbench-pc-visualizer",
+      "SLOs": [
+        {
+          "var": "data_quality",
+          "larger": true,
+          "target": 50,
+          "weight": 0.5
+        },
+        {
+          "var": "throughput",
+          "larger": true,
+          "target": 30,
+          "weight": 1.0
+        }
+      ]
     }
   ]
 }

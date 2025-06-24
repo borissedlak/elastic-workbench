@@ -85,6 +85,7 @@ def solve_global(service_contexts_m, max_cores, rask: RASK):
             ES_var = list(ES_desc.keys())[0]
             flat_bounds.append((ES_desc[ES_var]["min"], ES_desc[ES_var]["max"]))
 
+            # Set default value for starting numerical solver
             if ES_var == 'cores':
                 x0.append(max_cores / len(service_contexts_m))
             else:

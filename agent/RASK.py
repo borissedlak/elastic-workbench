@@ -97,8 +97,8 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 def train_rask_models(df, show_result=False):
     service_models = {}
 
-    for degree in range(1,10):
-        for service_type_s in ['elastic-workbench-qr-detector']:
+    for degree in [2]: #range(1,10):
+        for service_type_s in df['service_type'].unique():
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}
 
@@ -138,6 +138,8 @@ def get_dependent_variable_mapping(service_type: ServiceType):
         return {'throughput': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:
         return {'throughput': sorted(['cores', 'model_size', 'data_quality'])}
+    elif service_type == ServiceType.PC:
+        return {'throughput': sorted(['cores', 'data_quality'])}
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
