@@ -83,7 +83,7 @@ class ESRegistry:
             params = info["parameters"]
 
             if es_type == ESType.RESOURCE_SCALE and available_cores is not None:
-                params["cores"]["max"] = available_cores
+                params["cores"]["max"] = max(available_cores, 1.0)
 
             parameter_bounds[es_type] = params
 

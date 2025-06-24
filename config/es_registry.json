@@ -83,7 +83,7 @@
   "elastic-workbench-pc-visualizer": {
     "model_scaling": {
       "cooldown": 2000,
-      "active": true,
+      "active": false,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {

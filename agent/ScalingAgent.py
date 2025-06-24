@@ -3,17 +3,18 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List
 
 import utils
 from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 from agent.LGBN import calculate_missing_vars
 from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval, FullStateDQN
+from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
+from iot_services.PcVisualizer.PcVisualizer import PC_DISTANCE_DEFAULT
 from iwai.dqn_trainer import QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP
 
 CV_DATA_QUALITY_DEFAULT = 256
@@ -98,7 +99,6 @@ class ScalingAgent(Thread, ABC):
         self.last_known_state = full_state
         return full_state
 
-    # WRITE: Add a high-level algorithm of this to the paper
     def run(self):
         while self._running:
             start_time = time.perf_counter()
@@ -168,6 +168,9 @@ class ScalingAgent(Thread, ABC):
                 self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
                 self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': CV_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
                 self.execute_ES(service_m.host, service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
+            elif service_m.service_type == ServiceType.PC:
+                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': PC_DISTANCE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 

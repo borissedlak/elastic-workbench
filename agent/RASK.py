@@ -85,7 +85,7 @@ def collect_all_metric_files():
 
 
 # noinspection PyPackageRequirements
-def get_local_metric_file(path=ROOT + "/../share/metrics/LGBN.csv"):
+def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
     try:
         df = pd.read_csv(path)
         return "local", df

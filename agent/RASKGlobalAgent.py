@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 from typing import Dict, Tuple, Any
 
 import numpy as np
@@ -28,8 +29,6 @@ class RASK_Global_Agent(ScalingAgent):
                  log_experience=None, max_explore=10):
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
                          log_experience)
-        # self.epsilon = 1.0
-        # self.epsilon_decay = 0.85
         self.explore_count = 0
         self.max_explore = max_explore
         self.rask = RASK(show_figures=False)
@@ -40,7 +39,6 @@ class RASK_Global_Agent(ScalingAgent):
         if self.explore_count < self.max_explore:
             logger.info("Agent is exploring.....")
             self.explore_count += 1
-            # self.epsilon *= self.epsilon_decay
             self.call_all_ES_randomly(services_m)
         else:
             service_contexts = []
@@ -74,7 +72,11 @@ class RASK_Global_Agent(ScalingAgent):
                 self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
 
     def call_all_ES_randomly(self, services_m: list[ServiceID]):
-        for service_m in services_m:
+        # Shuffle services to avoid the first always getting the most resources
+        shuffled_services = services_m.copy()
+        random.shuffle(shuffled_services)
+
+        for service_m in shuffled_services:
 
             all_ES_active = self.es_registry.get_active_ES_for_service(service_m.service_type)
             for es in all_ES_active:
@@ -100,8 +102,9 @@ if __name__ == '__main__':
     ps = "http://localhost:9090"
     qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=50)  # , log_experience="RASK Agent"
+    pc_local = ServiceID("172.20.0.15", ServiceType.PC, "elastic-workbench-pc-visualizer-1")
+    agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=50)
 
     agent.reset_services_states()
     agent.start()
