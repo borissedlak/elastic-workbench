@@ -45,7 +45,7 @@ def get_random_parameter_assignments(parameters):
     random_params = {}
 
     for param, bounds in parameters.items():
-        random_ass = random.randint(bounds['min'], bounds['max'])
+        random_ass = random.randint(round(bounds['min']), round(bounds['max']))
         random_params[param] = random_ass
 
     return random_params
@@ -57,8 +57,7 @@ def min_max_scale(value: float | int, min_val: float, max_val: float) -> float:
         return 1.0  # Should only happen for QR service model_size
 
     scaled_value = (value - min_val) / (max_val - min_val)
-
-    scaled_value = max(0, min(1, scaled_value))
+    scaled_value = np.clip(scaled_value, 0, 1)
 
     return scaled_value
 

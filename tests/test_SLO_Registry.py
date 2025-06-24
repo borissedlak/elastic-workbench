@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from agent.es_registry import ServiceType
-from agent.SLO_Registry import SLO_Registry, SLO, calculate_slo_fulfillment, to_normalized_slo_f, smoothstep
+from agent.SLORegistry import SLO_Registry, SLO, calculate_slo_fulfillment, to_normalized_slo_f, smoothstep
 
 
 class TestSLO_Registry(TestCase):
@@ -19,16 +19,16 @@ class TestSLO_Registry(TestCase):
         self.service_state_cv_2 = {"model_size": 1, "avg_p_latency": 20, "completion_rate": 1.0, "quality": 500}
 
     def test_get_slos_for_client(self):
-        t_slos_c_1_qr = {'quality': SLO(**{'var': 'quality', 'larger': True, 'thresh': 800, 'weight': 1.0}),
+        t_slos_c_1_qr = {'quality': SLO(**{'var': 'quality', 'larger': True, 'target': 800, 'weight': 1.0}),
                          'avg_p_latency': SLO(
-                             **{'var': 'avg_p_latency', 'larger': False, 'thresh': 1000, 'weight': 1.0}),
+                             **{'var': 'avg_p_latency', 'larger': False, 'target': 1000, 'weight': 1.0}),
                          'completion_rate': SLO(
-                             **{'var': 'completion_rate', 'larger': True, 'thresh': 1.0, 'weight': 1.0})}
+                             **{'var': 'completion_rate', 'larger': True, 'target': 1.0, 'weight': 1.0})}
 
         t_slos_c_3_cv = {
-            'avg_p_latency': SLO(**{'var': 'avg_p_latency', 'larger': False, 'thresh': 100, 'weight': 1.0}),
-            'completion_rate': SLO(**{'var': 'completion_rate', 'larger': True, 'thresh': 1.0, 'weight': 1.0}),
-            'model_size': SLO(**{'var': 'model_size', 'larger': True, 'thresh': 2, 'weight': 1.0})}
+            'avg_p_latency': SLO(**{'var': 'avg_p_latency', 'larger': False, 'target': 100, 'weight': 1.0}),
+            'completion_rate': SLO(**{'var': 'completion_rate', 'larger': True, 'target': 1.0, 'weight': 1.0}),
+            'model_size': SLO(**{'var': 'model_size', 'larger': True, 'target': 2, 'weight': 1.0})}
 
         self.assertDictEqual(t_slos_c_1_qr, self.slos_c_1_qr)
         self.assertDictEqual(t_slos_c_3_cv, self.slos_c_3_cv)

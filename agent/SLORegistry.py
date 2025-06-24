@@ -59,44 +59,43 @@ def to_normalized_slo_f(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> 
     return scaled_reward
 
 
-# TODO: Calculate overall streaming latency and place into state
-#  I might also add a flag to use either the soft clip or the hard np.clip
 def calculate_slo_fulfillment(
         full_state: Dict[str, Any], slos: Dict[str, SLO]
 ) -> List[Tuple[str, float]]:
-    if 'model_size' in slos:  # === service_type.CV
-        quality = full_state["data_quality"] * 0.25 + full_state["model_size"] * 0.75
-        quality_target = (
-                full_state["data_quality_target"] * 0.25
-                + full_state["model_size_target"] * 0.75
-        )
-    else:  # === service_type.QR
-        quality = full_state["data_quality"]
-        quality_target = full_state["data_quality_target"]
-
-    throughput = full_state["throughput"]
-    throughput_target = full_state["throughput_target"]
-
-    slo_trace = [
-        ("quality", smoothstep((quality / quality_target)) if throughput > 0.0 else 0.0),
-        ("throughput", smoothstep((throughput / throughput_target))),
-    ]
-    # slo_trace = []
-    # for slo in slos.values():
-    #     var, larger, target, weight = slo
-    #     value = full_state[var]
-    #     if larger:
-    #         slo_f_single_slo = value / float(target)
-    #     else:
-    #         slo_f_single_slo = 1 - (
-    #             (value - float(target)) / float(target)
-    #         )  # SLO-F is 0 after 2 * t
+    # if 'model_size' in slos:  # === service_type.CV
+    #     quality = full_state["data_quality"] * 0.25 + full_state["model_size"] * 0.75
+    #     quality_target = (
+    #             full_state["data_quality_target"] * 0.25
+    #             + full_state["model_size_target"] * 0.75
+    #     )
+    # else:  # === service_type.QR
+    #     quality = full_state["data_quality"]
+    #     quality_target = full_state["data_quality_target"]
     #
-    #     slo_f_single_slo = float(smoothstep(slo_f_single_slo) * weight)
-    #     if "throughput" in full_state and full_state["throughput"] < 1.0:
-    #         slo_f_single_slo *= 0.1  # Heavily penalize if no output
+    # throughput = full_state["throughput"]
+    # throughput_target = full_state["throughput_target"]
     #
-    #     slo_trace.append((var, slo_f_single_slo))
+    # slo_trace = [
+    #     ("quality", smoothstep((quality / quality_target)) if throughput > 0.0 else 0.0),
+    #     ("throughput", smoothstep((throughput / throughput_target))),
+    # ]
+    # TODO: This does not work with normalized values yet...
+    slo_trace = []
+    for slo in slos.values():
+        var, larger, target, weight = slo
+        value = full_state[var]
+        if larger:
+            slo_f_single_slo = value / float(target)
+        else:
+            slo_f_single_slo = 1 - (
+                (value - float(target)) / float(target)
+            )  # SLO-F is 0 after 2 * t
+
+        slo_f_single_slo = float(smoothstep(slo_f_single_slo) * weight)
+        if "throughput" in full_state and full_state["throughput"] <= 0.0:
+            slo_f_single_slo = 0  # Heavily penalize if no output
+
+        slo_trace.append((var, slo_f_single_slo))
 
     return slo_trace
 
