@@ -37,7 +37,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
 
     # ---------- Part 2: Client SLOs ----------
 
-    slo_f = calculate_SLO_F_clients(full_state, slos_all_clients)
+    slo_f = calculate_SLO_F_clients(service_type, full_state, slos_all_clients)
     # print(f"Calculated SLO-F for {full_state}: {slo_f}")
     return -slo_f  # because we want to maximize
 
@@ -76,7 +76,7 @@ def constraint_total_cores(x, services, max_total_cores):
 
 def solve_global(service_contexts_m, max_cores, rask: RASK):
 
-    constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
+    constraints = [{'type': 'ineq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
     x0 = []

@@ -26,12 +26,11 @@ def smoothstep(x, x0=0.0, x1=1.0) -> float:
     return float(t * t * (3 - 2 * t))
 
 
-def calculate_SLO_F_clients(full_state, slos_all_clients):
+def calculate_SLO_F_clients(service_type:ServiceType, full_state, slos_all_clients):
     slo_f_all_clients = 0.0
 
     for slos_single_client in slos_all_clients:
-        boundaries = es_registry.get_boundaries_minimalistic(
-            ServiceType.CV if 'model_size' in slos_single_client else ServiceType.QR, 8)
+        boundaries = es_registry.get_boundaries_minimalistic(service_type, 8)
         full_state_tensor = FullStateDQN(
             full_state["data_quality"],
             slos_single_client['data_quality'].target,

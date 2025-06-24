@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import time
 from typing import Dict, Tuple, Any
 
 import numpy as np
@@ -8,6 +9,7 @@ import numpy as np
 import utils
 from agent import agent_utils
 from agent.RASK import RASK
+from agent.agent_utils import export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType, ESType
 from agent.PolicySolverRASK import solve_global
 from agent.ScalingAgent import ScalingAgent
@@ -104,7 +106,11 @@ if __name__ == '__main__':
     cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     pc_local = ServiceID("172.20.0.15", ServiceType.PC, "elastic-workbench-pc-visualizer-1")
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0)
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=10, log_experience="RRM")
 
     agent.reset_services_states()
     agent.start()
+
+    while True:
+        time.sleep(5)
+        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_RRM.csv")

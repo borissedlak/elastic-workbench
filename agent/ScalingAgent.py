@@ -177,7 +177,7 @@ class ScalingAgent(Thread, ABC):
     def terminate_gracefully(self):
         self._running = False
 
-    def evaluate_slos_and_buffer(self, service_m, service_state, slos_all_clients):
-        slo_f = calculate_SLO_F_clients(service_state, slos_all_clients)
+    def evaluate_slos_and_buffer(self, service_m: ServiceID, service_state, slos_all_clients):
+        slo_f = calculate_SLO_F_clients(service_m.service_type, service_state, slos_all_clients)
         self.experience_buffer.append((service_m, datetime.datetime.now(), slo_f, self.log_experience,
                                        service_state, self.last_iteration_length))
