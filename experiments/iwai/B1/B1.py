@@ -8,7 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-from agent.RRMGlobalAgent import RRM_Global_Agent
+from agent.RRMGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import delete_file_if_exists, export_experience_buffer
 from agent.daci.DAIAgent import DAIAgent
 from agent.AIF_agent import AIF_agent

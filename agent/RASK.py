@@ -19,7 +19,7 @@ logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)
 
 
-class RRM:
+class RASK:
     def __init__(self, show_figures=False):
         self.show_figures = show_figures
         self.models: Dict[ServiceType, Dict] = None
@@ -30,7 +30,7 @@ class RRM:
             df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
-        self.models = train_rrm_models(df_cleared, self.show_figures)
+        self.models = train_rask_models(df_cleared, self.show_figures)
 
     def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
         dependent_variables = list(get_dependent_variable_mapping(service_type).keys())
@@ -94,7 +94,7 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/LGBN.csv"):
 
 
 # @print_execution_time  # Roughly 10ms
-def train_rrm_models(df, show_result=False):
+def train_rask_models(df, show_result=False):
     service_models = {}
 
     for degree in range(1,10):
@@ -224,5 +224,5 @@ if __name__ == "__main__":
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    rrm = RRM(show_figures=True)
-    rrm.init_models()
+    rask = RASK(show_figures=True)
+    rask.init_models()

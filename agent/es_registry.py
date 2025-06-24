@@ -52,24 +52,30 @@ class ESRegistry:
     def is_es_supported(self, service_type: ServiceType, es_type: ESType) -> bool:
         return self.get_es_information(service_type, es_type) is not None
 
-    def get_supported_ES_for_service(self, service_type: ServiceType) -> List[ESType]:
+    def get_active_ES_for_service(self, service_type: ServiceType) -> List[ESType]:
         # TODO: Here I can filter if it should be active or not
         strategies = self.es_api.get(service_type.value, {})
-        return [ESType(es) for es in strategies]
 
-    def _get_random_ES_for_service(self, service_type: ServiceType) -> ESType:
-        return random.choice(self.get_supported_ES_for_service(service_type))
+        active = {
+            k: v for k, v in strategies.items()
+            if v.get('active') is True
+        }
 
-    def get_random_ES_and_params(self, service_type: ServiceType) -> Tuple[ESType, Dict]:
-        rand_ES = self._get_random_ES_for_service(service_type)
-        parameter_bounds = self.get_parameter_bounds_for_active_ES(service_type).get(rand_ES, {})
-        random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
+        return [ESType(es) for es in active]
 
-        return rand_ES, random_params
+    # def _get_random_ES_for_service(self, service_type: ServiceType) -> ESType:
+    #     return random.choice(self.get_supported_ES_for_service(service_type))
+
+    # def get_random_ES_and_params(self, service_type: ServiceType) -> Tuple[ESType, Dict]:
+    #     rand_ES = self._get_random_ES_for_service(service_type)
+    #     parameter_bounds = self.get_parameter_bounds_for_active_ES(service_type).get(rand_ES, {})
+    #     random_params = agent_utils.get_random_parameter_assignments(parameter_bounds)
+    #
+    #     return rand_ES, random_params
 
     def get_parameter_bounds_for_active_ES(self, service_type: ServiceType, available_cores=None) -> Dict[ESType, Dict]:
         parameter_bounds = {}
-        for es_type in self.get_supported_ES_for_service(service_type):
+        for es_type in self.get_active_ES_for_service(service_type):
             info = self.get_es_information(service_type, es_type)
             if not info or "parameters" not in info:
                 continue

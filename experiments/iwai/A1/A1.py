@@ -9,7 +9,7 @@ from pandas import DataFrame
 
 import utils
 from agent.PolicySolverRRM import solve_global
-from agent.RRMGlobalAgent import RRM_Global_Agent, apply_gaussian_noise_to_asses
+from agent.RRMGlobalAgent import RASK_Global_Agent, apply_gaussian_noise_to_asses
 from agent.es_registry import ServiceID, ServiceType, ESType
 from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV, QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP, \
     NO_EPISODES, EPISODE_LENGTH
@@ -65,7 +65,7 @@ def train_q_network():
     print(f"Finished Q-Network Training")
 
 
-class TestableRRMAgent(RRM_Global_Agent):
+class TestableRRMAgent(RASK_Global_Agent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle, testing_env,
                  slo_registry_path=ROOT + "/../../../config/slo_config.json",
                  es_registry_path=ROOT + "/../../../config/es_registry.json",

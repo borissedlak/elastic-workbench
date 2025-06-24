@@ -2,21 +2,19 @@ import random
 
 from scipy.optimize import minimize
 
-from agent.es_registry import ServiceType
 from agent.LGBN import calculate_missing_vars
-from agent.RRM import RRM
+from agent.RASK import RASK
 from agent.SLORegistry import calculate_SLO_F_clients
+from agent.es_registry import ServiceType
 
-# rrm = RRM(show_figures=False)
 
-
-def solve(service_type, parameter_bounds, clients_SLOs, total_rps, rrm):
+def solve(service_type, parameter_bounds, clients_SLOs, total_rps, rask: RASK):
     bounds = [(inner["min"], inner["max"]) for param in parameter_bounds.values() for inner in
               param.values()]  # Shape [(360, 1080), (1, 8)]
     x0 = [random.randint(mini, maxi) for mini, maxi in bounds]  # Initial guess; Shape [520, 4]
 
     result = minimize(local_obj, x0, method='L-BFGS-B', bounds=bounds,
-                      args=(service_type, parameter_bounds, clients_SLOs, total_rps, rrm))
+                      args=(service_type, parameter_bounds, clients_SLOs, total_rps, rask))
 
     if not result.success:
         raise RuntimeWarning("Policy solver encountered an error: " + result.message)
@@ -28,12 +26,12 @@ def solve(service_type, parameter_bounds, clients_SLOs, total_rps, rrm):
     return es_param_ass
 
 
-def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, total_rps, rrm):
+def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, total_rps, rask: RASK):
     independent_variables = {list(param.keys())[0]: val for param, val in zip(parameter_bounds.values(), x)}
 
     # ---------- Part 1: LGBN Relations ----------
 
-    dependent_variables = rrm.get_all_dependent_vars_ass(service_type, independent_variables)
+    dependent_variables = rask.get_all_dependent_vars_ass(service_type, independent_variables)
     full_state = independent_variables | dependent_variables
     full_state |= calculate_missing_vars(full_state, total_rps)
 
@@ -44,7 +42,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
     return -slo_f  # because we want to maximize
 
 
-def composite_obj_global(x, service_context, rrm):
+def composite_obj_global(x, service_context, rask: RASK):
     offset = 0
     total_slo_f = 0
 
@@ -53,7 +51,7 @@ def composite_obj_global(x, service_context, rrm):
         x_i = x[offset:offset + num_params]
         offset += num_params
 
-        slo_f_i = local_obj(x_i, service_type, parameter_bounds, slos, total_rps, rrm)
+        slo_f_i = local_obj(x_i, service_type, parameter_bounds, slos, total_rps, rask)
         total_slo_f += slo_f_i
 
     return total_slo_f  # already negative (since composite_obj returns -slo_f)
@@ -76,9 +74,7 @@ def constraint_total_cores(x, services, max_total_cores):
     return max_total_cores - total_cores_ass  # must be 0
 
 
-def solve_global(service_contexts_m, max_cores, rrm):
-    # global rrm
-    # rrm.init_models()  # Might not be needed every time we solve the assignment
+def solve_global(service_contexts_m, max_cores, rask: RASK):
 
     constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
@@ -95,7 +91,7 @@ def solve_global(service_contexts_m, max_cores, rrm):
                 x0.append((ES_desc[ES_var]["min"] + ES_desc[ES_var]["max"]) / 2)
 
     result = minimize(composite_obj_global, x0, method='SLSQP', constraints=constraints,
-                      bounds=flat_bounds, args=(service_contexts_m, rrm))
+                      bounds=flat_bounds, args=(service_contexts_m, rask))
 
     # print(result)
     if not result.success:

@@ -2,6 +2,7 @@
   "elastic-workbench-qr-detector": {
     "quality_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/quality_scaling",
       "parameters": {
         "data_quality": {
@@ -12,6 +13,7 @@
     },
     "parallelism_scaling": {
       "cooldown": 2000,
+      "active": false,
       "endpoint": "/parallelism_scaling",
       "parameters": {
         "parallelism": {
@@ -22,6 +24,7 @@
     },
     "resource_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {
@@ -34,6 +37,7 @@
   "elastic-workbench-cv-analyzer": {
     "model_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {
@@ -44,6 +48,7 @@
     },
     "quality_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/quality_scaling",
       "parameters": {
         "data_quality": {
@@ -54,6 +59,7 @@
     },
     "parallelism_scaling": {
       "cooldown": 2000,
+      "active": false,
       "endpoint": "/parallelism_scaling",
       "parameters": {
         "parallelism": {
@@ -64,6 +70,7 @@
     },
     "resource_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {
@@ -76,6 +83,7 @@
   "elastic-workbench-pc-visualizer": {
     "model_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {
@@ -86,6 +94,7 @@
     },
     "parallelism_scaling": {
       "cooldown": 2000,
+      "active": false,
       "endpoint": "/parallelism_scaling",
       "parameters": {
         "parallelism": {
@@ -96,6 +105,7 @@
     },
     "quality_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/quality_scaling",
       "parameters": {
         "data_quality": {
@@ -106,6 +116,7 @@
     },
     "resource_scaling": {
       "cooldown": 2000,
+      "active": true,
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {

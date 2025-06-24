@@ -17,9 +17,9 @@ class TestES_Registry(TestCase):
         self.assertFalse(self.es_registry.is_es_supported(ServiceType.CV, ESType.QUALITY_SCALE))
 
     def test_get_supported_es_for_s(self):
-        self.assertListEqual([], self.es_registry.get_supported_ES_for_service(ServiceType.CV))
+        self.assertListEqual([], self.es_registry.get_active_ES_for_service(ServiceType.CV))
         self.assertListEqual([ESType.QUALITY_SCALE, ESType.RESOURCE_SCALE],
-                             self.es_registry.get_supported_ES_for_service(ServiceType.QR))
+                             self.es_registry.get_active_ES_for_service(ServiceType.QR))
 
     def test_get_es_cooldown(self):
         self.assertEqual(1500, self.es_registry.get_es_cooldown(ServiceType.QR, ESType.QUALITY_SCALE))

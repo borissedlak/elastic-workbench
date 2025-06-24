@@ -362,7 +362,7 @@ class AIF_agent(ScalingAgent):
         
         for service in services_m:
             if random.random() < 0.3:  # 30%概率执行动作
-                all_es = self.es_registry.get_supported_ES_for_service(service.service_type)
+                all_es = self.es_registry.get_active_ES_for_service(service.service_type)
                 if all_es:
                     random_es = random.choice(all_es)
                     max_cores = self.get_max_available_cores(service)
