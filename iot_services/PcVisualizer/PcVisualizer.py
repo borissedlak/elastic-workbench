@@ -3,8 +3,6 @@ import os
 import time
 from typing import Any
 
-import cv2
-
 from agent.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.KittiReader import KittiReader
@@ -13,21 +11,23 @@ from lidar_utils import parse_tracklets, fuse_pointclouds, point_cloud_to_bev, d
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-PV_DISTANCE_DEFAULT = 30
-PV_FUSION_DEFAULT = 1
+PC_DISTANCE_DEFAULT = 30
+PC_FUSION_DEFAULT = 1
+PC_PARALLELISM_DEFAULT = 1
 
 class PcVisualizer(IoTService):
 
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'data_quality': PV_DISTANCE_DEFAULT, 'model_size': PV_FUSION_DEFAULT}
+        self.service_conf = {'data_quality': PC_DISTANCE_DEFAULT, 'model_size': PC_FUSION_DEFAULT,
+                             'parallelism': PC_PARALLELISM_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.PC
         self.data_stream = KittiReader(ROOT + "/data", "2011_09_26", "0001")
         self.fusion_buffer = []
 
     def get_service_parallelism(self) -> int:
-        return 1
+        return self.service_conf['parallelism']
 
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
@@ -49,10 +49,10 @@ class PcVisualizer(IoTService):
             pose = obj["poses"][i - obj["first_frame"]]
             draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
 
-        cv2.imshow("LIDAR BEV with Fused Frames", bev)
-        if cv2.waitKey(10) == 27:
-            pass
-        time.sleep(0.1)
+        # cv2.imshow("LIDAR BEV with Fused Frames", bev)
+        # if cv2.waitKey(10) == 27:
+        #     pass
+        # time.sleep(0.1)
 
         duration = (time.perf_counter() - start) * 1000
         return bev, duration

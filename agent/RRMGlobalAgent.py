@@ -34,9 +34,6 @@ class RRM_Global_Agent(ScalingAgent):
         self.max_explore = max_explore
         self.rrm = RRM(show_figures=False)
 
-    # def reload_rrm_model(self, df=None):
-    #     self.rrm.init_models(df)  # Reloads the RRM model from the metrics.csv
-
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
 

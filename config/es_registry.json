@@ -10,6 +10,16 @@
         }
       }
     },
+    "parallelism_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/parallelism_scaling",
+      "parameters": {
+        "parallelism": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    },
     "resource_scaling": {
       "cooldown": 2000,
       "endpoint": "/resource_scaling",
@@ -42,6 +52,16 @@
         }
       }
     },
+    "parallelism_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/parallelism_scaling",
+      "parameters": {
+        "parallelism": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    },
     "resource_scaling": {
       "cooldown": 2000,
       "endpoint": "/resource_scaling",
@@ -61,6 +81,16 @@
         "model_size": {
           "min": 1,
           "max": 10
+        }
+      }
+    },
+    "parallelism_scaling": {
+      "cooldown": 2000,
+      "endpoint": "/parallelism_scaling",
+      "parameters": {
+        "parallelism": {
+          "min": 1,
+          "max": 8
         }
       }
     },

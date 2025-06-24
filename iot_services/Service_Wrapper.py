@@ -57,6 +57,7 @@ class ServiceWrapper:
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
         self.app.add_url_rule('/model_scaling', 'model_scaling', self.model_scaling, methods=['PUT'])
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
+        self.app.add_url_rule('/parallelism_scaling', 'parallelism_scaling', self.parallelism_scaling, methods=['PUT'])
         self.app.add_url_rule('/change_rps', 'change_rps', self.alter_client_connection, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
 
@@ -86,6 +87,20 @@ class ServiceWrapper:
     #     self.service.change_config(service_d)
     #     self.service.set_flag_and_cooldown(EsType.QUALITY_SCALE)
     #     return ""
+
+    def parallelism_scaling(self):
+        parallelism = int(request.args.get('parallelism'))
+        parallelism_corrected = np.clip(parallelism, self.bounds['parallelism']['min'], self.bounds['parallelism']['max'])
+
+        if parallelism != parallelism_corrected:
+            logger.warning(f"Manually corrected parallelism from {parallelism} to {parallelism_corrected}")
+
+        s_conf = self.service.service_conf.copy()
+        s_conf['parallelism'] = parallelism_corrected
+
+        self.service.change_config(s_conf)
+        self.service.set_flag_and_cooldown(ESType.PARALLELISM_SCALE)
+        return ""
 
     def quality_scaling(self):
         data_quality = round(float(request.args.get('data_quality')))

@@ -15,18 +15,20 @@ logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
 QR_DATA_QUALITY_DEFAULT = 700
+QR_PARALLELISM_DEFAULT = 1
 
 
 class QrDetector(IoTService):
 
     def __init__(self, store_to_csv=True):
         super().__init__()
-        self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT}
+        self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT, 'parallelism': QR_PARALLELISM_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.QR
         self.data_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
 
     def get_service_parallelism(self) -> int:
+        # return self.service_conf['parallelism']
         return utils.cores_to_threads(self.cores_reserved)
 
     def process_one_iteration(self, frame) -> (Any, int):

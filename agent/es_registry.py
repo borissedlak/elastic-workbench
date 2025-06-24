@@ -20,6 +20,7 @@ class ServiceType(Enum):
 class ESType(Enum):
     STARTUP = 'startup'
     QUALITY_SCALE = 'quality_scaling'
+    PARALLELISM_SCALE = 'parallelism_scaling'
     RESOURCE_SCALE = 'resource_scaling'
     MODEL_SCALE = 'model_scaling'
     RESOURCE_SWAP = 'resource_swapping'
@@ -52,6 +53,7 @@ class ESRegistry:
         return self.get_es_information(service_type, es_type) is not None
 
     def get_supported_ES_for_service(self, service_type: ServiceType) -> List[ESType]:
+        # TODO: Here I can filter if it should be active or not
         strategies = self.es_api.get(service_type.value, {})
         return [ESType(es) for es in strategies]
 
