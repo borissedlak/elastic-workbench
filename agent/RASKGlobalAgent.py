@@ -8,11 +8,11 @@ import numpy as np
 
 import utils
 from agent import agent_utils
+from agent.PolicySolverRASK import solve_global
 from agent.RASK import RASK
+from agent.ScalingAgent import ScalingAgent
 from agent.agent_utils import export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType, ESType
-from agent.PolicySolverRASK import solve_global
-from agent.ScalingAgent import ScalingAgent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -39,14 +39,16 @@ class RASK_Global_Agent(ScalingAgent):
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
 
+        # Need to build the state in any case to evaluate the SLOs
+        service_contexts = []
+        for service_m in services_m:  # For all monitored services
+            service_contexts.append(self.prepare_service_context(service_m))
+
         if self.explore_count < self.max_explore:
             logger.info("Agent is exploring.....")
             self.explore_count += 1
             self.call_all_ES_randomly(services_m)
         else:
-            service_contexts = []
-            for service_m in services_m:  # For all monitored services
-                service_contexts.append(self.prepare_service_context(service_m))
 
             self.rask.init_models()  # Reloads the RASK model from the metrics.csv
             assignments = solve_global(service_contexts, MAX_CORES, self.rask)
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=20, log_experience="RRM")
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=20, log_experience="#")
 
     agent_utils.stream_remote_metrics_file()
 
@@ -117,4 +119,4 @@ if __name__ == '__main__':
 
     while True:
         time.sleep(5)
-        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_RRM.csv")
+        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_RASK.csv")
