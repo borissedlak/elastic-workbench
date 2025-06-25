@@ -42,11 +42,11 @@ class RedisClient:
 
 
 def create_ass_key(service_id: ServiceID):
-    return f"a:{service_id.host}:{service_id.service_type.value}:{service_id.container_id}"
+    return f"a:{service_id.service_type.value}:{service_id.container_id}"
 
 
 def create_cool_key(service_id: ServiceID):
-    return f"f:{service_id.host}:{service_id.service_type.value}:{service_id.container_id}"
+    return f"f:{service_id.service_type.value}:{service_id.container_id}"
 
 
 if __name__ == '__main__':

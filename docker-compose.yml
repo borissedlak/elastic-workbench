@@ -12,7 +12,6 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
-      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
@@ -37,7 +36,6 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna
     volumes:
@@ -62,7 +60,6 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-pc-visualizer-1
       - REDIS_INSTANCE=172.20.0.4
-      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
