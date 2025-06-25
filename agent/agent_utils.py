@@ -2,11 +2,15 @@ import csv
 import logging
 import os
 import random
+import subprocess
+import threading
 import time
 from typing import NamedTuple, Dict
 
 import numpy as np
 import pandas as pd
+
+import utils
 
 logger = logging.getLogger('multiscale')
 
@@ -227,3 +231,22 @@ def delete_file_if_exists(file_path="./agent_experience.csv"):
         print(f"{file_path} deleted.")
     else:
         print(f"{file_path} does not exist.")
+
+def stream_remote_metrics_file():
+    def stream_csv():
+        csv_buffer = []
+
+        cmd = ["ssh", "root@128.131.172.182", "tail", "-f", "~/development/elastic-workbench/share/metrics/metrics.csv"]
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+
+        for line in process.stdout:
+            csv_buffer.append(line)
+
+            # TODO: Write every time the evaluation cycle is reached
+            # if len(csv_buffer) > 15: # Writes 3 *
+            utils.write_metrics_to_csv(csv_buffer, pure_string=True)
+            csv_buffer=[]
+
+    # Start the background thread
+    thread = threading.Thread(target=stream_csv, daemon=True)
+    thread.start()

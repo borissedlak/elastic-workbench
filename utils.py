@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 
 logger = logging.getLogger('multiscale')
-
+ROOT = os.path.dirname(__file__)
 
 def get_env_param(var, default) -> str:
     env = os.environ.get(var)
@@ -91,9 +91,9 @@ def filter_tuple(t, name, index):
 
 
 # @print_execution_time
-def write_metrics_to_csv(lines):
+def write_metrics_to_csv(lines, pure_string=False):
     # Define the directory and file name
-    directory = "./share/metrics"
+    directory = ROOT + "/share/metrics"
     file_name = "metrics.csv"
     file_path = os.path.join(directory, file_name)
 
@@ -106,13 +106,16 @@ def write_metrics_to_csv(lines):
 
     # Open the file in append mode
     with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
+        csv_writer = csv.writer(file)
 
         if not file_exists or os.path.getsize(file_path) == 0:
-            writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores",
+            csv_writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores",
                              "rps", "throughput", "cooldown"])
 
-        writer.writerows(lines)
+        if pure_string:
+            file.writelines(lines)
+        else:
+            csv_writer.writerows(lines)
 
 
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:

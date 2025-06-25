@@ -1,5 +1,7 @@
 import datetime
 import logging
+import subprocess
+import threading
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
@@ -54,6 +56,7 @@ def convert_action_to_real_ES(service:ServiceID, state_pw:FullStateDQN, action_p
         }
 
     return ESType.IDLE, {}
+
 
 
 class ScalingAgent(Thread, ABC):

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     cv_local = ServiceID("128.131.172.182", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     qr_local = ServiceID("128.131.172.182", ServiceType.QR, "elastic-workbench-qr-detector-1")
     # nonsense = ServiceID("172.20", ServiceType.QR, "elastic--qr-detector-1")
-    redis.store_assignment(cv_local, {"C_10": 50})
+    # redis.store_assignment(cv_local, {"C_1": 100})
     print(redis.get_assignments_for_service(cv_local))
 
     redis.redis_conn.close()

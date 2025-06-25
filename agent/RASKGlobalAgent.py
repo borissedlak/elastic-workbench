@@ -108,7 +108,9 @@ if __name__ == '__main__':
     cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0, log_experience="RRM")
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=20, log_experience="RRM")
+
+    agent_utils.stream_remote_metrics_file()
 
     agent.reset_services_states()
     agent.start()

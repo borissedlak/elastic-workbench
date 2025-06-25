@@ -5,9 +5,10 @@ services:
     build:
       context: .
       dockerfile: iot_services/QrDetector/QrDetector.Dockerfile
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.5
+    # TODO: I wanted to remove the network, but otherwise the service breaks somehow
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-qr-detector-1
@@ -29,9 +30,9 @@ services:
     build:
       context: .
       dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.10
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.10
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
@@ -53,9 +54,9 @@ services:
     build:
       context: .
       dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
-#    networks:
-#      docker_network:
-#        ipv4_address: 172.20.0.15
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.15
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-pc-visualizer-1

@@ -83,6 +83,15 @@ def collect_all_metric_files():
     combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
     return combined_df
 
+def collect_remote_metric_file():
+    import subprocess
+
+    cmd = ["ssh", "root@128.131.172.182", "tail", "-f", "~/development/elastic-workbench/share/metrics/metrics.csv"]  # -f follows the file
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+
+    for line in process.stdout:
+        print("New line:", line.strip())
+        # Optionally parse CSV line here
 
 # noinspection PyPackageRequirements
 def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
