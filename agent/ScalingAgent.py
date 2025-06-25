@@ -25,6 +25,7 @@ logger = logging.getLogger("multiscale")
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
+SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
 
 
 def convert_action_to_real_ES(service:ServiceID, state_pw:FullStateDQN, action_pw: int, free_cores):
@@ -69,7 +70,7 @@ class ScalingAgent(Thread, ABC):
         self.prom_client = PrometheusClient(prom_server)
         self.docker_client = DockerClient()
         self.http_client = HttpClient()
-        self.reddis_client = RedisClient()
+        self.reddis_client = RedisClient(SERVICE_HOST)
         self.slo_registry = SLO_Registry(slo_registry_path)
         self.es_registry = ESRegistry(es_registry_path)
         self.experience_buffer = []

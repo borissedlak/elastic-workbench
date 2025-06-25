@@ -19,6 +19,7 @@ logger = logging.getLogger("multiscale")
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
+SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
 
 ROOT = os.path.dirname(__file__)
 
@@ -101,13 +102,13 @@ def apply_gaussian_noise_to_asses(assignment, noise=0.08):
 
 
 if __name__ == '__main__':
-    remote_vm = "128.131.172.182"
-    ps = f"http://{remote_vm}:9090"
-    qr_local = ServiceID(remote_vm, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
-    cv_local = ServiceID(remote_vm, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
-    pc_local = ServiceID(remote_vm, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
+    # remote_vm = "128.131.172.182"
+    ps = f"http://{SERVICE_HOST}:9090"
+    qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
+    cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
+    pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=30, log_experience="RRM")
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0, log_experience="RRM")
 
     agent.reset_services_states()
     agent.start()

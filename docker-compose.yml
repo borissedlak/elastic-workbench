@@ -5,14 +5,14 @@ services:
     build:
       context: .
       dockerfile: iot_services/QrDetector/QrDetector.Dockerfile
-    networks:
-      docker_network:
-        ipv4_address: 172.20.0.5
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
-      - CONTAINER_IP=172.20.0.5
+      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
@@ -30,14 +30,14 @@ services:
     build:
       context: .
       dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
-    networks:
-      docker_network:
-        ipv4_address: 172.20.0.10
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.20.0.10
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4
-      - CONTAINER_IP=172.20.0.10
+      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna
     volumes:
@@ -55,14 +55,14 @@ services:
     build:
       context: .
       dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
-    networks:
-      docker_network:
-        ipv4_address: 172.20.0.15
+#    networks:
+#      docker_network:
+#        ipv4_address: 172.20.0.15
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-pc-visualizer-1
       - REDIS_INSTANCE=172.20.0.4
-      - CONTAINER_IP=172.20.0.15
+      - HOST_IP=128.131.172.182
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:

@@ -16,7 +16,7 @@ from agent.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 logger = logging.getLogger("multiscale")
 
 CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
-CONTAINER_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
+HOST_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
@@ -38,7 +38,7 @@ class IoTService(ABC):
 
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
         # self.docker_client = DockerClient()
-        self.container_ip = CONTAINER_IP  # self.docker_client.get_container_ip(self.docker_container_ref)
+        self.host_ip = HOST_IP  # self.docker_client.get_container_ip(self.docker_container_ref)
         self.flag_metric_cooldown = 0
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
@@ -163,7 +163,7 @@ class IoTService(ABC):
             time.sleep((self.processing_timeframe - time_elapsed) / 1000)
 
     def get_service_id(self):
-        return ServiceID(self.container_ip, self.service_type, self.docker_container_ref)
+        return ServiceID(self.host_ip, self.service_type, self.docker_container_ref)
 
     def set_flag_and_cooldown(self, es_type: ESType):
         self.flag_metric_cooldown = self.es_registry.get_es_cooldown(self.service_type, es_type)

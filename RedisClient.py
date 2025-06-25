@@ -50,10 +50,15 @@ def create_cool_key(service_id: ServiceID):
 
 
 if __name__ == '__main__':
-    redis = RedisClient()
-    qr_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    redis = RedisClient("128.131.172.182")
+
+    cv_local = ServiceID("128.131.172.182", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    qr_local = ServiceID("128.131.172.182", ServiceType.QR, "elastic-workbench-qr-detector-1")
     # nonsense = ServiceID("172.20", ServiceType.QR, "elastic--qr-detector-1")
-    print(redis.get_assignments_for_service(qr_local))
+    redis.store_assignment(cv_local, {"C_10": 50})
+    print(redis.get_assignments_for_service(cv_local))
+
+    redis.redis_conn.close()
     # redis.store_assignment(ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1"),
     #                        {'C_X': 50})
     # print(redis.get_assignments_for_service(
