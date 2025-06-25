@@ -7,3 +7,6 @@ venv
 **/models/*.onnx
 **/models/*.pt
 **/models/*.torchscript
+__pycache__
+2011_09_26_drive_0001_sync
+**/*.zip

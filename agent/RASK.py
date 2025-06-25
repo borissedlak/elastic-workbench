@@ -6,6 +6,7 @@ from typing import Dict, Any
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import PolynomialFeatures
@@ -59,8 +60,8 @@ class RASK:
 def preprocess_data(df):
     df_filtered = agent_utils.filter_rows_during_cooldown(df.copy())
     # df_filtered = df_filtered[df_filtered['avg_p_latency'] >= 0]  # Filter out rows where we had no processing
-    # z_scores = np.abs(stats.zscore(df_filtered['avg_p_latency']))
-    # df_filtered = df_filtered[z_scores < 1.5]  # 3 is a common threshold for extreme outliers
+    z_scores = np.abs(stats.zscore(df_filtered['throughput']))
+    df_filtered = df_filtered[z_scores < 2.0]  # 3 is a common threshold for extreme outliers
     df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
 
     # Convert and expand service config dict
@@ -68,7 +69,6 @@ def preprocess_data(df):
     metadata_expanded = pd.json_normalize(df_filtered['s_config'])
 
     combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
-    # del combined_df_expanded['timestamp']
     combined_df_expanded['model_size'] = combined_df_expanded['model_size'].fillna(-1)
 
     logger.info(f"Training data contains service types {df_filtered['service_type'].unique()}")
