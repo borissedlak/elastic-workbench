@@ -30,20 +30,20 @@ def calculate_SLO_F_clients(service_type:ServiceType, full_state, slos_all_clien
     slo_f_all_clients = 0.0
 
     for slos_single_client in slos_all_clients:
-        boundaries = es_registry.get_boundaries_minimalistic(service_type, 8)
-        full_state_tensor = FullStateDQN(
-            full_state["data_quality"],
-            slos_single_client['data_quality'].target,
-            full_state["throughput"],
-            slos_single_client['throughput'].target,
-            full_state['model_size'] if 'model_size' in slos_single_client else 0,
-            slos_single_client['model_size'].target if 'model_size' in slos_single_client else 0,
-            0,  # cores irrelevant for SLO-F
-            0,  # cores irrelevant for SLO-F
-            boundaries,
-        )
+        # boundaries = es_registry.get_boundaries_minimalistic(service_type, 8)
+        # full_state_tensor = FullStateDQN(
+        #     full_state["data_quality"],
+        #     slos_single_client['data_quality'].target,
+        #     full_state["throughput"],
+        #     slos_single_client['throughput'].target,
+        #     full_state['model_size'] if 'model_size' in slos_single_client else 0,
+        #     slos_single_client['model_size'].target if 'model_size' in slos_single_client else 0,
+        #     0,  # cores irrelevant for SLO-F
+        #     0,  # cores irrelevant for SLO-F
+        #     boundaries,
+        # )
 
-        slo_f_list = calculate_slo_fulfillment(full_state_tensor.to_normalized_dict(), slos_single_client)
+        slo_f_list = calculate_slo_fulfillment(full_state, slos_single_client)
         normalized_reward = to_normalized_slo_f(slo_f_list, slos_single_client)
         slo_f_all_clients += normalized_reward
 
@@ -53,12 +53,12 @@ def calculate_SLO_F_clients(service_type:ServiceType, full_state, slos_all_clien
 def to_normalized_slo_f(slof: List[Tuple[str, float]], slos: Dict[str, SLO]) -> float:
     slo_f_single_client = sum(value for _, value in slof)
 
-    max_slo_f_single_client = 2 # sum([s.weight for s in slos.values()])
+    max_slo_f_single_client = sum([s.weight for s in slos.values()])
     scaled_reward = slo_f_single_client / max_slo_f_single_client
 
     return scaled_reward
 
-
+# TODO: Should again use normalized values
 def calculate_slo_fulfillment(
         full_state: Dict[str, Any], slos: Dict[str, SLO]
 ) -> List[Tuple[str, float]]:
@@ -79,16 +79,15 @@ def calculate_slo_fulfillment(
     #     ("quality", smoothstep((quality / quality_target)) if throughput > 0.0 else 0.0),
     #     ("throughput", smoothstep((throughput / throughput_target))),
     # ]
-    # TODO: This does not work with normalized values yet...
     slo_trace = []
     for slo in slos.values():
         var, larger, target, weight = slo
         value = full_state[var]
         if larger:
-            slo_f_single_slo = value / float(target)
+            slo_f_single_slo = value / target
         else:
             slo_f_single_slo = 1 - (
-                (value - float(target)) / float(target)
+                (value - target) / target
             )  # SLO-F is 0 after 2 * t
 
         slo_f_single_slo = float(smoothstep(slo_f_single_slo) * weight)
