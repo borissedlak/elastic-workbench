@@ -69,9 +69,9 @@ class RASK_Global_Agent(ScalingAgent):
     def call_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
         # TODO: Ideally, this needs a mechanisms that avoids oscillating or changing the instance if it stays the same
         for i, service_m in enumerate(services_m):  # For all monitored services
-            all_ES = self.es_registry.get_active_ES_for_service(service_m.service_type)
-            for target_ES in all_ES:
-                self.execute_ES(service_m.host, service_m, target_ES, assignments[i], respect_cooldown=False)
+            all_es = self.es_registry.get_active_ES_for_service(service_m.service_type)
+            for target_ES in all_es:
+                self.execute_ES(service_m, target_ES, assignments[i], respect_cooldown=False)
 
     def call_all_ES_randomly(self, services_m: list[ServiceID]):
         # Shuffle services to avoid the first always getting the most resources
@@ -87,7 +87,7 @@ class RASK_Global_Agent(ScalingAgent):
                                                                                    max_available_cores).get(es, {})
 
                 random_params = agent_utils.get_random_parameter_assignments(param_bounds)
-                self.execute_ES(service_m.host, service_m, es, random_params, respect_cooldown=False)
+                self.execute_ES(service_m, es, random_params, respect_cooldown=False)
 
 
 def apply_gaussian_noise_to_asses(assignment, noise=0.08):
@@ -101,10 +101,11 @@ def apply_gaussian_noise_to_asses(assignment, noise=0.08):
 
 
 if __name__ == '__main__':
-    ps = "http://localhost:9090"
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-    pc_local = ServiceID("172.20.0.15", ServiceType.PC, "elastic-workbench-pc-visualizer-1")
+    remote_vm = "128.131.172.182"
+    ps = f"http://{remote_vm}:9090"
+    qr_local = ServiceID(remote_vm, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
+    cv_local = ServiceID(remote_vm, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
+    pc_local = ServiceID(remote_vm, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
                               evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=30, log_experience="RRM")
 

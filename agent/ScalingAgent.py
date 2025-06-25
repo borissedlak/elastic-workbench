@@ -109,8 +109,7 @@ class ScalingAgent(Thread, ABC):
 
             wait_for_remaining_interval(self.evaluation_cycle, start_time)
 
-    # TODO: Remove this host fix as soon as possible
-    def execute_ES(self, host, service: ServiceID, es_type: ESType, params, respect_cooldown=True):
+    def execute_ES(self, service: ServiceID, es_type: ESType, params, respect_cooldown=True):
 
         if respect_cooldown and self.reddis_client.is_under_cooldown(service):
             warning_msg = f"Service <{service.host, service.container_id}> is under cooldown, cannot call ES"
@@ -123,7 +122,7 @@ class ScalingAgent(Thread, ABC):
 
         ES_endpoint = self.es_registry.get_es_information(service.service_type, es_type)['endpoint']
 
-        self.http_client.call_ES_endpoint(host, ES_endpoint, params)
+        self.http_client.call_ES_endpoint(service, ES_endpoint, params)
         logger.info(f"Calling ES <{service.service_type},{es_type}> with {params}")
 
     @abstractmethod
@@ -162,15 +161,15 @@ class ScalingAgent(Thread, ABC):
 
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
-                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': QR_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': QR_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
-                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': CV_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': CV_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.PC:
-                self.execute_ES(service_m.host, service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
-                self.execute_ES(service_m.host, service_m, ESType.QUALITY_SCALE, {'data_quality': PC_DISTANCE_DEFAULT}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': PC_DISTANCE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
 

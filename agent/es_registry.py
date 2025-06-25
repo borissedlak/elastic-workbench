@@ -1,11 +1,8 @@
 import json
 import logging
-import random
 from enum import Enum
 from os import PathLike
-from typing import NamedTuple, List, Dict, Tuple
-
-from agent import agent_utils
+from typing import NamedTuple, List, Dict
 
 logger = logging.getLogger("multiscale")
 
@@ -33,6 +30,7 @@ class ServiceID(NamedTuple):
     host: str
     service_type: ServiceType
     container_id: str
+    port: str = 8080
 
 
 class ESRegistry:
