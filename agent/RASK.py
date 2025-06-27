@@ -114,9 +114,9 @@ def train_rask_models(df, show_result=False):
                 model.fit(X_poly_train, Y_train)
 
                 # MSE on test data
-                y_test_pred = model.predict(X_poly_test)
-                mse_test = mean_squared_error(Y_test, y_test_pred)
-                logger.info(f"Test MSE for {var} in {service_type_s}: {mse_test:.4f}, with degree {degree}")
+                # y_test_pred = model.predict(X_poly_test)
+                # mse_test = mean_squared_error(Y_test, y_test_pred)
+                # logger.info(f"Test MSE for {var} in {service_type_s}: {mse_test:.4f}, with degree {degree}")
 
                 # Inspect learned coefficients
                 logger.debug(f"Polynomial feature names: {poly.get_feature_names_out(deps)}")

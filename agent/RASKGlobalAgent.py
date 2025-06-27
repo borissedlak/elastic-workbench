@@ -29,11 +29,16 @@ class RASK_Global_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
-                 log_experience=None, max_explore=10):
-        super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path, es_registry_path,
-                         log_experience)
+                 log_experience=None, max_explore=25, gaussian_noise=0.05):
+
+        super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path,
+                         es_registry_path, log_experience)
+
         self.explore_count = 0
         self.max_explore = max_explore
+        self.gaussian_noise = gaussian_noise
+        self.last_assignments = None
+
         self.rask = RASK(show_figures=False)
 
     @utils.print_execution_time
@@ -49,10 +54,10 @@ class RASK_Global_Agent(ScalingAgent):
             self.explore_count += 1
             self.call_all_ES_randomly(services_m)
         else:
-
             self.rask.init_models()  # Reloads the RASK model from the metrics.csv
-            assignments = solve_global(service_contexts, MAX_CORES, self.rask)
-            assignments = apply_gaussian_noise_to_asses(assignments)
+            assignments = solve_global(service_contexts, MAX_CORES, self.rask, self.last_assignments)
+            assignments = apply_gaussian_noise_to_asses(assignments, self.gaussian_noise)
+            self.last_assignments = assignments
             self.call_all_ES_deterministic(services_m, assignments)
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
@@ -93,7 +98,7 @@ class RASK_Global_Agent(ScalingAgent):
                 self.execute_ES(service_m, es, random_params, respect_cooldown=False)
 
 
-def apply_gaussian_noise_to_asses(assignment, noise=0.08):
+def apply_gaussian_noise_to_asses(assignment, noise):
     for ass_group in assignment:
         for var in ass_group:
             value = ass_group[var]
@@ -104,7 +109,7 @@ def apply_gaussian_noise_to_asses(assignment, noise=0.08):
 
 
 if __name__ == '__main__':
-    ps = f"http://{SERVICE_HOST}:9090" # "128.131.172.182"
+    ps = f"http://{SERVICE_HOST}:9090"  # "128.131.172.182"
     qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
     cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
@@ -112,9 +117,9 @@ if __name__ == '__main__':
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
                               evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0, log_experience="#")
 
-    if SERVICE_HOST != 'localhost':
-        delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
-        agent_utils.stream_remote_metrics_file(SERVICE_HOST, EVALUATION_CYCLE_DELAY)
+    # if SERVICE_HOST != 'localhost':
+    #     delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
+    #     agent_utils.stream_remote_metrics_file(SERVICE_HOST, EVALUATION_CYCLE_DELAY)
 
     agent.reset_services_states()
     agent.start()

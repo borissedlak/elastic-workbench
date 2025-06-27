@@ -226,11 +226,15 @@ def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
 
             # Check if the cycle delay has passed
             if time.monotonic() - last_flush_time >= cycle_delay_seconds:
+                # print("Time reached", csv_buffer)
+
                 if csv_buffer:  # Only write if there’s something to write
                     utils.write_metrics_to_csv(csv_buffer, pure_string=True)
                     csv_buffer = []
-                last_flush_time = time.monotonic()  # Reset timer
+                    last_flush_time = time.monotonic()  # Reset timer
+                else:
+                    logger.warning("Buffer was empty.")
 
     # Start the background thread
-    thread = threading.Thread(target=stream_csv, daemon=True)
+    thread = threading.Thread(target=stream_csv, daemon=False)
     thread.start()

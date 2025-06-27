@@ -54,11 +54,12 @@ def constraint_total_cores(x, services, max_total_cores):
     return max_total_cores - total_cores_ass  # must be 0
 
 
-def solve_global(service_contexts_m, max_cores, rask: RASK):
+def solve_global(service_contexts_m, max_cores, rask: RASK, last_assignments):
     constraints = [{'type': 'ineq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
     x0 = []
+
     for _, parameter_bounds, _, _ in service_contexts_m:
         for ES_desc in parameter_bounds.values():
             ES_var = list(ES_desc.keys())[0]
@@ -70,8 +71,11 @@ def solve_global(service_contexts_m, max_cores, rask: RASK):
             else:
                 x0.append((ES_desc[ES_var]["min"] + ES_desc[ES_var]["max"]) / 2)
 
+    if last_assignments:
+        x0 = [v for d in last_assignments for v in d.values()] # Use last solution as starting point
+
     result = minimize(composite_obj_global, x0, method='SLSQP', constraints=constraints,
-                      bounds=flat_bounds, args=(service_contexts_m, rask))
+                      bounds=flat_bounds, args=(service_contexts_m, rask), options={'maxiter': 100})
 
     # print(result)
     if not result.success:

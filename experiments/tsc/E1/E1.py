@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -7,49 +8,57 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-from agent.AIF_agent import AIF_agent
-from agent.agent_utils import delete_file_if_exists, export_experience_buffer
+import utils
+from agent import agent_utils
+from agent.RASKGlobalAgent import RASK_Global_Agent
+from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType
-from iwai.dqn_agent import DQNAgent
-from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
+logging.getLogger('multiscale').setLevel(logging.INFO)
 nn_folder = "./networks"
+
+######## Experimental Parameters ##########
+
 EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 350
 
-MAX_EXPLORE = 20
+##### Scaling Agent Hyperparameters #######
 
-PROMETHEUS = "http://172.20.0.2:9090"
-
-qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
-
+MAX_EXPLORE = [0, 25, 50]
+GAUSSIAN_NOISE = [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 5
 
-logging.getLogger('multiscale').setLevel(logging.INFO)
+########## Service Definitions ############
+
+SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
+REMOTE_VM = utils.get_env_param('REMOTE_VM', "128.131.172.182")
+PROMETHEUS = f"http://{SERVICE_HOST}:9090"  # "128.131.172.182"
+
+qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
+cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
+pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
 
-def eval_scaling_agent(agent_factory, agent_type):
+def eval_scaling_agent(agent_factory, agent_suffix):
     # delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
-    if agent_type == "ASK":
-        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
-    print(f"Starting experiment for {agent_type} agent")
+    print(f"Starting experiment for {agent_suffix} agent")
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
-        # Start the agent with both services
+        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+
         agent = agent_factory(rep)
         agent.reset_services_states()
-        time.sleep(4)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
+        time.sleep(EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
         agent.terminate_gracefully()
-        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_type}.csv")
-        print(f"{agent_type} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
+        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
+        print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
@@ -58,22 +67,13 @@ LINE_STYLE_DICT = {"DQN": "--", "ASK": "-", "AIF": "-.", "DACI": ':'}
 
 
 def visualize_data(agent_types: list[str], output_file: str):
-    # changes_meth, changes_base = get_changed_lines(slof_files[0]), get_changed_lines(slof_files[1])
+
     df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
     x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) + 1)
-    # x = np.arange(len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))  # len(m_meth))
     plt.figure(figsize=(6.0, 3.8))
 
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
-        # for service in df['service'].unique():
-        #     df_filtered = df[df['service'] == service]
-        #     s_mean, s_std = calculate_mean_std(df_filtered)
-        #     lower_bound = np.array(s_mean) - np.array(s_std)
-        #     upper_bound = np.array(s_mean) + np.array(s_std)
-        #     plt.plot(x, s_mean, label=service+ f", {agent}", color=color_dict[service], linewidth=2,
-        #              linestyle=line_style_dict[agent])
-        #     plt.fill_between(x, lower_bound, upper_bound, color=color_dict[service], alpha=0.2)
 
         paired_df = df.groupby(df.index // 2).agg({
             'rep': 'first',
@@ -81,15 +81,12 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
-        s_mean, s_std = calculate_mean_std(paired_df)  # if agent != "AIF" else (paired_df['slo_f'].values, 0)
+        s_mean, s_std = calculate_mean_and_std(paired_df)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, label=f"{agent}", color=COLOR_DICT_AGENT[agent], linewidth=2,
                  linestyle=LINE_STYLE_DICT[agent])
         plt.fill_between(x, lower_bound, upper_bound, color=COLOR_DICT_AGENT[agent], alpha=0.1)
-
-    # plt.plot(x, m_base, label='Baseline VPA', color='black', linewidth=1.5)
-    # plt.vlines([0.1, 10, 20, 30, 40], ymin=1.25, ymax=2.75, label='Adjust Thresholds', linestyles="--")
 
     plt.xlim(1.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))
     plt.xticks([1, 10, 20, 30, 40, 50])
@@ -102,19 +99,8 @@ def visualize_data(agent_types: list[str], output_file: str):
     plt.show()
 
 
-def get_changed_lines(slof_file):
-    df = pd.read_csv(slof_file)
-
-    df['cores_change'] = df['cores'].ne(df['cores'].shift())
-    df['quality_change'] = df['quality'].ne(df['quality'].shift())
-
-    # Combine the change indicators
-    df['change'] = df['cores_change'] | df['quality_change']
-    return df['change']
-
-
-def calculate_mean_std(df: DataFrame):
-    del df['timestamp']
+def calculate_mean_and_std(df: DataFrame):
+    # del df['timestamp']
 
     slo_fs_index = []
 
@@ -131,52 +117,21 @@ def calculate_mean_std(df: DataFrame):
 
 
 if __name__ == '__main__':
-    # train_joint_q_networks(nn_folder=ROOT + "/networks")
 
-    # Load the trained DQNs
-    dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
-    dqn_qr.load("Q_QR_joint.pt")
-    dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
-    dqn_cv.load("Q_CV_joint.pt")
+    # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    agent_fact_dqn = lambda repetition: DQNAgent(
-        prom_server=PROMETHEUS,
-        services_monitored=[qr_local, cv_local],
-        dqn_for_services=[dqn_qr, dqn_cv],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition
-    )
-    #
-    # agent_fact_rrm = lambda repetition: RRM_Global_Agent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition,
-    #     max_explore=MAX_EXPLORE
-    # )
-    # agent_fact_daci = lambda repetition: DAIAgent(
-    #     prom_server=ps,
-    #     services_monitored=[qr_local, cv_local],
-    #     evaluation_cycle=EVALUATION_FREQUENCY,
-    #     log_experience=repetition,
-    #     iterations=20,
-    #     depth=5,
-    #     eh = False
-    # )
+    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
 
-    agent_fact_aif = lambda repetition: AIF_agent(
-        prom_server=PROMETHEUS,
-        services_monitored=[qr_local, cv_local],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition,
-        alpha=8,
-        motivate_cores=True,
-        action_selection="stochastic"
-    )
-    # eval_scaling_agent(agent_fact_ASK, "ASK")
-    # eval_scaling_agent(agent_fact_dqn, "DQN")
-    # eval_scaling_agent(agent_fact_aif, "AIF")
-    # eval_scaling_agent(agent_fact_daci, "DACI")
-    # import_pymdp_logs(filenames=pymdp_files)
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=max_exploration,
+            gaussian_noise=noise
+        )
 
-    visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
+        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+
+    # visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")

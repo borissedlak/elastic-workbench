@@ -116,6 +116,7 @@ def write_metrics_to_csv(lines, pure_string=False):
             file.writelines(lines)
         else:
             csv_writer.writerows(lines)
+        # print("Wrote lines")
 
 
 def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
