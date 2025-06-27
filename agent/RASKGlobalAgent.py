@@ -11,7 +11,7 @@ from agent import agent_utils
 from agent.PolicySolverRASK import solve_global
 from agent.RASK import RASK
 from agent.ScalingAgent import ScalingAgent
-from agent.agent_utils import export_experience_buffer
+from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType, ESType
 
 logging.basicConfig(level=logging.INFO)
@@ -104,15 +104,17 @@ def apply_gaussian_noise_to_asses(assignment, noise=0.08):
 
 
 if __name__ == '__main__':
-    # remote_vm = "128.131.172.182"
-    ps = f"http://{SERVICE_HOST}:9090"
+    ps = f"http://{SERVICE_HOST}:9090" # "128.131.172.182"
     qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
     cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
-    agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=20, log_experience="#")
 
-    agent_utils.stream_remote_metrics_file()
+    agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0, log_experience="#")
+
+    if SERVICE_HOST != 'localhost':
+        delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
+        agent_utils.stream_remote_metrics_file(SERVICE_HOST, EVALUATION_CYCLE_DELAY)
 
     agent.reset_services_states()
     agent.start()

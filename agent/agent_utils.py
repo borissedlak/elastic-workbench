@@ -196,26 +196,6 @@ def export_experience_buffer(rows: tuple, file_name):
         writer.writerows(data)
 
 
-# def log_service_state(state: FullStateDQN, prefix):
-#     # Define the directory and file name
-#     directory = "./"
-#     file_name = "agent_experience.csv"
-#     file_path = os.path.join(directory, file_name)
-#
-#     file_exists = os.path.isfile(file_path)
-#
-#     # Open the file in append mode
-#     with open(file_path, mode='a', newline='') as file:
-#         writer = csv.writer(file)
-#
-#         if not file_exists or os.path.getsize(file_path) == 0:
-#             writer.writerow(
-#                 ["rep", "timestamp", "quality", "quality_thresh", "throughput", "throughput_thresh", "cores",
-#                  "free_cores"])
-#
-#         writer.writerow([prefix, datetime.datetime.now()] + list(state))
-
-
 def wait_for_remaining_interval(interval_length: int, start_time: float):
     interval_ms = 1000 * interval_length
     time_elapsed = int((time.perf_counter() - start_time) * 1000)
@@ -232,20 +212,24 @@ def delete_file_if_exists(file_path="./agent_experience.csv"):
     else:
         print(f"{file_path} does not exist.")
 
-def stream_remote_metrics_file():
+
+def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
     def stream_csv():
         csv_buffer = []
+        last_flush_time = time.monotonic()
 
-        cmd = ["ssh", "root@128.131.172.182", "tail", "-f", "~/development/elastic-workbench/share/metrics/metrics.csv"]
+        cmd = ["ssh", f"root@{remote_server}", "tail", "-f", "~/development/elastic-workbench/share/metrics/metrics.csv"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
 
         for line in process.stdout:
             csv_buffer.append(line)
 
-            # TODO: Write every time the evaluation cycle is reached
-            # if len(csv_buffer) > 15: # Writes 3 *
-            utils.write_metrics_to_csv(csv_buffer, pure_string=True)
-            csv_buffer=[]
+            # Check if the cycle delay has passed
+            if time.monotonic() - last_flush_time >= cycle_delay_seconds:
+                if csv_buffer:  # Only write if there’s something to write
+                    utils.write_metrics_to_csv(csv_buffer, pure_string=True)
+                    csv_buffer = []
+                last_flush_time = time.monotonic()  # Reset timer
 
     # Start the background thread
     thread = threading.Thread(target=stream_csv, daemon=True)

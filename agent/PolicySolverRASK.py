@@ -1,29 +1,9 @@
-import random
-
 from scipy.optimize import minimize
 
 from agent.LGBN import calculate_missing_vars
 from agent.RASK import RASK
 from agent.SLORegistry import calculate_SLO_F_clients
 from agent.es_registry import ServiceType
-
-
-def solve(service_type, parameter_bounds, clients_SLOs, total_rps, rask: RASK):
-    bounds = [(inner["min"], inner["max"]) for param in parameter_bounds.values() for inner in
-              param.values()]  # Shape [(360, 1080), (1, 8)]
-    x0 = [random.randint(mini, maxi) for mini, maxi in bounds]  # Initial guess; Shape [520, 4]
-
-    result = minimize(local_obj, x0, method='L-BFGS-B', bounds=bounds,
-                      args=(service_type, parameter_bounds, clients_SLOs, total_rps, rask))
-
-    if not result.success:
-        raise RuntimeWarning("Policy solver encountered an error: " + result.message)
-
-    es_param_ass = {}
-    for index, var_name in enumerate([inner for param in parameter_bounds.values() for inner in param.keys()]):
-        es_param_ass[var_name] = int(result.x[index])  # Might need higher precision for resources later
-
-    return es_param_ass
 
 
 def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, total_rps, rask: RASK):
@@ -75,7 +55,6 @@ def constraint_total_cores(x, services, max_total_cores):
 
 
 def solve_global(service_contexts_m, max_cores, rask: RASK):
-
     constraints = [{'type': 'ineq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
