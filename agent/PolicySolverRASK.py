@@ -1,6 +1,6 @@
 from scipy.optimize import minimize
 
-from agent.LGBN import calculate_missing_vars
+from agent.RASK import calculate_missing_vars
 from agent.RASK import RASK
 from agent.SLORegistry import calculate_SLO_F_clients
 from agent.es_registry import ServiceType

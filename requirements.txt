@@ -3,16 +3,20 @@ requests~=2.32.3
 Flask~=3.0.3
 pyzbar~=0.1.9
 numpy~=1.26.4
-opencv-python~=4.10.0.82
+#opencv-python~=4.10.0.82
 prometheus-client~=0.16.0 # Provide to Server
 docker~=7.1.0
 prometheus-api-client~=0.5.5 # Query from Server
 seaborn~=0.13.2
-pgmpy~=1.0.0
+#pgmpy~=1.0.0
 matplotlib~=3.9.2
 redis~=5.2.1
 
+scipy~=1.16.0
+plotly~=6.2.0
+scikit-learn~=1.7.0
+
 # Required for IWAI
-gymnasium~=1.1.1
-torch~=2.7.0
-git+https://github.com/ran-weii/pymdp.git@feat/logging
+#gymnasium~=1.1.1
+#torch~=2.7.0
+#git+https://github.com/ran-weii/pymdp.git@feat/logging

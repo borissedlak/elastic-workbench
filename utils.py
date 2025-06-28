@@ -4,7 +4,6 @@ import os
 import time
 from typing import Dict
 
-import cv2
 import numpy as np
 
 logger = logging.getLogger('multiscale')
@@ -18,21 +17,6 @@ def get_env_param(var, default) -> str:
         env = default
         logger.warning(f"Didn't find ENV value for {var}, default to: {default}")
     return env
-
-
-def highlight_qr_codes(frame, decoded_objects):
-    for obj in decoded_objects:
-        points = obj.polygon
-        if len(points) == 4:
-            pts = np.array(points, dtype=np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            cv2.polylines(frame, [pts], True, (0, 255, 0), 4)
-
-        qr_data = obj.data.decode('utf-8')
-        qr_type = obj.type
-        text = f"{qr_type}: {qr_data}"
-        cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    return frame
 
 
 def print_execution_time(func):

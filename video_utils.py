@@ -268,3 +268,17 @@ def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.5
     picked_box_probs[:, 2] *= width
     picked_box_probs[:, 3] *= height
     return picked_box_probs[:, :4].astype(np.int32), np.array(picked_labels), picked_box_probs[:, 4]
+
+def highlight_qr_codes(frame, decoded_objects):
+    for obj in decoded_objects:
+        points = obj.polygon
+        if len(points) == 4:
+            pts = np.array(points, dtype=np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            cv2.polylines(frame, [pts], True, (0, 255, 0), 4)
+
+        qr_data = obj.data.decode('utf-8')
+        qr_type = obj.type
+        text = f"{qr_type}: {qr_data}"
+        cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    return frame

@@ -22,14 +22,14 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_REPETITIONS = 10
 EXPERIMENT_DURATION = 350
 
 ##### Scaling Agent Hyperparameters #######
 
 MAX_EXPLORE = [0, 25, 50]
 GAUSSIAN_NOISE = [0, 0.05, 0.10]
-EVALUATION_FREQUENCY = 5
+EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
 
@@ -118,8 +118,7 @@ def calculate_mean_and_std(df: DataFrame):
 
 if __name__ == '__main__':
 
-    # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
 
