@@ -7,6 +7,7 @@ import cv2
 from pyzbar.pyzbar import decode
 
 import utils
+import video_utils
 from agent.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
@@ -42,7 +43,7 @@ class QrDetector(IoTService):
         decoded_objects = decode(gray)
 
         # Resulting image and total processing time --> unused
-        combined_img = utils.highlight_qr_codes(frame, decoded_objects)
+        combined_img = video_utils.highlight_qr_codes(frame, decoded_objects)
         duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
 
