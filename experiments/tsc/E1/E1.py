@@ -27,8 +27,8 @@ EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [10] # [0, 10, 20]
-GAUSSIAN_NOISE = [0.10] # [0, 0.05, 0.10]
+MAX_EXPLORE = [0, 10, 20] # [0, 10, 20]
+GAUSSIAN_NOISE = [0, 0.10] # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
@@ -52,8 +52,7 @@ def eval_scaling_agent(agent_factory, agent_suffix):
 
         agent = agent_factory(rep)
         agent.reset_services_states()
-        time.sleep(
-            EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
+        time.sleep(EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
@@ -165,18 +164,18 @@ if __name__ == '__main__':
     #     # Save or print result
     #     df.to_csv(file, index=False)
 
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
-    #
-    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=max_exploration,
-    #         gaussian_noise=noise
-    #     )
-    #
-    #     eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+
+    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=max_exploration,
+            gaussian_noise=noise
+        )
+
+        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
     visualize_data(files, ROOT + "/plots/slo_f.png")
