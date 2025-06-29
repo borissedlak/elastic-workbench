@@ -22,13 +22,13 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 3
-EXPERIMENT_DURATION = 600 # seconds, so 600 = 10min
+EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [0, 10, 20]
-GAUSSIAN_NOISE = [0, 0.05, 0.10]
+MAX_EXPLORE = [10] # [0, 10, 20]
+GAUSSIAN_NOISE = [0.10] # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
@@ -52,7 +52,8 @@ def eval_scaling_agent(agent_factory, agent_suffix):
 
         agent = agent_factory(rep)
         agent.reset_services_states()
-        time.sleep(EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
+        time.sleep(
+            EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting the services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
@@ -65,17 +66,31 @@ COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-an
 COLOR_DICT_AGENT = {"DQN": "red", "ASK": "green", "AIF": "blue", "DACI": "grey"}
 LINE_STYLE_DICT = {"DQN": "--", "ASK": "-", "AIF": "-.", "DACI": ':'}
 
+FILE_COLOR_MAP = {
+    'agent_experience_RASK_0_0.1.csv': '#ff9999',   # light red
+    'agent_experience_RASK_0_0.05.csv': '#ff6666',  # medium red
+    'agent_experience_RASK_0_0.csv': '#cc0000',     # dark red
+
+    'agent_experience_RASK_10_0.1.csv': '#99ff99',  # light green
+    'agent_experience_RASK_10_0.05.csv': '#66cc66', # medium green
+    'agent_experience_RASK_10_0.csv': '#009900',    # dark green
+
+    'agent_experience_RASK_20_0.1.csv': '#9999ff',  # light blue
+    'agent_experience_RASK_20_0.05.csv': '#6666cc', # medium blue
+    'agent_experience_RASK_20_0.csv': '#0000cc',    # dark blue
+}
+
 
 def visualize_data(agent_types: list[str], output_file: str):
-
-    df_layout = pd.read_csv(ROOT + f"/agent_experience_{agent_types[0]}.csv")
-    x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2) + 1)
-    plt.figure(figsize=(6.0, 3.8))
+    df_layout = pd.read_csv(ROOT + f"/{agent_types[0]}")
+    x = np.arange(1, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 3) + 1)
+    # plt.figure(figsize=(6.0, 3.8))
+    plt.figure(figsize=(18.0, 5.0))
 
     for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/agent_experience_{agent}.csv")
+        df = pd.read_csv(ROOT + f"/{agent}")
 
-        paired_df = df.groupby(df.index // 2).agg({
+        paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
             'timestamp': 'first',
             'slo_f': 'mean'
@@ -84,13 +99,13 @@ def visualize_data(agent_types: list[str], output_file: str):
         s_mean, s_std = calculate_mean_and_std(paired_df)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
-        plt.plot(x, s_mean, label=f"{agent}", color=COLOR_DICT_AGENT[agent], linewidth=2,
-                 linestyle=LINE_STYLE_DICT[agent])
-        plt.fill_between(x, lower_bound, upper_bound, color=COLOR_DICT_AGENT[agent], alpha=0.1)
+        plt.plot(x, s_mean, color=FILE_COLOR_MAP[agent],  label=f"{agent}", linewidth=2)
+                 # linestyle=LINE_STYLE_DICT[agent])
+        plt.fill_between(x, lower_bound, upper_bound, color=FILE_COLOR_MAP[agent], alpha=0.1)
 
-    plt.xlim(1.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 2))
-    plt.xticks([1, 10, 20, 30, 40, 50])
-    plt.ylim(0.0, 1.0)
+    plt.xlim(1.0, len(df_layout.index) / (EXPERIMENT_REPETITIONS * 3))
+    # plt.xticks([1, 10, 20, 30, 40, 50])
+    plt.ylim(0.5, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
@@ -117,20 +132,51 @@ def calculate_mean_and_std(df: DataFrame):
 
 
 if __name__ == '__main__':
+    files = [
+        'agent_experience_RASK_0_0.1.csv',
+             # 'agent_experience_RASK_0_0.05.csv',
+             'agent_experience_RASK_0_0.csv',
+             'agent_experience_RASK_10_0.1.csv',
+             # 'agent_experience_RASK_10_0.05.csv',
+             'agent_experience_RASK_10_0.csv',
+             'agent_experience_RASK_20_0.1.csv',
+             # 'agent_experience_RASK_20_0.05.csv',
+             'agent_experience_RASK_20_0.csv'
+    ]
+    import pandas as pd
+    # for file in ['agent_experience_RASK_0_0.05.csv',
+    #              'agent_experience_RASK_0_0.csv',
+    #              'agent_experience_RASK_10_0.1.csv',
+    #              'agent_experience_RASK_10_0.05.csv',
+    #              'agent_experience_RASK_10_0.csv',
+    #              'agent_experience_RASK_20_0.1.csv',
+    #              'agent_experience_RASK_20_0.05.csv',
+    #              'agent_experience_RASK_20_0.csv']:
+    #     # Load the file
+    #     df = pd.read_csv(file)
+    #
+    #     # Identify blocks where 'rep' value changes
+    #     # Then assign a new group number to each block
+    #     block_changes = (df['rep'] != df['rep'].shift()).cumsum()
+    #
+    #     # Replace with continuous counter
+    #     df['rep'] = block_changes
+    #
+    #     # Save or print result
+    #     df.to_csv(file, index=False)
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    #
+    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=max_exploration,
+    #         gaussian_noise=noise
+    #     )
+    #
+    #     eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=max_exploration,
-            gaussian_noise=noise
-        )
-
-        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
-
-    # visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
+    visualize_data(files, ROOT + "/plots/slo_f.png")
