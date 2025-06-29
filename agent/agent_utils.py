@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import random
+import shutil
 import subprocess
 import threading
 import time
@@ -211,6 +212,12 @@ def delete_file_if_exists(file_path="./agent_experience.csv"):
         print(f"{file_path} deleted.")
     else:
         print(f"{file_path} does not exist.")
+
+def cache_file_if_exists(source: str, target: str):
+    # source_path = os.path.join(source)
+    # target_path = os.path.join(target)
+    shutil.copy(source, target)
+    logger.info(f"Cached metrics file to {target}")
 
 
 def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):

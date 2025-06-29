@@ -22,7 +22,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_REPETITIONS = 8
 EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
@@ -59,6 +59,9 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         agent.terminate_gracefully()
         export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
+
+        agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
+                                         ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
