@@ -75,7 +75,7 @@ def solve_global(service_contexts_m, max_cores, rask: RASK, last_assignments):
         x0 = [v for d in last_assignments for v in d.values()] # Use last solution as starting point
 
     result = minimize(composite_obj_global, x0, method='SLSQP', constraints=constraints,
-                      bounds=flat_bounds, args=(service_contexts_m, rask), options={'maxiter': 100})
+                      bounds=flat_bounds, args=(service_contexts_m, rask), options={'maxiter': 150})
 
     # print(result)
     if not result.success:
