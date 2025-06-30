@@ -32,7 +32,7 @@ class PatternRPS:
         rps_abs, rps_norm = line.split(",")[0], line.split(",")[1]
         return int(rps_abs), float(rps_norm)
 
-    def reconfigure_rps(self, req_pattern: RequestPattern, service_id: ServiceID, seconds_passed: int, max_rps: int):
+    def reconfigure_rps(self, req_pattern: RequestPattern, service_id: ServiceID, max_rps: int, seconds_passed: int = None):
         _, rps_norm = self.get_current_rps(req_pattern, seconds_passed)
         rps = round(rps_norm * max_rps)
         self.http_client.update_service_rps(service_id, rps)
