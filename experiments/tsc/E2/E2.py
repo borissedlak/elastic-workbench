@@ -57,28 +57,28 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
     pattern_rps = PatternRPS()
     print(f"Starting experiment for {agent_suffix} agent")
 
-    for rep in range(1, EXPERIMENT_REPETITIONS + 1):
+    experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
 
-        runtime_sec = 0
-        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-        ingest_metrics_data(ROOT + "/../E1/run_4/metrics_20_0.csv")
+    runtime_sec = 0
+    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+    ingest_metrics_data(ROOT + "/../E1/run_4/metrics_20_0.csv")
 
-        agent = agent_factory(rep)
-        agent.reset_services_states()
-        time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
+    agent = agent_factory("0")
+    agent.reset_services_states()
+    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
 
-        agent.start()
+    agent.start()
 
-        while runtime_sec < EXPERIMENT_DURATION:
-            pattern_rps.reconfigure_rps(request_pattern, qr_local, runtime_sec, MAX_RPS_QR)
-            pattern_rps.reconfigure_rps(request_pattern, cv_local, runtime_sec, MAX_RPS_CV)
-            time.sleep(EVALUATION_FREQUENCY)
+    while runtime_sec < EXPERIMENT_DURATION:
+        pattern_rps.reconfigure_rps(request_pattern, qr_local, runtime_sec, MAX_RPS_QR)
+        pattern_rps.reconfigure_rps(request_pattern, cv_local, runtime_sec, MAX_RPS_CV)
+        time.sleep(EVALUATION_FREQUENCY)
 
-            runtime_sec += EVALUATION_FREQUENCY
-            export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
+        runtime_sec += EVALUATION_FREQUENCY
+        export_experience_buffer(agent.experience_buffer, experience_file)
 
-        agent.terminate_gracefully()
-        print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
+    agent.terminate_gracefully()
+    print(f"{agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
 
 
 def calculate_mean_and_std(df: DataFrame):
@@ -116,6 +116,6 @@ if __name__ == '__main__':
             gaussian_noise=GAUSSIAN_NOISE
         )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{MAX_EXPLORE}_{GAUSSIAN_NOISE}", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
 
     # visualize_data(files, ROOT + "/plots/slo_f.png")
