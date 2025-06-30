@@ -1,4 +1,3 @@
-import itertools
 import logging
 import os
 import time
@@ -9,14 +8,14 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 
 import utils
-from agent import agent_utils
-from agent.RASKGlobalAgent import RASK_Global_Agent
+from HttpClient import HttpClient
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
+http_client = HttpClient()
 logging.getLogger('multiscale').setLevel(logging.INFO)
 nn_folder = "./networks"
 
@@ -41,11 +40,17 @@ qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detecto
 cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
 pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
+QR_RPS = 120
+CV_RPS = 12
+PC_RPS = 55
+
 
 def eval_scaling_agent(agent_factory, agent_suffix):
-    # delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
-
     print(f"Starting experiment for {agent_suffix} agent")
+
+    http_client.update_service_rps(qr_local, QR_RPS)
+    http_client.update_service_rps(cv_local, CV_RPS)
+    http_client.update_service_rps(pc_local, PC_RPS)
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
         # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")

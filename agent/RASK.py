@@ -225,4 +225,5 @@ if __name__ == "__main__":
         logger.addHandler(ch)
 
     rask = RASK(show_figures=True)
-    rask.init_models()
+    df = pd.read_csv("../tests/static/metrics_20_0.csv")
+    rask.init_models(df)

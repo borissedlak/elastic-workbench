@@ -6,6 +6,8 @@ from agent.SLORegistry import calculate_SLO_F_clients
 from agent.es_registry import ServiceType
 
 
+# TODO: I have the critical problem that the RASK hits a plateau at the static maximum; the training must
+#  not hit a cap but it should be able to process more than the SLO demands
 def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, total_rps, rask: RASK):
     independent_variables = {list(param.keys())[0]: val for param, val in zip(parameter_bounds.values(), x)}
 
@@ -18,7 +20,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
     # ---------- Part 2: Client SLOs ----------
 
     slo_f = calculate_SLO_F_clients(service_type, full_state, slos_all_clients)
-    # print(f"Calculated SLO-F for {full_state}: {slo_f}")
+    print(f"Calculated SLO-F for {full_state}: {slo_f}")
     return -slo_f  # because we want to maximize
 
 
@@ -55,7 +57,7 @@ def constraint_total_cores(x, services, max_total_cores):
 
 
 def solve_global(service_contexts_m, max_cores, rask: RASK, last_assignments):
-    constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
+    constraints = [{'type': 'ineq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
     x0 = []
