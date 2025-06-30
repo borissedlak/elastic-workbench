@@ -51,7 +51,6 @@ def ingest_metrics_data(source):
     print(f"Ingested metrics from {source}")
 
 def eval_scaling_agent(agent_factory, agent_suffix):
-    # delete_file_if_exists(ROOT + f"/agent_experience_{agent_type}.csv")
 
     pattern_rps = PatternRPS()
     print(f"Starting experiment for {agent_suffix} agent")
@@ -102,7 +101,7 @@ def calculate_mean_and_std(df: DataFrame):
 
 if __name__ == '__main__':
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     agent_fact_rask = lambda repetition: RASK_Global_Agent(
         prom_server=PROMETHEUS,
