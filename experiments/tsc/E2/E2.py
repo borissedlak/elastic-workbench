@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import pandas as pd
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -40,8 +41,8 @@ qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detecto
 cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
 pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
-MAX_RPS_QR = 120
-MAX_RPS_CV = 20
+MAX_RPS_QR = 100
+MAX_RPS_CV = 10
 
 
 def ingest_metrics_data(source):
@@ -76,6 +77,7 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
         runtime_sec += EVALUATION_FREQUENCY
         export_experience_buffer(agent.experience_buffer, experience_file)
+        agent.experience_buffer = []
 
     agent.terminate_gracefully()
     print(f"{agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
@@ -97,25 +99,45 @@ def calculate_mean_and_std(df: DataFrame):
 
     return mean_over_time, std_over_time
 
+def visualize_data(agent_types: list[str], output_file: str):
+    x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
+    # plt.figure(figsize=(6.0, 3.8))
+    plt.figure(figsize=(18.0, 4.8))
 
-# TODO: 1) Read metrics csv to establish model knowledge -- Check
-#       2) Continuously update RPS -- Check
-#       3) Change SLO to 'completion_rate' --
+    for agent in agent_types:
+        df = pd.read_csv(ROOT + f"/{agent}")
+
+        paired_df = df.groupby(df.index // 3).agg({
+            'rep': 'first',
+            'timestamp': 'first',
+            'slo_f': 'mean'
+        })
+        plt.plot(x, paired_df['slo_f'], label=f"{agent}", linewidth=2)
+
+    plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
+    # plt.xticks([1, 10, 20, 30, 40, 50, 60])
+    plt.ylim(0.5, 0.95)
+
+    plt.xlabel('Scaling Agent Iterations')
+    plt.ylabel('Global SLO Fulfillment')
+    plt.legend()
+    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
+    plt.show()
 
 if __name__ == '__main__':
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=MAX_EXPLORE,
-            gaussian_noise=GAUSSIAN_NOISE
-        )
+    # for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=MAX_EXPLORE,
+    #         gaussian_noise=GAUSSIAN_NOISE
+    #     )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
+    #     eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
 
-    # visualize_data(files, ROOT + "/plots/slo_f.png")
+    visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
