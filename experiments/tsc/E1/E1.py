@@ -22,7 +22,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 8
+EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
@@ -48,11 +48,13 @@ def eval_scaling_agent(agent_factory, agent_suffix):
     print(f"Starting experiment for {agent_suffix} agent")
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
-        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
         agent = agent_factory(rep)
         agent.reset_services_states()
-        time.sleep(EVALUATION_FREQUENCY * 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
+        time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
+        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
 
         agent.start()
         time.sleep(EXPERIMENT_DURATION)
@@ -60,8 +62,8 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
-        agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
-                                         ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
+        # agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
+        #                                  ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
@@ -145,29 +147,8 @@ if __name__ == '__main__':
              # 'agent_experience_RASK_20_0.05.csv',
              'agent_experience_RASK_20_0.csv'
     ]
-    import pandas as pd
-    # for file in ['agent_experience_RASK_0_0.05.csv',
-    #              'agent_experience_RASK_0_0.csv',
-    #              'agent_experience_RASK_10_0.1.csv',
-    #              'agent_experience_RASK_10_0.05.csv',
-    #              'agent_experience_RASK_10_0.csv',
-    #              'agent_experience_RASK_20_0.1.csv',
-    #              'agent_experience_RASK_20_0.05.csv',
-    #              'agent_experience_RASK_20_0.csv']:
-    #     # Load the file
-    #     df = pd.read_csv(file)
-    #
-    #     # Identify blocks where 'rep' value changes
-    #     # Then assign a new group number to each block
-    #     block_changes = (df['rep'] != df['rep'].shift()).cumsum()
-    #
-    #     # Replace with continuous counter
-    #     df['rep'] = block_changes
-    #
-    #     # Save or print result
-    #     df.to_csv(file, index=False)
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
@@ -181,4 +162,4 @@ if __name__ == '__main__':
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-    visualize_data(files, ROOT + "/plots/slo_f.png")
+    # visualize_data(files, ROOT + "/plots/slo_f.png")

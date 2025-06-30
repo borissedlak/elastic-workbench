@@ -164,14 +164,14 @@ class ScalingAgent(Thread, ABC):
 
         for service_m in self.services_monitored:  # For all monitored services
             if service_m.service_type == ServiceType.QR:
-                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': MAX_CORES / 3}, respect_cooldown=False)
                 self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': QR_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.CV:
-                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': MAX_CORES / 3}, respect_cooldown=False)
                 self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': CV_DATA_QUALITY_DEFAULT}, respect_cooldown=False)
                 self.execute_ES(service_m, ESType.MODEL_SCALE, {'model_size': CV_M_SIZE_DEFAULT}, respect_cooldown=False)
             elif service_m.service_type == ServiceType.PC:
-                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 2}, respect_cooldown=False)
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': MAX_CORES / 3}, respect_cooldown=False)
                 self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': PC_DISTANCE_DEFAULT}, respect_cooldown=False)
             else:
                 raise RuntimeError("Not supported yet")
