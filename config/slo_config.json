@@ -11,9 +11,9 @@
           "weight": 0.5
         },
         {
-          "var": "throughput",
+          "var": "completion_rate",
           "larger": true,
-          "target": 80,
+          "target": 1,
           "weight": 1.0
         }
       ]
@@ -35,9 +35,9 @@
           "weight": 0.2
         },
         {
-          "var": "throughput",
+          "var": "completion_rate",
           "larger": true,
-          "target": 5,
+          "target": 1,
           "weight": 1.0
         }
       ]
@@ -53,9 +53,9 @@
           "weight": 0.5
         },
         {
-          "var": "throughput",
+          "var": "completion_rate",
           "larger": true,
-          "target": 55,
+          "target": 1,
           "weight": 1.0
         }
       ]

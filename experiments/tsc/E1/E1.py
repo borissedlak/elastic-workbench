@@ -27,8 +27,8 @@ EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [0, 10, 20] # [0, 10, 20]
-GAUSSIAN_NOISE = [0, 0.10] # [0, 0.05, 0.10]
+MAX_EXPLORE = [20] # [0, 10, 20]
+GAUSSIAN_NOISE = [0, 0.5] # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
