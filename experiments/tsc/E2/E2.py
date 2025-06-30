@@ -1,10 +1,8 @@
-import itertools
 import logging
 import os
 import time
 
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
@@ -13,7 +11,7 @@ from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType
-from experiments.tsc.E2.pattern.pattern_rps import PatternRPS, RequestPattern
+from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -42,6 +40,10 @@ qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detecto
 cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
 pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
+MAX_RPS_QR = 120
+MAX_RPS_CV = 20
+
+
 def ingest_metrics_data(source):
     with open(source, "r") as f:
         lines = f.readlines()
@@ -50,8 +52,8 @@ def ingest_metrics_data(source):
     utils.write_metrics_to_csv(data_lines, pure_string=True)
     print(f"Ingested metrics from {source}")
 
-def eval_scaling_agent(agent_factory, agent_suffix):
 
+def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPattern):
     pattern_rps = PatternRPS()
     print(f"Starting experiment for {agent_suffix} agent")
 
@@ -59,7 +61,7 @@ def eval_scaling_agent(agent_factory, agent_suffix):
 
         runtime_sec = 0
         delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-        ingest_metrics_data(ROOT + "/../E1/run_3/metrics_20_0.csv")
+        ingest_metrics_data(ROOT + "/../E1/run_4/metrics_20_0.csv")
 
         agent = agent_factory(rep)
         agent.reset_services_states()
@@ -68,15 +70,15 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         agent.start()
 
         while runtime_sec < EXPERIMENT_DURATION:
-            # TODO: Adjust qr and cv differently
-            pattern_rps.reconfigure_rps(RequestPattern.BURSTY, qr_local, runtime_sec)
+            pattern_rps.reconfigure_rps(request_pattern, qr_local, runtime_sec, MAX_RPS_QR)
+            pattern_rps.reconfigure_rps(request_pattern, cv_local, runtime_sec, MAX_RPS_CV)
             time.sleep(EVALUATION_FREQUENCY)
+
             runtime_sec += EVALUATION_FREQUENCY
+            export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
 
         agent.terminate_gracefully()
-        export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
-
 
 
 def calculate_mean_and_std(df: DataFrame):
@@ -95,23 +97,25 @@ def calculate_mean_and_std(df: DataFrame):
 
     return mean_over_time, std_over_time
 
+
 # TODO: 1) Read metrics csv to establish model knowledge -- Check
-#       2) Continuously update RPS --
+#       2) Continuously update RPS -- Check
 #       3) Change SLO to 'completion_rate' --
 
 if __name__ == '__main__':
 
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    agent_fact_rask = lambda repetition: RASK_Global_Agent(
-        prom_server=PROMETHEUS,
-        services_monitored=[qr_local, cv_local, pc_local],
-        evaluation_cycle=EVALUATION_FREQUENCY,
-        log_experience=repetition,
-        max_explore=MAX_EXPLORE,
-        gaussian_noise=GAUSSIAN_NOISE
-    )
+    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=MAX_EXPLORE,
+            gaussian_noise=GAUSSIAN_NOISE
+        )
 
-    eval_scaling_agent(agent_fact_rask, f"RASK_{MAX_EXPLORE}_{GAUSSIAN_NOISE}")
+        eval_scaling_agent(agent_fact_rask, f"RASK_{MAX_EXPLORE}_{GAUSSIAN_NOISE}", request_pattern)
 
-    visualize_data(files, ROOT + "/plots/slo_f.png")
+    # visualize_data(files, ROOT + "/plots/slo_f.png")
