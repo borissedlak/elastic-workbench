@@ -27,8 +27,8 @@ EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [0, 10, 20] # [0, 10, 20]
-GAUSSIAN_NOISE = [0, 0.10] # [0, 0.05, 0.10]
+MAX_EXPLORE = [20] # [0, 10, 20]
+GAUSSIAN_NOISE = [0, 0.5] # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
@@ -60,8 +60,8 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
-        agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
-                                         ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
+        # agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
+        #                                  ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
 
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
