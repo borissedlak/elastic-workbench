@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from scipy import stats
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
@@ -160,24 +161,48 @@ def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: 
 
 
 def draw_3d_plot(df, var, deps, poly, model):
-    if len(deps) != 2:
+    if len(deps) > 3:
         logger.info(f"3D plot not supported for more than 3 dimensions!")
         return
 
-    x1_range = np.linspace(df[deps[0]].min(), df[deps[0]].max(), 50)
-    x2_range = np.linspace(df[deps[1]].min(), df[deps[1]].max(), 50)
-    x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+    # If exactly 3 dependencies, reduce to 2 using PCA
+    if len(deps) == 3:
+        # Standardize data (optional but often helps)
+        data = df[deps].values
+        pca = PCA(n_components=2)
+        pca_coords = pca.fit_transform(data)
 
-    X_grid = np.column_stack((x1_grid.ravel(), x2_grid.ravel()))
-    X_grid_df = pd.DataFrame(X_grid, columns=deps)
+        # Add PCA components as synthetic "features" for plotting
+        df = df.copy()
+        df['PC1'] = pca_coords[:, 0]
+        df['PC2'] = pca_coords[:, 1]
+        x_axis = 'PC1'
+        y_axis = 'PC2'
 
-    # Use transformer if needed
+        # Build mesh grid in PCA space
+        x1_range = np.linspace(df['PC1'].min(), df['PC1'].max(), 50)
+        x2_range = np.linspace(df['PC2'].min(), df['PC2'].max(), 50)
+        x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+        grid_points = np.column_stack((x1_grid.ravel(), x2_grid.ravel()))
+
+        # Inverse-transform grid back to original feature space
+        orig_features = pca.inverse_transform(grid_points)
+        X_grid_df = pd.DataFrame(orig_features, columns=deps)
+
+    else:
+        x_axis, y_axis = deps[0], deps[1]
+        x1_range = np.linspace(df[x_axis].min(), df[x_axis].max(), 50)
+        x2_range = np.linspace(df[y_axis].min(), df[y_axis].max(), 50)
+        x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+        X_grid_df = pd.DataFrame(np.column_stack((x1_grid.ravel(), x2_grid.ravel())), columns=[x_axis, y_axis])
+
+    # Transform with polynomial if provided
     if poly is not None:
         X_transformed = poly.transform(X_grid_df)
     else:
         X_transformed = X_grid_df.values
 
-    # Predict on grid
+    # Predict output
     try:
         y_pred_grid = model.predict(X_transformed).reshape(x1_grid.shape)
     except Exception as e:
@@ -185,8 +210,8 @@ def draw_3d_plot(df, var, deps, poly, model):
         return
 
     # Actual data
-    x_actual = df[deps[0]]
-    y_actual = df[deps[1]]
+    x_actual = df[x_axis]
+    y_actual = df[y_axis]
     z_actual = df[var]
 
     # Plot
@@ -205,8 +230,8 @@ def draw_3d_plot(df, var, deps, poly, model):
     fig.update_layout(
         title=f'3D Surface for {var}',
         scene=dict(
-            xaxis_title=deps[0],
-            yaxis_title=deps[1],
+            xaxis_title=x_axis,
+            yaxis_title=y_axis,
             zaxis_title=var
         ),
         width=900,

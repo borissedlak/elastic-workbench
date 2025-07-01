@@ -98,8 +98,9 @@ def visualize_data(agent_types: list[str], output_file: str):
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
+    # TODO: Show quantiles instead? Maybe this is more stable
     for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/run_4/{agent}")
+        df = pd.read_csv(ROOT + f"/{agent}")
 
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
@@ -108,8 +109,8 @@ def visualize_data(agent_types: list[str], output_file: str):
         })
 
         s_mean, s_std = calculate_mean_and_std(paired_df)
-        lower_bound = np.array(s_mean) - np.array(s_std / 2.5)
-        upper_bound = np.array(s_mean) + np.array(s_std / 2.5)
+        lower_bound = np.array(s_mean) - np.array(s_std)
+        upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, color=FILE_COLOR_MAP[agent], label=f"{agent}", linewidth=2)
         # linestyle=LINE_STYLE_DICT[agent])
         plt.fill_between(x, lower_bound, upper_bound, color=FILE_COLOR_MAP[agent], alpha=0.1)
@@ -150,23 +151,23 @@ if __name__ == '__main__':
         'agent_experience_RASK_10_0.1.csv',
         # 'agent_experience_RASK_10_0.05.csv',
         'agent_experience_RASK_10_0.csv',
-        'agent_experience_RASK_20_0.1.csv',
+        # 'agent_experience_RASK_20_0.1.csv',
         # 'agent_experience_RASK_20_0.05.csv',
-        'agent_experience_RASK_20_0.csv'
+        # 'agent_experience_RASK_20_0.csv'
     ]
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=max_exploration,
-            gaussian_noise=noise
-        )
+    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=max_exploration,
+    #         gaussian_noise=noise
+    #     )
+    #
+    #     eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
-
-    # visualize_data(files, ROOT + "/plots/slo_f_run4.png")
+    visualize_data(files, ROOT + "/plots/slo_f_run5.png")
