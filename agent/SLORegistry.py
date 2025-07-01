@@ -91,8 +91,11 @@ def calculate_slo_fulfillment(
             )  # SLO-F is 0 after 2 * t
 
         slo_f_single_slo = float(smoothstep(slo_f_single_slo) * weight)
-        if "throughput" in full_state and full_state["throughput"] <= 0.0:
-            slo_f_single_slo = 0  # Heavily penalize if no output
+        if "throughput" in full_state:
+            if full_state["throughput"] <= 1.0:
+                slo_f_single_slo = 0  # Heavily penalize if no output
+        else:
+            raise RuntimeError("Where is the throughput!!??")
 
         slo_trace.append((var, slo_f_single_slo))
 

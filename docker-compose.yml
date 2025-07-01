@@ -36,7 +36,7 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4 # TODO: Since the services are within the container, I could also make redis dynamic and put 'redis' here
-      - DEFAULT_CLIENTS=C_1:50
+      - DEFAULT_CLIENTS=C_1:30
       - TZ=Europe/Vienna
     volumes:
       - ./share:/src/share # Linux

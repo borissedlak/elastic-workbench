@@ -99,7 +99,7 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 def train_rask_models(df, show_result=False):
     service_models = {}
 
-    for degree in [3]:  # range(1,10):
+    for degree in [2]:  # range(1,10):
         for service_type_s in df['service_type'].unique():
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}
@@ -148,8 +148,9 @@ def get_dependent_variable_mapping(service_type: ServiceType):
 def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: int):
     full_state = partial_state.copy()
 
+    # This is ONLY invoked by RASK, who does not have the 'throughout' in the state; the Agent has it already
     if "max_tp" in partial_state.keys():
-        full_state['throughput'] = partial_state['max_tp']
+        full_state['throughput'] = partial_state['max_tp'] if partial_state['max_tp'] > 0 else 0
 
     if "completion_rate" not in partial_state.keys():
         completion_r_expected = full_state['throughput'] / total_rps if total_rps > 0 else 1.0
@@ -227,5 +228,5 @@ if __name__ == "__main__":
         logger.addHandler(ch)
 
     rask = RASK(show_figures=True)
-    df = pd.read_csv("../tests/static/metrics_20_0.csv")
+    df = pd.read_csv("../share/metrics/metrics.csv")
     rask.init_models(df)

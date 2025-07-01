@@ -233,7 +233,6 @@ def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
 
             # Check if the cycle delay has passed
             if time.monotonic() - last_flush_time >= cycle_delay_seconds:
-                # print("Time reached", csv_buffer)
 
                 if csv_buffer:  # Only write if there’s something to write
                     utils.write_metrics_to_csv(csv_buffer, pure_string=True)

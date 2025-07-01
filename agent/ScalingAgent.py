@@ -94,7 +94,9 @@ class ScalingAgent(Thread, ABC):
 
         if parameter_ass == {} or metric_values == {}:
             logger.warning(f"No metrics found for service {service_id}")  # Remove if never happens
-            return self.last_known_state[service_id.service_type.value]
+            return self.last_known_state[service_id.service_type.value] if service_id.service_type.value in self.last_known_state else {}
+
+
 
         missing_vars = calculate_missing_vars(service_id.service_type, metric_values, utils.to_absolut_rps(assigned_clients))
         full_state = metric_values | parameter_ass | missing_vars

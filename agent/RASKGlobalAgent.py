@@ -7,6 +7,7 @@ from typing import Dict, Tuple, Any
 import numpy as np
 
 import utils
+from HttpClient import HttpClient
 from agent import agent_utils
 from agent.PolicySolverRASK import solve_global
 from agent.RASK import RASK
@@ -18,8 +19,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
-EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
+EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
 SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
+REMOTE_VM = utils.get_env_param('REMOTE_VM', "128.131.172.182")
 
 ROOT = os.path.dirname(__file__)
 
@@ -86,16 +88,21 @@ class RASK_Global_Agent(ScalingAgent):
         shuffled_services = services_m.copy()
         random.shuffle(shuffled_services)
 
-        for service_m in shuffled_services:
+        assigned_cores = 0
 
+        for index, service_m in enumerate(shuffled_services):
             all_ES_active = self.es_registry.get_active_ES_for_service(service_m.service_type)
+            max_available_cores = MAX_CORES - assigned_cores + (index - 2)  # 6 Cores for first service
+
             for es in all_ES_active:
-                max_available_cores = self.get_max_available_cores(service_m)
                 param_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type,
                                                                                    max_available_cores).get(es, {})
 
                 random_params = agent_utils.get_random_parameter_assignments(param_bounds)
                 self.execute_ES(service_m, es, random_params, respect_cooldown=False)
+
+                if es == ESType.RESOURCE_SCALE:
+                    assigned_cores += random_params['cores']
 
 
 def apply_gaussian_noise_to_asses(assignment, noise):
@@ -115,13 +122,16 @@ if __name__ == '__main__':
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=10, log_experience="#")
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
+                              max_explore=10, gaussian_noise=0.05)
 
-    # if SERVICE_HOST != 'localhost':
-    #     delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
-    #     agent_utils.stream_remote_metrics_file(SERVICE_HOST, EVALUATION_CYCLE_DELAY)
+    # agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)
 
-
+    http_client = HttpClient()
+    http_client.update_service_rps(qr_local, 80)
+    http_client.update_service_rps(cv_local, 5)
+    http_client.update_service_rps(pc_local, 55)
 
     agent.reset_services_states()
     agent.start()
