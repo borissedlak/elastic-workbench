@@ -127,9 +127,9 @@ if __name__ == '__main__':
 
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
                               evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
-                              max_explore=0, gaussian_noise=0.05)
+                              max_explore=10, gaussian_noise=0.05)
 
-    # agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
+    agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
     agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)
 
     http_client = HttpClient()

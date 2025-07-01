@@ -15,7 +15,7 @@ from iot_services.VideoReader import VideoReader
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-QR_DATA_QUALITY_DEFAULT = 700
+QR_DATA_QUALITY_DEFAULT = 552
 QR_PARALLELISM_DEFAULT = 1
 
 

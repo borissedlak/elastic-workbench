@@ -17,9 +17,9 @@ from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval, FullStateDQN
 from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 
-CV_DATA_QUALITY_DEFAULT = 256
+CV_DATA_QUALITY_DEFAULT = 224
 CV_M_SIZE_DEFAULT = 3
-QR_DATA_QUALITY_DEFAULT = 700
+QR_DATA_QUALITY_DEFAULT = 552
 PC_DISTANCE_DEFAULT= 30
 
 logger = logging.getLogger("multiscale")

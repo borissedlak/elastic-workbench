@@ -153,7 +153,7 @@ def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: 
 
     # This is ONLY invoked by RASK, who does not have the 'throughout' in the state; the Agent has it already
     if "max_tp" in partial_state.keys():
-        full_state['throughput'] = partial_state['max_tp'] if partial_state['max_tp'] > 0 else 0
+        full_state['throughput'] = partial_state['max_tp'] if partial_state['max_tp'] > 1 else 0
 
     if "completion_rate" not in partial_state.keys():
         completion_r_expected = full_state['throughput'] / total_rps if total_rps > 0 else 1.0

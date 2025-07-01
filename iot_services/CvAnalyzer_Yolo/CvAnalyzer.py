@@ -14,7 +14,7 @@ from video_utils import yolo_model_sizes, draw_detections
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-CV_DATA_QUALITY_DEFAULT = 256
+CV_DATA_QUALITY_DEFAULT = 224
 CV_M_SIZE_DEFAULT = 3
 
 

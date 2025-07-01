@@ -29,8 +29,8 @@ EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [0, 10, 20]  # [0, 10, 20]
-GAUSSIAN_NOISE = [0, 0.10]  # [0, 0.05, 0.10]
+MAX_EXPLORE = [0]  # [0, 10, 20]
+GAUSSIAN_NOISE = [0.10]  # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
@@ -56,12 +56,11 @@ def eval_scaling_agent(agent_factory, agent_suffix):
     http_client.update_service_rps(pc_local, PC_RPS)
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
-        # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
 
         agent = agent_factory(rep)
         agent.reset_services_states()
         time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
-        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
         time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
 
         agent.start()
@@ -176,7 +175,7 @@ if __name__ == '__main__':
         'agent_experience_RASK_20_0.csv'
     ]
 
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
