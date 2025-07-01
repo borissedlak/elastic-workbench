@@ -11,7 +11,7 @@ from agent import agent_utils
 from agent.PolicySolverRASK import solve_global
 from agent.RASK import RASK
 from agent.ScalingAgent import ScalingAgent
-from agent.agent_utils import export_experience_buffer, delete_file_if_exists
+from agent.agent_utils import export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType, ESType
 
 logging.basicConfig(level=logging.INFO)
@@ -115,11 +115,13 @@ if __name__ == '__main__':
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=0, log_experience="#")
+                              evaluation_cycle=EVALUATION_CYCLE_DELAY, max_explore=10, log_experience="#")
 
     # if SERVICE_HOST != 'localhost':
     #     delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
     #     agent_utils.stream_remote_metrics_file(SERVICE_HOST, EVALUATION_CYCLE_DELAY)
+
+
 
     agent.reset_services_states()
     agent.start()

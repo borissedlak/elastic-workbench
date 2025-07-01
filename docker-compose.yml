@@ -12,7 +12,7 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-qr-detector-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_1:80
+      - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - ./share:/src/share # Linux
@@ -36,7 +36,7 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
       - REDIS_INSTANCE=172.20.0.4 # TODO: Since the services are within the container, I could also make redis dynamic and put 'redis' here
-      - DEFAULT_CLIENTS=C_1:5
+      - DEFAULT_CLIENTS=C_1:50
       - TZ=Europe/Vienna
     volumes:
       - ./share:/src/share # Linux
@@ -60,7 +60,7 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-pc-visualizer-1
       - REDIS_INSTANCE=172.20.0.4
-      - DEFAULT_CLIENTS=C_1:55
+      - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - ./share:/src/share # Linux

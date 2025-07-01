@@ -8,9 +8,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy import stats
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import PolynomialFeatures
 
 import utils
 from agent import agent_utils
@@ -63,17 +62,21 @@ def preprocess_data(df):
     z_scores = np.abs(stats.zscore(df_filtered['throughput']))
     df_filtered = df_filtered[z_scores < 2.0]  # 3 is a common threshold for extreme outliers
     df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
-
     # Convert and expand service config dict
     df_filtered['s_config'] = df_filtered['s_config'].apply(lambda x: ast.literal_eval(x))
     metadata_expanded = pd.json_normalize(df_filtered['s_config'])
 
     combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
     combined_df_expanded['model_size'] = combined_df_expanded['model_size'].fillna(-1)
+    df = combined_df_expanded
 
-    logger.info(f"Training data contains service types {df_filtered['service_type'].unique()}")
+    df['max_tp'] = np.where(df['avg_p_latency'] != -1, (1000 / df['avg_p_latency']), 0)
+    df['max_tp'] = np.where(df['service_type'] == ServiceType.QR.value,
+                            df['max_tp'] * round(df['cores']), df['max_tp'])
 
-    return combined_df_expanded
+    logger.info(f"Training data contains service types {df['service_type'].unique()}")
+
+    return df
 
 
 def collect_all_metric_files():
@@ -81,6 +84,7 @@ def collect_all_metric_files():
     metrics_contents = [metrics_local]
     combined_df = pd.concat([df for _, df in metrics_contents], ignore_index=True)
     return combined_df
+
 
 # noinspection PyPackageRequirements
 def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
@@ -95,7 +99,7 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 def train_rask_models(df, show_result=False):
     service_models = {}
 
-    for degree in [2]: #range(1,10):
+    for degree in [3]:  # range(1,10):
         for service_type_s in df['service_type'].unique():
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}
@@ -130,26 +134,25 @@ def train_rask_models(df, show_result=False):
     return service_models
 
 
-
 def get_dependent_variable_mapping(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return {'throughput': sorted(['cores', 'data_quality'])}
+        return {'max_tp': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:
-        return {'throughput': sorted(['cores', 'model_size', 'data_quality'])}
+        return {'max_tp': sorted(['cores', 'model_size', 'data_quality'])}
     elif service_type == ServiceType.PC:
-        return {'throughput': sorted(['cores', 'data_quality'])}
+        return {'max_tp': sorted(['cores', 'data_quality'])}
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 
 
-def calculate_missing_vars(partial_state, total_rps: int):
+def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: int):
     full_state = partial_state.copy()
 
-    if "throughput" not in partial_state.keys():
-        raise RuntimeWarning("Should be included!!")
+    if "max_tp" in partial_state.keys():
+        full_state['throughput'] = partial_state['max_tp']
 
     if "completion_rate" not in partial_state.keys():
-        completion_r_expected = partial_state['throughput'] / total_rps if total_rps > 0 else 1.0
+        completion_r_expected = full_state['throughput'] / total_rps if total_rps > 0 else 1.0
         full_state = full_state | {"completion_rate": completion_r_expected}
 
     return full_state
@@ -210,7 +213,6 @@ def draw_3d_plot(df, var, deps, poly, model):
     )
 
     fig.show()
-
 
 
 if __name__ == "__main__":
