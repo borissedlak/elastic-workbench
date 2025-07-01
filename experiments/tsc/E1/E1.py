@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -9,6 +10,8 @@ from pandas import DataFrame
 
 import utils
 from HttpClient import HttpClient
+from agent import agent_utils
+from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType
 
@@ -40,8 +43,8 @@ qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detecto
 cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
 pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
-QR_RPS = 120
-CV_RPS = 12
+QR_RPS = 80
+CV_RPS = 5
 PC_RPS = 55
 
 
@@ -154,16 +157,16 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=max_exploration,
-    #         gaussian_noise=noise
-    #     )
-    #
-    #     eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=max_exploration,
+            gaussian_noise=noise
+        )
 
-    visualize_data(files, ROOT + "/plots/slo_f_run4.png")
+        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+
+    # visualize_data(files, ROOT + "/plots/slo_f_run4.png")
