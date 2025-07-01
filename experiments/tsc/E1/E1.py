@@ -70,9 +70,6 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
-        # agent_utils.cache_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv",
-        #                                  ROOT + f"/metrics_{agent_suffix}_{rep}.csv")
-
 
 COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
 COLOR_DICT_AGENT = {"DQN": "red", "ASK": "green", "AIF": "blue", "DACI": "grey"}
@@ -92,15 +89,34 @@ FILE_COLOR_MAP = {
     'agent_experience_RASK_20_0.csv': '#0000cc',  # dark blue
 }
 
+def calculate_percentiles(df: DataFrame):
+    slo_fs_index = []
+
+    # Group slo_f values per run (rep)
+    for j in range(1, EXPERIMENT_REPETITIONS + 1):
+        slo_f_run = df[df['rep'] == j]['slo_f']
+        slo_fs_index.append(slo_f_run.to_list())
+
+    array = np.array(slo_fs_index)
+
+    # Calculate 2.5, 50, and 97.5 percentiles across repetitions for each time step
+    q2_5 = np.percentile(array, 2.5, axis=0)
+    q50 = np.percentile(array, 50, axis=0)  # median
+    q97_5 = np.percentile(array, 97.5, axis=0)
+
+    return q50, q2_5, q97_5
+
+def moving_average(data, window_size=3):
+    return np.convolve(data, np.ones(window_size)/window_size, mode='same')
+
 
 def visualize_data(agent_types: list[str], output_file: str):
     x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
-    # TODO: Show quantiles instead? Maybe this is more stable
     for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/{agent}")
+        df = pd.read_csv(ROOT + f"/run_5/{agent}")
 
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
@@ -108,12 +124,16 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
+        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=3)
         s_mean, s_std = calculate_mean_and_std(paired_df)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, color=FILE_COLOR_MAP[agent], label=f"{agent}", linewidth=2)
         # linestyle=LINE_STYLE_DICT[agent])
         plt.fill_between(x, lower_bound, upper_bound, color=FILE_COLOR_MAP[agent], alpha=0.1)
+        # median, lower, upper = calculate_percentiles(paired_df)
+        # plt.plot(x, upper, color=FILE_COLOR_MAP[agent], label=f"{agent}", linewidth=2)
+        # plt.fill_between(x, lower, upper, color=FILE_COLOR_MAP[agent], alpha=0.1)
 
     plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY))
     plt.xticks([1, 10, 20, 30, 40, 50, 60])
@@ -151,9 +171,9 @@ if __name__ == '__main__':
         'agent_experience_RASK_10_0.1.csv',
         # 'agent_experience_RASK_10_0.05.csv',
         'agent_experience_RASK_10_0.csv',
-        # 'agent_experience_RASK_20_0.1.csv',
+        'agent_experience_RASK_20_0.1.csv',
         # 'agent_experience_RASK_20_0.05.csv',
-        # 'agent_experience_RASK_20_0.csv'
+        'agent_experience_RASK_20_0.csv'
     ]
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)

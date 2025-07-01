@@ -57,23 +57,25 @@ class RASK:
         return y_pred_single[0]
 
 
-def preprocess_data(df):
-    df_filtered = agent_utils.filter_rows_during_cooldown(df.copy())
-    # df_filtered = df_filtered[df_filtered['avg_p_latency'] >= 0]  # Filter out rows where we had no processing
-    z_scores = np.abs(stats.zscore(df_filtered['throughput']))
-    df_filtered = df_filtered[z_scores < 2.0]  # 3 is a common threshold for extreme outliers
-    df_filtered.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
-    # Convert and expand service config dict
-    df_filtered['s_config'] = df_filtered['s_config'].apply(lambda x: ast.literal_eval(x))
-    metadata_expanded = pd.json_normalize(df_filtered['s_config'])
+def preprocess_data(df_input):
+    df = df_input.copy()
 
-    combined_df_expanded = pd.concat([df_filtered.drop(columns=['s_config']), metadata_expanded], axis=1)
-    combined_df_expanded['model_size'] = combined_df_expanded['model_size'].fillna(-1)
-    df = combined_df_expanded
+    # Convert and expand service config dict
+    df['s_config'] = df['s_config'].apply(lambda x: ast.literal_eval(x))
+    metadata_expanded = pd.json_normalize(df['s_config'])
+
+    df = pd.concat([df.drop(columns=['s_config']), metadata_expanded], axis=1)
+    df['model_size'] = df['model_size'].fillna(-1)
+    # df = combined_df_expanded
 
     df['max_tp'] = np.where(df['avg_p_latency'] != -1, (1000 / df['avg_p_latency']), 0)
     df['max_tp'] = np.where(df['service_type'] == ServiceType.QR.value,
                             df['max_tp'] * round(df['cores']), df['max_tp'])
+
+    df = agent_utils.filter_rows_during_cooldown(df.copy())
+    z_scores = np.abs(stats.zscore(df['max_tp']))
+    df = df[z_scores < 2.5]  # 3 is a common threshold for extreme outliers
+    df.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
 
     logger.info(f"Training data contains service types {df['service_type'].unique()}")
 
@@ -100,7 +102,7 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 def train_rask_models(df, show_result=False):
     service_models = {}
 
-    for degree in [1]:  # range(1,10):
+    for degree in [2]:  # range(1,10):
         for service_type_s in df['service_type'].unique():
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}
