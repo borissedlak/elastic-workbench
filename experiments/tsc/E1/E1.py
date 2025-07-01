@@ -45,7 +45,7 @@ pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visuali
 
 QR_RPS = 80
 CV_RPS = 5
-PC_RPS = 55
+PC_RPS = 50
 
 
 def eval_scaling_agent(agent_factory, agent_suffix):

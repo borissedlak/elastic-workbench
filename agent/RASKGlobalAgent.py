@@ -11,7 +11,8 @@ from HttpClient import HttpClient
 from agent import agent_utils
 from agent.PolicySolverRASK import solve_global
 from agent.RASK import RASK
-from agent.ScalingAgent import ScalingAgent
+from agent.ScalingAgent import ScalingAgent, QR_DATA_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT, CV_DATA_QUALITY_DEFAULT, \
+    PC_DISTANCE_DEFAULT
 from agent.agent_utils import export_experience_buffer
 from agent.es_registry import ServiceID, ServiceType, ESType
 
@@ -39,7 +40,10 @@ class RASK_Global_Agent(ScalingAgent):
         self.explore_count = 0
         self.max_explore = max_explore
         self.gaussian_noise = gaussian_noise
-        self.last_assignments = None
+        # TODO: Remove this hard coding again at a later stage
+        self.last_assignments = [{'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+                                 {'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+                                 {'data_quality': PC_DISTANCE_DEFAULT, 'cores': MAX_CORES / 3}]
 
         self.rask = RASK(show_figures=False)
 
