@@ -99,7 +99,7 @@ def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
 def train_rask_models(df, show_result=False):
     service_models = {}
 
-    for degree in [2]:  # range(1,10):
+    for degree in [1]:  # range(1,10):
         for service_type_s in df['service_type'].unique():
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}

@@ -57,7 +57,7 @@ def constraint_total_cores(x, services, max_total_cores):
 
 
 def solve_global(service_contexts_m, max_cores, rask: RASK, last_assignments):
-    constraints = [{'type': 'ineq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
+    constraints = [{'type': 'eq', 'fun': constraint_total_cores, 'args': (service_contexts_m, max_cores)}]
     flat_bounds = []
 
     x0 = []
