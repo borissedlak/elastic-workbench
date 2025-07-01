@@ -178,16 +178,16 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=max_exploration,
-    #         gaussian_noise=noise
-    #     )
-    #
-    #     eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=max_exploration,
+            gaussian_noise=noise
+        )
+    
+        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-    visualize_data(files, ROOT + "/plots/slo_f_run5.png")
+    # visualize_data(files, ROOT + "/plots/slo_f_run5.png")

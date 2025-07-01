@@ -41,8 +41,8 @@ class RASK_Global_Agent(ScalingAgent):
         self.max_explore = max_explore
         self.gaussian_noise = gaussian_noise
         # TODO: Remove this hard coding again at a later stage
-        self.last_assignments = [{'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
-                                 {'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+        self.last_assignments = [{'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+                                 {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
                                  {'data_quality': PC_DISTANCE_DEFAULT, 'cores': MAX_CORES / 3}]
 
         self.rask = RASK(show_figures=False)
