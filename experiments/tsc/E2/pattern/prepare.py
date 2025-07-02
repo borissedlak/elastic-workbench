@@ -1,6 +1,11 @@
 import csv
 
+import numpy as np
+from matplotlib import pyplot as plt
+
 from agent import agent_utils
+
+plt.rcParams.update({'font.size': 12})
 
 for pattern in ['bursty', 'diurnal']:
 
@@ -20,3 +25,12 @@ for pattern in ['bursty', 'diurnal']:
 
             for abs, rel in values:
                 file.write(f"{abs},{rel}\n")
+
+        x = np.arange(1, 3601)
+        y = [v[1] for v in values]
+        plt.figure(figsize=(4.5, 3.2))
+        plt.plot(x, y, linewidth=2)
+        plt.ylabel("% Request Load")
+        plt.xlabel("Time in Experiment (s)")
+        plt.savefig(f"{pattern}.eps", bbox_inches='tight')
+        plt.show()

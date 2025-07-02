@@ -13,6 +13,7 @@ from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.es_registry import ServiceID, ServiceType
+from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 
 ROOT = os.path.dirname(__file__)
@@ -103,23 +104,22 @@ def calculate_mean_and_std(df: DataFrame):
     return mean_over_time, std_over_time
 
 def visualize_data(agent_types: list[str], output_file: str):
-    x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
+    x = np.arange(1, 399)
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/{agent}")
-
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
             'timestamp': 'first',
             'slo_f': 'mean'
         })
+        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
         plt.plot(x, paired_df['slo_f'], label=f"{agent}", linewidth=2)
 
-    plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
-    # plt.xticks([1, 10, 20, 30, 40, 50, 60])
-    plt.ylim(0.5, 0.95)
+    plt.xlim(1, 399)
+    # plt.ylim(0.5, 0.95)
 
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
@@ -129,18 +129,18 @@ def visualize_data(agent_types: list[str], output_file: str):
 
 if __name__ == '__main__':
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    #
+    # for request_pattern, noise in itertools.product([RequestPattern.BURSTY, RequestPattern.DIURNAL], [0, 0.05]):
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=MAX_EXPLORE,
+    #         gaussian_noise=noise
+    #     )
+    #
+    #     eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
 
-    for request_pattern, noise in itertools.product([RequestPattern.BURSTY, RequestPattern.DIURNAL], [0, 0.05]):
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=MAX_EXPLORE,
-            gaussian_noise=noise
-        )
-
-        eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
-
-    # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
+    visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
