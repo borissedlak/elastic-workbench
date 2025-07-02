@@ -29,8 +29,8 @@ EXPERIMENT_DURATION = 600  # seconds, so 600 = 10min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = [0]  # [0, 10, 20]
-GAUSSIAN_NOISE = [0.10]  # [0, 0.05, 0.10]
+MAX_EXPLORE = [0, 10, 20]  # [0, 10, 20]
+GAUSSIAN_NOISE = [0, 0.10]  # [0, 0.05, 0.10]
 EVALUATION_FREQUENCY = 10
 
 ########## Service Definitions ############
@@ -60,7 +60,7 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         agent = agent_factory(rep)
         agent.reset_services_states()
         time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
-        # delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
         time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
 
         agent.start()
@@ -115,7 +115,7 @@ def visualize_data(agent_types: list[str], output_file: str):
     plt.figure(figsize=(18.0, 4.8))
 
     for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/run_5/{agent}")
+        df = pd.read_csv(ROOT + f"/run_6/{agent}")
 
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
@@ -187,6 +187,6 @@ if __name__ == '__main__':
             gaussian_noise=noise
         )
     
-        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+        # eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-    # visualize_data(files, ROOT + "/plots/slo_f_run5.png")
+    visualize_data(files, ROOT + "/plots/slo_f_run6.png")

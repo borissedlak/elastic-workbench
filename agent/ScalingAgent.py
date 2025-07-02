@@ -19,7 +19,7 @@ from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 
 CV_DATA_QUALITY_DEFAULT = 224
 CV_M_SIZE_DEFAULT = 3
-QR_DATA_QUALITY_DEFAULT = 552
+QR_DATA_QUALITY_DEFAULT = 550
 PC_DISTANCE_DEFAULT= 30
 
 logger = logging.getLogger("multiscale")
