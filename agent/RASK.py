@@ -1,6 +1,7 @@
 import ast
 import logging
 import os
+import platform
 from typing import Dict, Any
 
 import numpy as np
@@ -73,8 +74,8 @@ def preprocess_data(df_input):
                             df['max_tp'] * round(df['cores']), df['max_tp'])
 
     df = agent_utils.filter_rows_during_cooldown(df.copy())
-    z_scores = np.abs(stats.zscore(df['max_tp']))
-    df = df[z_scores < 2.5]  # 3 is a common threshold for extreme outliers
+    # z_scores = np.abs(stats.zscore(df['max_tp'])) # Does only filter out samples that are actually well aligned
+    # df = df[z_scores < 1000]  # 3 is a common threshold for extreme outliers
     df.reset_index(drop=True, inplace=True)  # Needed because the filtered does not keep the index
 
     logger.info(f"Training data contains service types {df['service_type'].unique()}")
@@ -132,12 +133,12 @@ def train_rask_models(df, show_result=False):
 
                 service_models[ServiceType(service_type_s)] |= {var: (poly, model)}
                 if show_result:
-                    draw_3d_plot(df_service, var, deps, poly, model)
+                    draw_3d_plot(df_service, var, deps, poly, model, service_type_s)
 
     return service_models
 
 
-def get_dependent_variable_mapping(service_type: ServiceType):
+def get_dependent_variable_mapping(service_type: str):
     if service_type == ServiceType.QR:
         return {'max_tp': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:
@@ -162,7 +163,7 @@ def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: 
     return full_state
 
 
-def draw_3d_plot(df, var, deps, poly, model):
+def draw_3d_plot(df, var, deps, poly, model, service_type_s: ServiceType):
     if len(deps) > 3:
         logger.info(f"3D plot not supported for more than 3 dimensions!")
         return
@@ -240,7 +241,10 @@ def draw_3d_plot(df, var, deps, poly, model):
         height=700
     )
 
-    fig.show()
+    if platform.system() == "Windows":
+        fig.write_html(f"rask_plot_{service_type_s}.html", auto_open=True)
+    else:
+        fig.show()
 
 
 if __name__ == "__main__":
