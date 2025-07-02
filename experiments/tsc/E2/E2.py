@@ -108,7 +108,7 @@ def calculate_mean_and_std(df: DataFrame):
     return mean_over_time, std_over_time
 
 def visualize_data(agent_types: list[str], output_file: str):
-    x = np.arange(1, 399)
+    x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
@@ -122,7 +122,7 @@ def visualize_data(agent_types: list[str], output_file: str):
         paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
         plt.plot(x, paired_df['slo_f'], label=f"{agent}", linewidth=2)
 
-    plt.xlim(1, 399)
+    plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
     # plt.ylim(0.5, 0.95)
 
     plt.xlabel('Scaling Agent Iterations')
