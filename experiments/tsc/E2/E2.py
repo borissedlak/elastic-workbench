@@ -133,21 +133,7 @@ def visualize_data(agent_types: list[str], output_file: str):
 
 if __name__ == '__main__':
 
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
-    #
-    # for request_pattern, noise in itertools.product([RequestPattern.BURSTY, RequestPattern.DIURNAL], [0, 0.05]):
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=MAX_EXPLORE,
-    #         gaussian_noise=noise
-    #     )
-    #
-    #     eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
-
-    for request_pattern, noise in itertools.product([RequestPattern.BURSTY, RequestPattern.DIURNAL], [0, 0.05]):
+    for request_pattern, noise in itertools.product([RequestPattern.DIURNAL], [0, 0.05]):
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
             prom_server=PROMETHEUS,
             services_monitored=[qr_local, cv_local, pc_local],
@@ -159,4 +145,4 @@ if __name__ == '__main__':
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{noise}", request_pattern)
 
-    visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
+    # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
