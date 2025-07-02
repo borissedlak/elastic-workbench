@@ -109,8 +109,8 @@ def calculate_mean_and_std(df: DataFrame):
 
 def visualize_data(agent_types: list[str], output_file: str):
     x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
-    # plt.figure(figsize=(6.0, 3.8))
-    plt.figure(figsize=(18.0, 4.8))
+    plt.figure(figsize=(6.0, 3.8))
+    # plt.figure(figsize=(18.0, 4.8))
 
     for agent in agent_types:
         df = pd.read_csv(ROOT + f"/{agent}")
@@ -123,26 +123,27 @@ def visualize_data(agent_types: list[str], output_file: str):
         plt.plot(x, paired_df['slo_f'], label=f"{agent}", linewidth=2)
 
     plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
-    # plt.ylim(0.5, 0.95)
+    plt.ylim(0.5, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
     plt.legend()
-    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
+    plt.savefig(output_file, dpi=600, bbox_inches="tight")
     plt.show()
 
 if __name__ == '__main__':
 
-    for request_pattern, noise in itertools.product([RequestPattern.DIURNAL], [0, 0.05]):
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=MAX_EXPLORE,
-            gaussian_noise=noise
-        )
+    # for request_pattern, noise in itertools.product([RequestPattern.DIURNAL], [0, 0.05]):
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=MAX_EXPLORE,
+    #         gaussian_noise=noise
+    #     )
+    #
+    #     eval_scaling_agent(agent_fact_rask, f"RASK_{noise}", request_pattern)
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{noise}", request_pattern)
-
-    # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
+    visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/bursty_slof.eps")
+    visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/diurnal_slof.eps")
