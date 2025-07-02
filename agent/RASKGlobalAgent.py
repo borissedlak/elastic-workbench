@@ -144,7 +144,7 @@ if __name__ == '__main__':
     http_client = HttpClient()
     http_client.update_service_rps(qr_local, 80)
     http_client.update_service_rps(cv_local, 5)
-    http_client.update_service_rps(pc_local, 55)
+    http_client.update_service_rps(pc_local, 50)
 
     agent.reset_services_states()
     agent.start()
