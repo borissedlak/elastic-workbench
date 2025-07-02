@@ -1,7 +1,9 @@
 import itertools
 import logging
 import os
+import sys
 import time
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -56,7 +58,6 @@ def eval_scaling_agent(agent_factory, agent_suffix):
     http_client.update_service_rps(pc_local, PC_RPS)
 
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
-
         agent = agent_factory(rep)
         agent.reset_services_states()
         time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
@@ -88,34 +89,28 @@ FILE_COLOR_MAP = {
     'agent_experience_RASK_20_0.csv': '#0000cc',  # dark blue
 }
 
-def calculate_percentiles(df: DataFrame):
-    slo_fs_index = []
+LINE_STYLE_DICT = {
+    'agent_experience_RASK_0_0.1.csv': "--",
+    'agent_experience_RASK_0_0.csv': "--",
 
-    # Group slo_f values per run (rep)
-    for j in range(1, EXPERIMENT_REPETITIONS + 1):
-        slo_f_run = df[df['rep'] == j]['slo_f']
-        slo_fs_index.append(slo_f_run.to_list())
+    'agent_experience_RASK_10_0.1.csv': "-",
+    'agent_experience_RASK_10_0.csv': "-",
 
-    array = np.array(slo_fs_index)
-
-    # Calculate 2.5, 50, and 97.5 percentiles across repetitions for each time step
-    q2_5 = np.percentile(array, 2.5, axis=0)
-    q50 = np.percentile(array, 50, axis=0)  # median
-    q97_5 = np.percentile(array, 97.5, axis=0)
-
-    return q50, q2_5, q97_5
+    'agent_experience_RASK_20_0.1.csv': "-.",
+    'agent_experience_RASK_20_0.csv': "-.",
+}
 
 def moving_average(data, window_size=3):
-    return np.convolve(data, np.ones(window_size)/window_size, mode='same')
+    return np.convolve(data, np.ones(window_size) / window_size, mode='same')
 
 
-def visualize_data(agent_types: list[str], output_file: str):
+def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
     x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
-    for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/run_6/{agent}")
+    for file, name in rask_configs:
+        df = pd.read_csv(ROOT + f"/run_6/{file}")
 
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
@@ -123,20 +118,17 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
 
-        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=3)
+        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
         s_mean, s_std = calculate_mean_and_std(paired_df)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
-        plt.plot(x, s_mean, color=FILE_COLOR_MAP[agent], label=f"{agent}", linewidth=2)
-        # linestyle=LINE_STYLE_DICT[agent])
-        plt.fill_between(x, lower_bound, upper_bound, color=FILE_COLOR_MAP[agent], alpha=0.1)
-        # median, lower, upper = calculate_percentiles(paired_df)
-        # plt.plot(x, upper, color=FILE_COLOR_MAP[agent], label=f"{agent}", linewidth=2)
-        # plt.fill_between(x, lower, upper, color=FILE_COLOR_MAP[agent], alpha=0.1)
+        plt.plot(x, s_mean, color=FILE_COLOR_MAP[file], label=f"{name}", linewidth=2,
+                 linestyle=LINE_STYLE_DICT[file])
+        plt.fill_between(x, lower_bound, upper_bound, color=FILE_COLOR_MAP[file], alpha=0.1)
 
     plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY))
     plt.xticks([1, 10, 20, 30, 40, 50, 60])
-    plt.ylim(0.5, 0.95)
+    plt.ylim(0.5, 1.0)
 
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
@@ -164,29 +156,29 @@ def calculate_mean_and_std(df: DataFrame):
 
 if __name__ == '__main__':
     files = [
-        'agent_experience_RASK_0_0.1.csv',
-        # 'agent_experience_RASK_0_0.05.csv',
-        'agent_experience_RASK_0_0.csv',
-        'agent_experience_RASK_10_0.1.csv',
-        # 'agent_experience_RASK_10_0.05.csv',
-        'agent_experience_RASK_10_0.csv',
-        'agent_experience_RASK_20_0.1.csv',
-        # 'agent_experience_RASK_20_0.05.csv',
-        'agent_experience_RASK_20_0.csv'
+        ('agent_experience_RASK_0_0.csv', 'RASK, no exploration, no noise'),
+        ('agent_experience_RASK_0_0.1.csv', 'RASK, no exploration, 10% noise'),
+        # ('agent_experience_RASK_0_0.05.csv', 'RASK, no exploration, 5% noise'),
+        ('agent_experience_RASK_10_0.csv', 'RASK, exploration=0, no noise'),
+        ('agent_experience_RASK_10_0.1.csv', 'RASK, exploration=10, 10% noise'),
+        # ('agent_experience_RASK_10_0.05.csv', 'RASK, 10 exploration steps, 5% noise'),
+        ('agent_experience_RASK_20_0.csv', 'RASK, exploration=20, no noise'),
+        ('agent_experience_RASK_20_0.1.csv', 'RASK, exploration=20, 10% noise'),
+        # ('agent_experience_RASK_20_0.05.csv', 'RASK, 20 exploration steps, 5% noise'),
     ]
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
-            prom_server=PROMETHEUS,
-            services_monitored=[qr_local, cv_local, pc_local],
-            evaluation_cycle=EVALUATION_FREQUENCY,
-            log_experience=repetition,
-            max_explore=max_exploration,
-            gaussian_noise=noise
-        )
-    
-        eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
+    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    #         prom_server=PROMETHEUS,
+    #         services_monitored=[qr_local, cv_local, pc_local],
+    #         evaluation_cycle=EVALUATION_FREQUENCY,
+    #         log_experience=repetition,
+    #         max_explore=max_exploration,
+    #         gaussian_noise=noise
+    #     )
+    #
+    # eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
     visualize_data(files, ROOT + "/plots/slo_f_run6.png")

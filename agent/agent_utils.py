@@ -1,3 +1,4 @@
+import ast
 import csv
 import logging
 import os
@@ -97,6 +98,7 @@ class FullStateDQN(NamedTuple):
             index = np.digitize(value, bins, right=False)
             # Cap to highest valid bin index
             return min(index, len(bins) - 1)
+
         if env_type == 'qr':
             throughput_qr_bins = np.arange(0, 101, 20)
             aif_throughput = discretize_value(self.throughput, throughput_qr_bins)
@@ -213,6 +215,7 @@ def delete_file_if_exists(file_path="./agent_experience.csv"):
     else:
         print(f"{file_path} does not exist.")
 
+
 def cache_file_if_exists(source: str, target: str):
     # source_path = os.path.join(source)
     # target_path = os.path.join(target)
@@ -225,7 +228,8 @@ def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
         csv_buffer = []
         last_flush_time = time.monotonic()
 
-        cmd = ["ssh", f"root@{remote_server}", "tail", "-f", "~/development/elastic-workbench/share/metrics/metrics.csv"]
+        cmd = ["ssh", f"root@{remote_server}", "tail", "-f",
+               "~/development/elastic-workbench/share/metrics/metrics.csv"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
 
         for line in process.stdout:
@@ -244,3 +248,19 @@ def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
     # Start the background thread
     thread = threading.Thread(target=stream_csv, daemon=False)
     thread.start()
+
+
+def get_last_assignment_from_metrics(file: str):
+    # Load CSV
+    df = pd.read_csv(file)
+
+    quality_qr = ast.literal_eval(df.iloc[-3]['s_config'])['data_quality']
+    quality_cv = ast.literal_eval(df.iloc[-2]['s_config'])['data_quality']
+    model_s_cv = ast.literal_eval(df.iloc[-2]['s_config'])['model_size']
+    quality_pc = ast.literal_eval(df.iloc[-1]['s_config'])['data_quality']
+
+    assignments = [{'data_quality': quality_qr, 'cores': df.iloc[-3]['cores']},
+                   {'model_size': model_s_cv, 'data_quality': quality_cv, 'cores': df.iloc[-2]['cores']},
+                   {'data_quality': quality_pc, 'cores': df.iloc[-1]['cores']}]
+
+    return assignments

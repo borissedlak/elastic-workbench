@@ -50,7 +50,7 @@ def create_cool_key(service_id: ServiceID):
 
 
 if __name__ == '__main__':
-    redis = RedisClient("128.131.172.182")
+    redis = RedisClient("localhost")
 
     cv_local = ServiceID("128.131.172.182", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
     qr_local = ServiceID("128.131.172.182", ServiceType.QR, "elastic-workbench-qr-detector-1")

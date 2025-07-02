@@ -18,7 +18,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
     # ---------- Part 2: Client SLOs ----------
 
     slo_f = calculate_SLO_F_clients(service_type, full_state, slos_all_clients)
-    print(f"Calculated SLO-F for {full_state}: {slo_f}")
+    # print(f"Calculated SLO-F for {full_state}: {slo_f}")
     return -slo_f  # because we want to maximize
 
 

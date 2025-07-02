@@ -42,7 +42,8 @@ class RASK_Global_Agent(ScalingAgent):
         self.gaussian_noise = gaussian_noise
         # TODO: Remove this hard coding again at a later stage
         self.last_assignments = [{'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
-                                 {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+                                 {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT,
+                                  'cores': MAX_CORES / 3},
                                  {'data_quality': PC_DISTANCE_DEFAULT, 'cores': MAX_CORES / 3}]
 
         self.rask = RASK(show_figures=False)
@@ -69,6 +70,12 @@ class RASK_Global_Agent(ScalingAgent):
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
+        # TODO: Fix this ....
+        if assigned_clients == {}:
+            logging.warning("No clients found, but why?")
+            time.sleep(0.01)
+            return self.prepare_service_context(service_m)
+
         service_state = self.resolve_service_state(service_m, assigned_clients)
         es_parameter_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type)
         all_client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(service_m.service_type, assigned_clients)
@@ -81,7 +88,6 @@ class RASK_Global_Agent(ScalingAgent):
 
     # @utils.print_execution_time
     def call_all_ES_deterministic(self, services_m: list[ServiceID], assignments):
-        # TODO: Ideally, this needs a mechanisms that avoids oscillating or changing the instance if it stays the same
         for i, service_m in enumerate(services_m):  # For all monitored services
             all_es = self.es_registry.get_active_ES_for_service(service_m.service_type)
             for target_ES in all_es:
@@ -107,6 +113,9 @@ class RASK_Global_Agent(ScalingAgent):
 
                 if es == ESType.RESOURCE_SCALE:
                     assigned_cores += random_params['cores']
+
+    def set_last_assignments(self, assignments):
+        self.last_assignments = assignments
 
 
 def apply_gaussian_noise_to_asses(assignment, noise):

@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -62,22 +63,24 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
     runtime_sec = 0
     delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-    ingest_metrics_data(ROOT + "/../E1/run_4/metrics_20_0.csv")
+    ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")
 
     agent = agent_factory("0")
-    agent.reset_services_states()
-    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services (i.e., calling ES)
+    last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
+    agent.set_last_assignments(last_assignments)
 
+    agent.reset_services_states()
+    time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
     agent.start()
 
     while runtime_sec < EXPERIMENT_DURATION:
-        pattern_rps.reconfigure_rps(request_pattern, qr_local, runtime_sec, MAX_RPS_QR)
-        pattern_rps.reconfigure_rps(request_pattern, cv_local, runtime_sec, MAX_RPS_CV)
+        pattern_rps.reconfigure_rps(request_pattern, qr_local, MAX_RPS_QR, runtime_sec)
+        pattern_rps.reconfigure_rps(request_pattern, cv_local, MAX_RPS_CV, runtime_sec)
         time.sleep(EVALUATION_FREQUENCY)
 
         runtime_sec += EVALUATION_FREQUENCY
         export_experience_buffer(agent.experience_buffer, experience_file)
-        agent.experience_buffer = []
+        agent.experience_buffer.clear()
 
     agent.terminate_gracefully()
     print(f"{agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
@@ -126,18 +129,18 @@ def visualize_data(agent_types: list[str], output_file: str):
 
 if __name__ == '__main__':
 
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    # for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=MAX_EXPLORE,
-    #         gaussian_noise=GAUSSIAN_NOISE
-    #     )
+    for request_pattern, noise in itertools.product([RequestPattern.BURSTY, RequestPattern.DIURNAL], [0, 0.05]):
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=MAX_EXPLORE,
+            gaussian_noise=noise
+        )
 
-    #     eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
 
-    visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
+    # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
