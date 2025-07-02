@@ -8,6 +8,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
+from HttpClient import HttpClient
+from experiments.tsc.E1.E1 import PC_RPS
 import utils
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
@@ -18,6 +20,7 @@ from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
+http_client = HttpClient()
 logging.getLogger('multiscale').setLevel(logging.INFO)
 nn_folder = "./networks"
 
@@ -58,6 +61,7 @@ def ingest_metrics_data(source):
 def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPattern):
     pattern_rps = PatternRPS()
     print(f"Starting experiment for {agent_suffix} agent")
+    http_client.update_service_rps(pc_local, PC_RPS)
 
     experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
 
@@ -141,6 +145,6 @@ if __name__ == '__main__':
             gaussian_noise=noise
         )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK_{noise}", request_pattern)
 
     # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
