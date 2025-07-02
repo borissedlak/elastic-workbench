@@ -1,20 +1,17 @@
 import datetime
 import logging
-import subprocess
-import threading
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
 from typing import Dict, List
 
 import utils
-from DockerClient import DockerClient
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
 from agent.RASK import calculate_missing_vars
 from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
-from agent.agent_utils import wait_for_remaining_interval, FullStateDQN
+from agent.agent_utils import wait_for_remaining_interval
 from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 
 CV_DATA_QUALITY_DEFAULT = 224
@@ -70,7 +67,7 @@ class ScalingAgent(Thread, ABC):
 
         self.services_monitored: list[ServiceID] = services_monitored
         self.prom_client = PrometheusClient(prom_server)
-        self.docker_client = DockerClient()
+        # self.docker_client = DockerClient()
         self.http_client = HttpClient()
         self.reddis_client = RedisClient(SERVICE_HOST)
         self.slo_registry = SLO_Registry(slo_registry_path)
@@ -142,24 +139,24 @@ class ScalingAgent(Thread, ABC):
         """
         pass
 
-    def get_free_cores(self) -> int:
-        cores_ass = self.get_core_assignment(self.services_monitored)
-        free_cores = MAX_CORES - sum(cores_ass.values())
-        return free_cores
+    # def get_free_cores(self) -> int:
+    #     cores_ass = self.get_core_assignment(self.services_monitored)
+    #     free_cores = MAX_CORES - sum(cores_ass.values())
+    #     return free_cores
 
-    def get_max_available_cores(self, service: ServiceID) -> int:
-        cores_ass = self.get_core_assignment(self.services_monitored)
-        free_cores = MAX_CORES - sum(cores_ass.values())
-        max_available_c = free_cores + cores_ass[service.container_id]
-        return max_available_c
+    # def get_max_available_cores(self, service: ServiceID) -> int:
+    #     cores_ass = self.get_core_assignment(self.services_monitored)
+    #     free_cores = MAX_CORES - sum(cores_ass.values())
+    #     max_available_c = free_cores + cores_ass[service.container_id]
+    #     return max_available_c
 
-    def get_core_assignment(self, service_list: list[ServiceID]) -> Dict[str, int]:
-        cores_per_service = {}
-
-        for service_id in service_list:
-            s_cores = self.docker_client.get_container_cores(service_id.container_id)
-            cores_per_service[service_id.container_id] = s_cores
-        return cores_per_service
+    # def get_core_assignment(self, service_list: list[ServiceID]) -> Dict[str, int]:
+    #     cores_per_service = {}
+    #
+    #     for service_id in service_list:
+    #         s_cores = self.docker_client.get_container_cores(service_id.container_id)
+    #         cores_per_service[service_id.container_id] = s_cores
+    #     return cores_per_service
 
     # Between the experiments, we need to reset the processing environment to a default state
     def reset_services_states(self):
