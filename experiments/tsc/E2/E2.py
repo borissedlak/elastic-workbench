@@ -153,5 +153,5 @@ if __name__ == '__main__':
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
 
-    # visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.png")
-    # visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.png")
+    visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
