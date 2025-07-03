@@ -90,7 +90,7 @@ def collect_all_metric_files():
 
 
 # noinspection PyPackageRequirements
-def get_local_metric_file(path=ROOT + "/../share/metrics/metrics.csv"):
+def get_local_metric_file(path=ROOT + "/../../share/metrics/metrics.csv"):
     try:
         df = pd.read_csv(path)
         return "local", df
@@ -112,13 +112,13 @@ def train_rask_models(df, show_result=False):
                 Y = df_service[var]  # dependent variable
                 X = df_service[deps]  # independent variables
 
-                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+                # X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
                 poly = PolynomialFeatures(degree=degree, include_bias=False)
-                X_poly_train = poly.fit_transform(X_train)
-                X_poly_test = poly.transform(X_test)
+                X_poly_train = poly.fit_transform(X)
+                # X_poly_test = poly.transform(X_test)
 
                 model = LinearRegression()
-                model.fit(X_poly_train, Y_train)
+                model.fit(X_poly_train, Y)
 
                 # MSE on test data
                 # y_test_pred = model.predict(X_poly_test)
@@ -137,7 +137,7 @@ def train_rask_models(df, show_result=False):
     return service_models
 
 
-def get_dependent_variable_mapping(service_type: str):
+def get_dependent_variable_mapping(service_type: ServiceType):
     if service_type == ServiceType.QR:
         return {'max_tp': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:

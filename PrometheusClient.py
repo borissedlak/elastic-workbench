@@ -50,6 +50,11 @@ class PrometheusClient:
         else:
             return float('nan')  # or raise an exception if you prefer
 
+    def get_assigned_cores(self):
+        metric_data = self.client.custom_query(query=f'sum(cores)')
+        overall_cores = float(metric_data[0]['value'][1])
+        return overall_cores
+
 
 if __name__ == "__main__":
     client = PrometheusClient("http://localhost:9090")
@@ -59,5 +64,5 @@ if __name__ == "__main__":
 
     for i in range(1, 100000):
         # print("Metric assignments:", client.get_metrics(["data_quality", "cores", "model_size"], service_id=cv_local))
-        print(client.get_container_cpu_utilization(cv_local))
+        print(client.get_assigned_cores())
         time.sleep(0.25)
