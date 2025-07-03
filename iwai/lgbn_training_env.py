@@ -5,9 +5,9 @@ import gymnasium
 import pandas as pd
 
 import utils
-from agent.es_registry import ServiceType, ESRegistry
-from agent.LGBN import LGBN
-from agent.SLORegistry import (
+from agent.components.es_registry import ServiceType, ESRegistry
+from agent.components.LGBN import LGBN
+from agent.components.SLORegistry import (
     calculate_slo_fulfillment,
     to_normalized_slo_f,
     SLO_Registry,

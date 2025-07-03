@@ -11,7 +11,7 @@ from prometheus_client import start_http_server, Gauge
 
 import utils
 from RedisClient import RedisClient
-from agent.es_registry import ESType, ESRegistry, ServiceID, ServiceType
+from agent.components.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 
 logger = logging.getLogger("multiscale")
 
@@ -54,7 +54,7 @@ class IoTService(ABC):
         # This is only executed once after the batch is processed
         self.prom_throughput.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                     metric_id="throughput").set(processed_item_counter)
-        avg_p_latency_v = int(np.mean(processed_item_durations)) if processed_item_counter > 0 else -1
+        avg_p_latency_v = max(1, round(np.mean(processed_item_durations))) if processed_item_counter > 0 else -1
         self.prom_avg_p_latency.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                        metric_id="avg_p_latency").set(avg_p_latency_v)
         self.prom_cores.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,

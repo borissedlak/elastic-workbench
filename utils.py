@@ -9,6 +9,7 @@ import numpy as np
 logger = logging.getLogger('multiscale')
 ROOT = os.path.dirname(__file__)
 
+
 def get_env_param(var, default) -> str:
     env = os.environ.get(var)
     if env:
@@ -94,7 +95,7 @@ def write_metrics_to_csv(lines, pure_string=False):
 
         if not file_exists or os.path.getsize(file_path) == 0:
             csv_writer.writerow(["timestamp", "service_type", "container_id", "avg_p_latency", "s_config", "cores",
-                             "rps", "throughput", "cooldown"])
+                                 "rps", "throughput", "cooldown"])
 
         if pure_string:
             file.writelines(lines)
@@ -109,3 +110,20 @@ def to_absolut_rps(client_arrivals: Dict[str, int]) -> int:
 
 def cores_to_threads(cores_reserved):
     return max(1, round(cores_reserved))
+
+
+class SlidingWindow:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.values = []
+
+    def add_value(self, value):
+        self.values.append(value)
+        # Keep only the last window_size elements
+        if len(self.values) > self.window_size:
+            self.values.pop(0)
+
+    def get_average(self):
+        if not self.values:
+            return None
+        return round(sum(self.values) / len(self.values), 3)

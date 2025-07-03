@@ -8,7 +8,7 @@ from pyzbar.pyzbar import decode
 
 import utils
 import video_utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
 

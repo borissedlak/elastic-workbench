@@ -6,7 +6,7 @@ from typing import Tuple
 import utils
 from HttpClient import HttpClient
 from RedisClient import RedisClient
-from agent.es_registry import ServiceID
+from agent.components.es_registry import ServiceID
 
 ROOT = os.path.dirname(__file__)
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")

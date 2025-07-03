@@ -1,7 +1,5 @@
-import itertools
 import logging
 import os
-import sys
 import time
 from typing import Tuple
 
@@ -12,10 +10,8 @@ from pandas import DataFrame
 
 import utils
 from HttpClient import HttpClient
-from agent import agent_utils
-from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
-from agent.es_registry import ServiceID, ServiceType
+from agent.components.es_registry import ServiceID, ServiceType
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})

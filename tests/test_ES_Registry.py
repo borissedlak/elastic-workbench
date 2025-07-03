@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from agent.es_registry import ESRegistry, ESType, ServiceType
+from agent.components.es_registry import ESRegistry, ESType, ServiceType
 
 
 class TestES_Registry(TestCase):

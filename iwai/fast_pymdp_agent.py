@@ -14,7 +14,6 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from typing import List, Tuple, Dict
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -24,7 +23,7 @@ from iwai.vectorized_policy_inference import VectorizedPolicyInference
 # 导入训练相关的模块
 from iwai.proj_types import ESServiceAction
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP
 from iwai.global_training_env import GlobalTrainingEnv
 from iwai.lgbn_training_env import LGBNTrainingEnv

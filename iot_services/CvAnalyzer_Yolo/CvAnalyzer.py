@@ -5,7 +5,7 @@ from typing import Any
 
 import cv2
 
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iot_services.CvAnalyzer_Yolo.YOLOv8_ONNX import YOLOv8
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader

@@ -10,8 +10,8 @@ from pgmpy.estimators import AIC, HillClimbSearch
 from pgmpy.factors.continuous import LinearGaussianCPD
 from pgmpy.models import LinearGaussianBayesianNetwork
 
-from agent.es_registry import ServiceType
-from agent.RASK import calculate_missing_vars, collect_all_metric_files, preprocess_data
+from agent.components.es_registry import ServiceType
+from agent.components.RASK import calculate_missing_vars, collect_all_metric_files, preprocess_data
 from utils import print_execution_time
 
 ROOT = os.path.dirname(__file__)

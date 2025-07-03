@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 # PyMDP imports
 from pymdp import utils as mdp_utils
@@ -27,7 +27,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Project imports
 from iwai.proj_types import ESServiceAction
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iwai.dqn_trainer import CV_DATA_QUALITY_STEP, QR_DATA_QUALITY_STEP
 from iwai.global_training_env import GlobalTrainingEnv
 from iwai.lgbn_training_env import LGBNTrainingEnv

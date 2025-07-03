@@ -1,4 +1,3 @@
-import itertools
 import logging
 import os
 import time
@@ -9,12 +8,13 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 
 from HttpClient import HttpClient
-from experiments.tsc.E1.E1 import FILE_COLOR_MAP, LINE_STYLE_DICT, PC_RPS
+from agent.k8_Agent import k8_Agent
+from experiments.tsc.E1.E1 import PC_RPS
 import utils
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
-from agent.es_registry import ServiceID, ServiceType
+from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 
@@ -22,7 +22,8 @@ ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 http_client = HttpClient()
-logging.getLogger('multiscale').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("multiscale")
 nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
@@ -74,7 +75,8 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
         agent = agent_factory(rep)
         last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
-        agent.set_last_assignments(last_assignments)
+        if isinstance(agent, RASK_Global_Agent):
+            agent.set_last_assignments(last_assignments)
 
         agent.reset_services_states()
         time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
@@ -141,17 +143,26 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+    for request_pattern in [RequestPattern.DIURNAL]:
+        # agent_fact_rask = lambda repetition: RASK_Global_Agent(
+        #     prom_server=PROMETHEUS,
+        #     services_monitored=[qr_local, cv_local, pc_local],
+        #     evaluation_cycle=EVALUATION_FREQUENCY,
+        #     log_experience=repetition,
+        #     max_explore=MAX_EXPLORE,
+        #     gaussian_noise=GAUSSIAN_NOISE
+        # )
+        #
+        # eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
+
+        agent_fact_k8 = lambda repetition: k8_Agent(
             prom_server=PROMETHEUS,
             services_monitored=[qr_local, cv_local, pc_local],
             evaluation_cycle=EVALUATION_FREQUENCY,
             log_experience=repetition,
-            max_explore=MAX_EXPLORE,
-            gaussian_noise=GAUSSIAN_NOISE
         )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
+        eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
 
     visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
     visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")

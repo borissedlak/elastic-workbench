@@ -2,7 +2,6 @@ import os
 from collections import deque
 
 import pandas as pd
-import torch.nn.functional as F
 import copy
 import itertools
 import logging
@@ -12,15 +11,15 @@ from typing import Dict, Tuple
 import numpy as np
 import torch
 
-from agent.LGBN import LGBN
-from agent.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
+from agent.components.LGBN import LGBN
+from agent.components.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
 from agent.agent_utils import FullStateDQN, min_max_scale
 from agent.daci.aif_utils import calculate_expected_free_energy
 from agent.daci.network import SimpleDeltaTransitionNetwork, SimpleMCDaciWorldModel
 from agent.daci_optim.vectorized_env import VectorizedEnvironment
 from torch.nn import functional as F
 
-from agent.es_registry import ESRegistry, ServiceType
+from agent.components.es_registry import ESRegistry, ServiceType
 from iwai.proj_types import WorldModelLoss
 
 logger = logging.getLogger("multiscale")

@@ -12,7 +12,7 @@ import torch.optim as optim
 from matplotlib import pyplot as plt
 
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iwai.lgbn_training_env import LGBNTrainingEnv
 from iwai.proj_types import ESServiceAction
 

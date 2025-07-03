@@ -7,10 +7,10 @@ import torch
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from agent.SLORegistry import calculate_slo_fulfillment, SLO_Registry, to_normalized_slo_f
+from agent.components.SLORegistry import calculate_slo_fulfillment, SLO_Registry, to_normalized_slo_f
 from agent.agent_utils import FullStateDQN
 from agent.daci_optim.hybrid_daci_agent import HybridMCDACIAgent
-from agent.es_registry import ServiceType, ESRegistry
+from agent.components.es_registry import ServiceType, ESRegistry
 from agent.daci.mcts_utils import MCTS
 
 print("Uses other file")

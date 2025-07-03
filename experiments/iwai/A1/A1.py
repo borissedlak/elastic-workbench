@@ -10,7 +10,7 @@ from pandas import DataFrame
 import utils
 from agent.PolicySolverRRM import solve_global
 from agent.RRMGlobalAgent import RASK_Global_Agent, apply_gaussian_noise_to_asses
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 from iwai.dqn_trainer import ACTION_DIM_QR, DQN, STATE_DIM, ACTION_DIM_CV, QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP, \
     NO_EPISODES, EPISODE_LENGTH
 from iwai.global_dqn_trainer import JointDQNTrainer

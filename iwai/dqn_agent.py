@@ -8,12 +8,10 @@ import numpy as np
 import utils
 from agent.ScalingAgent import ScalingAgent, EVALUATION_CYCLE_DELAY, convert_action_to_real_ES
 from agent.agent_utils import FullStateDQN
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 from iwai.dqn_trainer import (
     DQN,
     ACTION_DIM_QR,
-    QR_DATA_QUALITY_STEP,
-    CV_DATA_QUALITY_STEP,
     ACTION_DIM_CV,
 )
 from iwai.dqn_trainer import STATE_DIM

@@ -1,11 +1,9 @@
 import os
 
 import torch
-import numpy as np
 
-from agent.SLORegistry import SLO_Registry, to_normalized_slo_f, calculate_slo_fulfillment
-from agent.agent_utils import FullStateDQN
-from agent.es_registry import ESRegistry, ServiceType
+from agent.components.SLORegistry import SLO_Registry
+from agent.components.es_registry import ESRegistry, ServiceType
 
 ROOT = os.path.dirname(__file__)
 slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")
@@ -85,9 +83,9 @@ import os
 import torch
 import numpy as np
 
-from agent.SLORegistry import SLO_Registry, to_normalized_slo_f, calculate_slo_fulfillment
+from agent.components.SLORegistry import SLO_Registry, to_normalized_slo_f, calculate_slo_fulfillment
 from agent.agent_utils import FullStateDQN
-from agent.es_registry import ESRegistry, ServiceType
+from agent.components.es_registry import ESRegistry, ServiceType
 
 ROOT = os.path.dirname(__file__)
 slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")

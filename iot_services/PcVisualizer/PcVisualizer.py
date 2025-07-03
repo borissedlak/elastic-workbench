@@ -3,7 +3,7 @@ import os
 import time
 from typing import Any
 
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.KittiReader import KittiReader
 from lidar_utils import parse_tracklets, fuse_pointclouds, point_cloud_to_bev, draw_bev_box

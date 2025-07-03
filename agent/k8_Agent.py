@@ -1,14 +1,13 @@
 import logging
 import os
 import time
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
 
 import utils
 from HttpClient import HttpClient
-from agent import agent_utils
 from agent.ScalingAgent import ScalingAgent
 from agent.agent_utils import export_experience_buffer
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
@@ -17,8 +16,12 @@ REMOTE_VM = utils.get_env_param('REMOTE_VM', "128.131.172.182")
 
 ROOT = os.path.dirname(__file__)
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
-logger.setLevel(logging.DEBUG)
+
+DEFAULT_SCALEUP_T = 0.95
+DEFAULT_SCALEDOWN_T = 0.80
+DEFAULT_SCALING_STEP = 0.25
 
 
 class k8_Agent(ScalingAgent):
@@ -26,13 +29,19 @@ class k8_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
-                 log_experience=None):
+                 log_experience=None, scaleup_t=DEFAULT_SCALEUP_T,
+                 scaledown_t=DEFAULT_SCALEDOWN_T, scaling_step=DEFAULT_SCALING_STEP,):
 
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path,
                          es_registry_path, log_experience)
+        self.utilization_window = {ServiceType.QR: utils.SlidingWindow(3),
+                                   ServiceType.CV: utils.SlidingWindow(3),
+                                   ServiceType.PC: utils.SlidingWindow(3)}
+        self.scaleup_t = scaleup_t
+        self.scaledown_t = scaledown_t
+        self.scaling_step = scaling_step
 
-
-    def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict]]:
+    def prepare_service_context(self, service_m: ServiceID) -> Dict:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
         service_state = self.resolve_service_state(service_m, assigned_clients)
@@ -41,13 +50,30 @@ class k8_Agent(ScalingAgent):
         if self.log_experience is not None:
             self.evaluate_slos_and_buffer(service_m, service_state, all_client_slos)
 
-        return service_m.service_type, service_state
+        return service_state
 
     def orchestrate_services_optimally(self, services_m: List[ServiceID]):
-        # TODO: (1) See which containers currently don't have enough CPU
-        #       (2) Increase their CPU (if possible)
-        #       (?) Get free cores
-        pass
+
+        for service_m in services_m:  # For all monitored services
+
+            service_state = self.prepare_service_context(service_m)
+
+            container_utilization = self.prom_client.get_container_cpu_utilization(service_m)
+            self.utilization_window[service_m.service_type].add_value(container_utilization)
+            utilization_avg = self.utilization_window[service_m.service_type].get_average()
+
+            if utilization_avg > self.scaleup_t:
+                ass_cores = self.prom_client.get_assigned_cores()
+
+                if ass_cores + self.scaling_step < MAX_CORES:
+                    new_cores = service_state['cores'] + self.scaling_step
+                    self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': new_cores}, False)
+                else:
+                    logger.info(f"{service_m.service_type}: Wants to scale, but no resources available")
+
+            elif utilization_avg < self.scaledown_t:
+                new_cores = service_state['cores'] - self.scaling_step
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': new_cores}, False)
 
 
 if __name__ == '__main__':

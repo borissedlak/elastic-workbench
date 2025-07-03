@@ -9,12 +9,12 @@ import numpy as np
 import utils
 from HttpClient import HttpClient
 from agent import agent_utils
-from agent.PolicySolverRASK import solve_global
-from agent.RASK import RASK
+from agent.components.PolicySolverRASK import solve_global
+from agent.components.RASK import RASK
 from agent.ScalingAgent import ScalingAgent, QR_DATA_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT, CV_DATA_QUALITY_DEFAULT, \
     PC_DISTANCE_DEFAULT
 from agent.agent_utils import export_experience_buffer
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
@@ -136,10 +136,10 @@ if __name__ == '__main__':
 
     agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
                               evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
-                              max_explore=0, gaussian_noise=0.05)
+                              max_explore=5, gaussian_noise=0.05)
 
     # agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)
 
     http_client = HttpClient()
     http_client.update_service_rps(qr_local, 80)
