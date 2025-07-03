@@ -5,13 +5,12 @@ from typing import Dict, Any, List, Tuple, NamedTuple
 
 import numpy as np
 
-from agent.agent_utils import FullStateDQN
-from agent.es_registry import ServiceType, ESRegistry
+from agent.components.es_registry import ServiceType, ESRegistry
 
 logger = logging.getLogger("multiscale")
 
 ROOT = os.path.dirname(__file__)
-es_registry = ESRegistry(ROOT + "/../config/es_registry.json")
+es_registry = ESRegistry(ROOT + "/../../config/es_registry.json")
 
 
 class SLO(NamedTuple):

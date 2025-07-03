@@ -1,9 +1,9 @@
 from scipy.optimize import minimize
 
-from agent.RASK import calculate_missing_vars
-from agent.RASK import RASK
-from agent.SLORegistry import calculate_SLO_F_clients
-from agent.es_registry import ServiceType
+from agent.components.RASK import calculate_missing_vars
+from agent.components.RASK import RASK
+from agent.components.SLORegistry import calculate_SLO_F_clients
+from agent.components.es_registry import ServiceType
 
 
 def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, total_rps, rask: RASK):

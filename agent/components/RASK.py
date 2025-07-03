@@ -7,7 +7,6 @@ from typing import Dict, Any
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from scipy import stats
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -15,7 +14,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 import utils
 from agent import agent_utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 
 logger = logging.getLogger("multiscale")
 ROOT = os.path.dirname(__file__)
@@ -259,5 +258,5 @@ if __name__ == "__main__":
         logger.addHandler(ch)
 
     rask = RASK(show_figures=True)
-    df = pd.read_csv("../share/metrics/metrics.csv")
+    df = pd.read_csv("../../share/metrics/metrics.csv")
     rask.init_models(df)

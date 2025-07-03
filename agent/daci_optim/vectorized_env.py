@@ -2,13 +2,12 @@ import pandas as pd
 import os
 
 import torch
-import numpy as np
 from typing import Tuple, Dict
 
-from agent.LGBN import LGBN
-from agent.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
+from agent.components.LGBN import LGBN
+from agent.components.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
 from agent.agent_utils import FullStateDQN
-from agent.es_registry import ESRegistry, ServiceType
+from agent.components.es_registry import ESRegistry, ServiceType
 
 ROOT = os.path.dirname(__file__)
 slo_registry = SLO_Registry(ROOT + "/../../config/slo_config.json")

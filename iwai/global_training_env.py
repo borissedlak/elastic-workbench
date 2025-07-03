@@ -3,9 +3,9 @@ import os
 import pandas as pd
 
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iwai.dqn_trainer import QR_DATA_QUALITY_STEP, CV_DATA_QUALITY_STEP
-from iwai.lgbn_training_env import LGBNTrainingEnv, INVALID_ACTION_PUNISHMENT
+from iwai.lgbn_training_env import LGBNTrainingEnv
 from iwai.proj_types import ESServiceAction
 
 MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))

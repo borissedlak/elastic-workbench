@@ -1,14 +1,13 @@
 import logging
 import os
 import time
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
 
 import utils
 from HttpClient import HttpClient
-from agent import agent_utils
 from agent.ScalingAgent import ScalingAgent
 from agent.agent_utils import export_experience_buffer
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))

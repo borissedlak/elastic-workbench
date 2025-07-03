@@ -1,9 +1,8 @@
-from typing import Any
 from unittest import TestCase
 
 import pytest
 
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from agent.RRM import RRM
 
 

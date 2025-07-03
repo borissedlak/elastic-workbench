@@ -8,9 +8,9 @@ import torch
 
 import utils
 from agent.ScalingAgent import ScalingAgent, convert_action_to_real_ES
-from agent.agent_utils import FullStateDQN, export_experience_buffer
+from agent.agent_utils import FullStateDQN
 from agent.daci.mcts_utils import MCTS
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 
 def scale_joint(raw: torch.Tensor, vec_env) -> torch.Tensor:
     """Scale an 8‑D raw joint observation to 0‑1 using the env’s helper."""

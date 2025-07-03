@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.ScalingAgent import ScalingAgent, convert_action_to_real_ES
 from agent.agent_utils import FullStateDQN
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 from iwai.fast_pymdp_agent import FastPymdpAgent
 from iwai.proj_types import ESServiceAction
 import utils
@@ -222,7 +222,7 @@ class AIF_agent(ScalingAgent):
                 qr_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(ServiceType.QR, qr_clients)
                 cv_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(ServiceType.CV, cv_clients)
                 
-                from agent.SLORegistry import calculate_SLO_F_clients
+                from agent.components.SLORegistry import calculate_SLO_F_clients
                 qr_reward = calculate_SLO_F_clients(qr_state, qr_slos)
                 cv_reward = calculate_SLO_F_clients(cv_state, cv_slos)
                 total_reward = (qr_reward + cv_reward) / 2.0  # 平均reward

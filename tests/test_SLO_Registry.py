@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from agent.es_registry import ServiceType
-from agent.SLORegistry import SLO_Registry, SLO, calculate_slo_fulfillment, to_normalized_slo_f, smoothstep
+from agent.components.es_registry import ServiceType
+from agent.components.SLORegistry import SLO_Registry, SLO, calculate_slo_fulfillment, smoothstep
 
 
 class TestSLO_Registry(TestCase):

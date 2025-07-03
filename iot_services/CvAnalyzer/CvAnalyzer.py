@@ -1,4 +1,3 @@
-import datetime
 import logging
 import os
 import time
@@ -7,7 +6,7 @@ from typing import Any
 import numpy as np
 
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iot_services.CvAnalyzer.FaceDetector import FaceDetector
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader

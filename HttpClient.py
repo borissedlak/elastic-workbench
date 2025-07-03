@@ -2,7 +2,7 @@ import threading
 
 import requests
 
-from agent.es_registry import ServiceID
+from agent.components.es_registry import ServiceID
 
 
 class HttpClient:

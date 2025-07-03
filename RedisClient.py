@@ -3,7 +3,7 @@ from typing import Dict
 
 import redis
 
-from agent.es_registry import ServiceID, ServiceType, ESType
+from agent.components.es_registry import ServiceID, ServiceType, ESType
 
 
 class RedisClient:

@@ -1,4 +1,3 @@
-import itertools
 import logging
 import os
 import time
@@ -9,12 +8,12 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 
 from HttpClient import HttpClient
-from experiments.tsc.E1.E1 import FILE_COLOR_MAP, LINE_STYLE_DICT, PC_RPS
+from experiments.tsc.E1.E1 import PC_RPS
 import utils
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
-from agent.es_registry import ServiceID, ServiceType
+from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 
