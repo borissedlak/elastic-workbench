@@ -22,7 +22,8 @@ ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
 http_client = HttpClient()
-logging.getLogger('multiscale').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("multiscale")
 nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
@@ -142,7 +143,7 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
+    for request_pattern in [RequestPattern.DIURNAL]:
         # agent_fact_rask = lambda repetition: RASK_Global_Agent(
         #     prom_server=PROMETHEUS,
         #     services_monitored=[qr_local, cv_local, pc_local],
