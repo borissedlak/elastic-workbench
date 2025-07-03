@@ -9,7 +9,7 @@ from pandas import DataFrame
 
 from HttpClient import HttpClient
 from agent.k8_Agent import k8_Agent
-from experiments.tsc.E1.E1 import PC_RPS
+from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS
 import utils
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
@@ -63,6 +63,9 @@ def ingest_metrics_data(source):
 def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPattern):
     pattern_rps = PatternRPS()
     print(f"Starting experiment for {agent_suffix} agent")
+
+    http_client.update_service_rps(qr_local, QR_RPS)
+    http_client.update_service_rps(cv_local, CV_RPS)
     http_client.update_service_rps(pc_local, PC_RPS)
 
     experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
@@ -162,7 +165,7 @@ if __name__ == '__main__':
             log_experience=repetition,
         )
 
-        eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
+        # eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
 
-    visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    visualize_data(["agent_experience_RASK_0_bursty.csv", "agent_experience_k8_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    # visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
