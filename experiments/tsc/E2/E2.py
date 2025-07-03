@@ -134,7 +134,7 @@ def visualize_data(agent_types: list[str], output_file: str):
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
     plt.legend()
-    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
+    plt.savefig(output_file, dpi=600, bbox_inches="tight")
     plt.show()
 
 if __name__ == '__main__':

@@ -1082,6 +1082,7 @@ rep,timestamp,service,slo_f,state,last_iteration_length
 0,2025-07-02 10:12:37.079819,elastic-workbench-qr-detector-1,0.9616583450520833,"{'throughput': 41.0, 'avg_p_latency': 43.76923076923077, 'data_quality': 631.0, 'cores': 1.51, 'completion_rate': 1.0}",685
 0,2025-07-02 10:12:37.082653,elastic-workbench-cv-analyzer-1,0.9166425308423446,"{'throughput': 3.4615384615384617, 'avg_p_latency': 243.53846153846155, 'data_quality': 176.0, 'cores': 5.49, 'model_size': 3.0, 'completion_rate': 0.8653846153846154}",685
 0,2025-07-02 10:12:37.085285,elastic-workbench-pc-visualizer-1,0.9968853333333333,"{'throughput': 48.0, 'avg_p_latency': 19.923076923076923, 'data_quality': 46.0, 'cores': 1.01, 'model_size': 1.0, 'completion_rate': 0.96}",685
+<<<<<<< HEAD
 1,2025-07-02 14:55:57.638692,elastic-workbench-qr-detector-1,0.9129706290998542,"{'throughput': 39.0, 'avg_p_latency': 26.076923076923077, 'data_quality': 550.0, 'cores': 2.67, 'completion_rate': 0.9285714285714286}",-1
 1,2025-07-02 14:55:57.641693,elastic-workbench-cv-analyzer-1,0.4528708602782677,"{'throughput': 1.3333333333333333, 'avg_p_latency': 533.9166666666666, 'data_quality': 224.0, 'cores': 2.67, 'model_size': 3.0, 'completion_rate': 0.3333333333333333}",-1
 1,2025-07-02 14:55:57.644288,elastic-workbench-pc-visualizer-1,0.9468447160493826,"{'throughput': 48.833333333333336, 'avg_p_latency': 19.666666666666668, 'data_quality': 30.0, 'cores': 2.67, 'model_size': 1.0, 'completion_rate': 0.9766666666666667}",-1
@@ -5413,3 +5414,5 @@ rep,timestamp,service,slo_f,state,last_iteration_length
 2,2025-07-02 23:19:25.304313,elastic-workbench-qr-detector-1,0.9685614228434057,"{'throughput': 40.5, 'avg_p_latency': 46.0, 'data_quality': 649.0, 'cores': 1.59, 'completion_rate': 0.9878048780487805}",753
 2,2025-07-02 23:19:25.313254,elastic-workbench-cv-analyzer-1,0.9487640542328044,"{'throughput': 3.8333333333333335, 'avg_p_latency': 189.33333333333334, 'data_quality': 240.0, 'cores': 5.41, 'model_size': 2.0, 'completion_rate': 0.9583333333333334}",753
 2,2025-07-02 23:19:25.319009,elastic-workbench-pc-visualizer-1,0.9897702716049382,"{'throughput': 46.333333333333336, 'avg_p_latency': 20.416666666666668, 'data_quality': 60.0, 'cores': 1.0, 'model_size': 1.0, 'completion_rate': 0.9266666666666667}",753
+=======
+>>>>>>> 85e49f3265dbab3e5808f64fba8a71b5107cf42d

@@ -7,11 +7,10 @@ services:
       dockerfile: iot_services/QrDetector/QrDetector.Dockerfile
     networks:
       docker_network:
-#        ipv4_address: 172.20.0.5
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-qr-detector-1
-      - REDIS_INSTANCE=172.20.0.4
+      - REDIS_INSTANCE=redis
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
@@ -21,8 +20,6 @@ services:
       - "8080:8080" # Only needed on Windows
     depends_on:
       - redis
-      - grafana
-      - prometheus
 
   cv-analyzer:
     container_name: elastic-workbench-cv-analyzer-1
@@ -31,11 +28,10 @@ services:
       dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
     networks:
       docker_network:
-#        ipv4_address: 172.20.0.10
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-cv-analyzer-1
-      - REDIS_INSTANCE=172.20.0.4 # TODO: Since the services are within the container, I could also make redis dynamic and put 'redis' here
+      - REDIS_INSTANCE=redis
       - DEFAULT_CLIENTS=C_1:30
       - TZ=Europe/Vienna
     volumes:
@@ -45,8 +41,6 @@ services:
       - "8081:8080" # Only needed on Windows
     depends_on:
       - redis
-      - grafana
-      - prometheus
 
   pc-visualizer:
     container_name: elastic-workbench-pc-visualizer-1
@@ -55,11 +49,10 @@ services:
       dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
     networks:
       docker_network:
-#        ipv4_address: 172.20.0.15
     environment:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-pc-visualizer-1
-      - REDIS_INSTANCE=172.20.0.4
+      - REDIS_INSTANCE=redis
       - DEFAULT_CLIENTS=C_1:100
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
@@ -69,15 +62,12 @@ services:
       - "8082:8080" # Only needed on Windows
     depends_on:
       - redis
-      - grafana
-      - prometheus
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     networks:
       docker_network:
-        ipv4_address: 172.20.0.2
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
@@ -91,7 +81,6 @@ services:
     container_name: grafana
     networks:
       docker_network:
-        ipv4_address: 172.20.0.3
     ports:
       - "3000:3000" # Grafana UI
     environment:
@@ -109,6 +98,19 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    networks:
+      docker_network:
+    ports:
+      - "8090:8080" # Expose the cAdvisor UI and metrics endpoint
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
 
 
 networks:
