@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from pandas import DataFrame
 
 from HttpClient import HttpClient
-from experiments.tsc.E1.E1 import PC_RPS
+from experiments.tsc.E1.E1 import FILE_COLOR_MAP, LINE_STYLE_DICT, PC_RPS
 import utils
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
@@ -27,7 +27,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 1
+EXPERIMENT_REPETITIONS = 2
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -66,29 +66,31 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
     experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
 
-    runtime_sec = 0
-    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-    ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")
+    for rep in range(1, EXPERIMENT_REPETITIONS + 1):
 
-    agent = agent_factory("0")
-    last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
-    agent.set_last_assignments(last_assignments)
+        runtime_sec = 0
+        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")
 
-    agent.reset_services_states()
-    time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
-    agent.start()
+        agent = agent_factory(rep)
+        last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
+        agent.set_last_assignments(last_assignments)
 
-    while runtime_sec < EXPERIMENT_DURATION:
-        pattern_rps.reconfigure_rps(request_pattern, qr_local, MAX_RPS_QR, runtime_sec)
-        pattern_rps.reconfigure_rps(request_pattern, cv_local, MAX_RPS_CV, runtime_sec)
-        time.sleep(EVALUATION_FREQUENCY)
+        agent.reset_services_states()
+        time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
+        agent.start()
 
-        runtime_sec += EVALUATION_FREQUENCY
-        export_experience_buffer(agent.experience_buffer, experience_file)
-        agent.experience_buffer.clear()
+        while runtime_sec < EXPERIMENT_DURATION:
+            pattern_rps.reconfigure_rps(request_pattern, qr_local, MAX_RPS_QR, runtime_sec)
+            pattern_rps.reconfigure_rps(request_pattern, cv_local, MAX_RPS_CV, runtime_sec)
+            time.sleep(EVALUATION_FREQUENCY)
 
-    agent.terminate_gracefully()
-    print(f"{agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
+            runtime_sec += EVALUATION_FREQUENCY
+            export_experience_buffer(agent.experience_buffer, experience_file)
+            agent.experience_buffer.clear()
+
+        agent.terminate_gracefully()
+        print(f"Run #{rep}| {agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
 
 
 def calculate_mean_and_std(df: DataFrame):
@@ -108,7 +110,7 @@ def calculate_mean_and_std(df: DataFrame):
     return mean_over_time, std_over_time
 
 def visualize_data(agent_types: list[str], output_file: str):
-    x = np.arange(1, 399)
+    x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
     # plt.figure(figsize=(6.0, 3.8))
     plt.figure(figsize=(18.0, 4.8))
 
@@ -120,9 +122,13 @@ def visualize_data(agent_types: list[str], output_file: str):
             'slo_f': 'mean'
         })
         paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
-        plt.plot(x, paired_df['slo_f'], label=f"{agent}", linewidth=2)
+        s_mean, s_std = calculate_mean_and_std(paired_df)
+        lower_bound = np.array(s_mean) - np.array(s_std)
+        upper_bound = np.array(s_mean) + np.array(s_std)
+        plt.plot(x, s_mean, label=f"{agent}", linewidth=2)
+        plt.fill_between(x, lower_bound, upper_bound, alpha=0.1)
 
-    plt.xlim(1, 399)
+    plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
     # plt.ylim(0.5, 0.95)
 
     plt.xlabel('Scaling Agent Iterations')
@@ -133,16 +139,19 @@ def visualize_data(agent_types: list[str], output_file: str):
 
 if __name__ == '__main__':
 
-    for request_pattern, noise in itertools.product([RequestPattern.DIURNAL], [0, 0.05]):
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+
+    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
             prom_server=PROMETHEUS,
             services_monitored=[qr_local, cv_local, pc_local],
             evaluation_cycle=EVALUATION_FREQUENCY,
             log_experience=repetition,
             max_explore=MAX_EXPLORE,
-            gaussian_noise=noise
+            gaussian_noise=GAUSSIAN_NOISE
         )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{noise}", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
 
-    # visualize_data(["agent_experience_RASK_bursty.csv"], ROOT + "/plots/slo_f.png")
+    # visualize_data(["agent_experience_RASK_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.png")
+    # visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.png")
