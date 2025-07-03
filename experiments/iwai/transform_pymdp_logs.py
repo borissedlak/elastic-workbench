@@ -2,9 +2,9 @@ import os
 
 import pandas as pd
 
-from agent.SLORegistry import calculate_slo_fulfillment, SLO_Registry, to_normalized_slo_f
+from agent.components.SLORegistry import SLO_Registry
 from agent.agent_utils import FullStateDQN
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 
 FullStateDQN(None, None, None, None, None, None, None, None, None)  # Keep here so the type is known
 

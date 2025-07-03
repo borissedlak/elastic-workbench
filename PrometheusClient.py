@@ -3,7 +3,7 @@ import time
 from prometheus_api_client import PrometheusConnect
 
 import utils
-from agent.es_registry import ServiceID, ServiceType
+from agent.components.es_registry import ServiceID, ServiceType
 
 
 class PrometheusClient:
@@ -23,12 +23,41 @@ class PrometheusClient:
         transformed = utils.convert_prom_multi(metric_data, decimal=True, avg=(period is not None))
         return transformed
 
+    def get_container_cpu_utilization(self, service_id: ServiceID, rate_interval="10s") -> float:
+        """Returns normalized CPU usage (fraction of quota used) for the container."""
+        name = service_id.container_id
+
+        query = f"""
+        sum by (container) (
+          rate(container_cpu_usage_seconds_total{{name="{name}"}}[{rate_interval}])
+        )
+        /
+        on(container)
+        group_left
+        max by (container) (
+          container_spec_cpu_quota{{name="{name}"}}
+        )
+        /
+        max by (container) (
+          container_spec_cpu_period{{name="{name}"}}
+        )
+        """.strip()
+
+        result = self.client.custom_query(query=query)
+        # Extract float value from result
+        if result and isinstance(result, list) and 'value' in result[0]:
+            return round(float(result[0]['value'][1]) * 1e10, 3)
+        else:
+            return float('nan')  # or raise an exception if you prefer
+
 
 if __name__ == "__main__":
-    client = PrometheusClient("http://128.131.172.182:9090")
-    qr_local = ServiceID("172.20.0.5", ServiceType.QR, "elastic-workbench-qr-detector-1")
-    cv_local = ServiceID("172.20.0.10", ServiceType.CV, "elastic-workbench-cv-analyzer-1")
+    client = PrometheusClient("http://localhost:9090")
+    qr_local = ServiceID("localhost", ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
+    cv_local = ServiceID("localhost", ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
+    pc_local = ServiceID("localhost", ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
     for i in range(1, 100000):
-        print("Metric assignments:", client.get_metrics(["data_quality", "cores", "model_size"], service_id=cv_local))
+        # print("Metric assignments:", client.get_metrics(["data_quality", "cores", "model_size"], service_id=cv_local))
+        print(client.get_container_cpu_utilization(cv_local))
         time.sleep(0.25)

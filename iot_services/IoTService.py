@@ -11,7 +11,7 @@ from prometheus_client import start_http_server, Gauge
 
 import utils
 from RedisClient import RedisClient
-from agent.es_registry import ESType, ESRegistry, ServiceID, ServiceType
+from agent.components.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 
 logger = logging.getLogger("multiscale")
 

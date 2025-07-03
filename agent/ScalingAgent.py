@@ -9,10 +9,10 @@ import utils
 from HttpClient import HttpClient
 from PrometheusClient import PrometheusClient
 from RedisClient import RedisClient
-from agent.RASK import calculate_missing_vars
-from agent.SLORegistry import SLO_Registry, calculate_SLO_F_clients
+from agent.components.RASK import calculate_missing_vars
+from agent.components.SLORegistry import SLO_Registry, calculate_SLO_F_clients
 from agent.agent_utils import wait_for_remaining_interval
-from agent.es_registry import ESRegistry, ServiceID, ServiceType, ESType
+from agent.components.es_registry import ESRegistry, ServiceID, ServiceType, ESType
 
 CV_DATA_QUALITY_DEFAULT = 224
 CV_M_SIZE_DEFAULT = 3

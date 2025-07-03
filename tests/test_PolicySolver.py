@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import pandas as pd
 
-from agent.RASK import RASK
-from agent.es_registry import ESType, ServiceType
-from agent.PolicySolverRASK import local_obj, solve_global
-from agent.SLORegistry import SLO
+from agent.components.RASK import RASK
+from agent.components.es_registry import ESType, ServiceType
+from agent.components.PolicySolverRASK import solve_global
+from agent.components.SLORegistry import SLO
 
 MAX_CORES = 8
 

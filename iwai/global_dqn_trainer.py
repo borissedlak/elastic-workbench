@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 import utils
-from agent.es_registry import ServiceType
+from agent.components.es_registry import ServiceType
 from iwai.dqn_trainer import (
     DQN,
     STATE_DIM,

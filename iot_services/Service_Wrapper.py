@@ -5,7 +5,7 @@ from flask import Flask, request
 
 import utils
 from DockerClient import DockerClient
-from agent.es_registry import ESType
+from agent.components.es_registry import ESType
 from iot_services.IoTService import IoTService
 
 app = Flask(__name__)
