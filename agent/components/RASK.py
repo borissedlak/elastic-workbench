@@ -148,7 +148,7 @@ def get_dependent_variable_mapping(service_type: ServiceType):
         raise RuntimeError(f"Service type {service_type} not supported")
 
 
-def calculate_missing_vars(service_type: ServiceType, partial_state, total_rps: int):
+def calculate_missing_vars(partial_state, total_rps: int):
     full_state = partial_state.copy()
 
     # This is ONLY invoked by RASK, who does not have the 'throughout' in the state; the Agent has it already

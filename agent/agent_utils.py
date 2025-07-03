@@ -85,12 +85,12 @@ def normalize_in_bounds(vector, min_val, max_val):
 class FullStateDQN(NamedTuple):
     data_quality: int
     data_quality_target: int
-    throughput: int
-    throughput_target: int
+    completion_rate: int
+    completion_target: int
     model_size: int  # only for CV!
     model_size_target: int  # only for CV!
-    cores: int
-    free_cores: int
+    cores: float
+    free_cores: float
     bounds: Dict[str, Dict]
 
     def for_pymdp(self, env_type):
