@@ -28,7 +28,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 2
+EXPERIMENT_REPETITIONS = 3
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -146,17 +146,17 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for request_pattern in [RequestPattern.DIURNAL]:
-        # agent_fact_rask = lambda repetition: RASK_Global_Agent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition,
-        #     max_explore=MAX_EXPLORE,
-        #     gaussian_noise=GAUSSIAN_NOISE
-        # )
-        #
-        # eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
+    for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=MAX_EXPLORE,
+            gaussian_noise=GAUSSIAN_NOISE
+        )
+        
+        eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
 
         agent_fact_k8 = lambda repetition: k8_Agent(
             prom_server=PROMETHEUS,
@@ -165,7 +165,7 @@ if __name__ == '__main__':
             log_experience=repetition,
         )
 
-        # eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
+        eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
 
-    visualize_data(["agent_experience_RASK_0_bursty.csv", "agent_experience_k8_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    # visualize_data(["agent_experience_RASK_0_bursty.csv", "agent_experience_k8_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
     # visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
