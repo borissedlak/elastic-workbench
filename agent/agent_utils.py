@@ -93,48 +93,6 @@ class FullStateDQN(NamedTuple):
     free_cores: float
     bounds: Dict[str, Dict]
 
-    def for_pymdp(self, env_type):
-        def discretize_value(value, bins):
-            index = np.digitize(value, bins, right=False)
-            # Cap to highest valid bin index
-            return min(index, len(bins) - 1)
-
-        if env_type == 'qr':
-            throughput_qr_bins = np.arange(0, 101, 20)
-            aif_throughput = discretize_value(self.throughput, throughput_qr_bins)
-
-            base_quality = np.arange(300, 1100, 100)
-            aif_quality = np.argmin(np.abs(base_quality - self.data_quality))
-
-            aif_cores = self.cores - 1
-
-            return [aif_throughput, aif_quality, aif_cores]
-
-        elif env_type == 'cv':
-            throughput_cv_bins = np.arange(0, 6, 1)
-            aif_throughput = discretize_value(self.throughput, throughput_cv_bins)
-
-            base_quality = np.arange(128, 352, 32)
-            aif_quality = np.argmin(np.abs(base_quality - self.data_quality))
-
-            aif_model_size = self.model_size - 1
-
-            aif_cores = self.cores - 1
-
-            return [aif_throughput, aif_quality, aif_model_size, aif_cores]
-
-    def for_tensor(self):
-        return [
-            self.data_quality <= self.bounds['data_quality']['min'],
-            self.data_quality >= self.bounds['data_quality']['max'],
-            (self.model_size <= self.bounds['model_size']['min']) if 'model_size' in self.bounds else True,
-            (self.model_size >= self.bounds['model_size']['max']) if 'model_size' in self.bounds else True,
-            self.cores <= self.bounds['cores']['min'],
-            self.free_cores > 0,
-            self.data_quality / self.data_quality_target,
-            self.model_size / self.model_size_target,
-            self.throughput / self.throughput_target]
-
     def to_normalized_dict(self):
         state_array = self.to_np_ndarray(True)
         state_dict = {
@@ -156,8 +114,8 @@ class FullStateDQN(NamedTuple):
                               max_val=self.bounds["data_quality"]["max"]),
                 min_max_scale(self.data_quality_target, min_val=self.bounds["data_quality"]["min"],
                               max_val=self.bounds["data_quality"]["max"]),
-                min_max_scale(self.throughput, min_val=0, max_val=100),
-                min_max_scale(self.throughput_target, min_val=0, max_val=100),
+                self.completion_rate,
+                self.completion_target,
                 min_max_scale(self.model_size, min_val=self.bounds["model_size"]["min"],
                               max_val=self.bounds["model_size"]["max"]) if 'model_size' in self.bounds else 1.0,
                 min_max_scale(self.model_size_target, min_val=self.bounds["model_size"]["min"],
@@ -170,8 +128,8 @@ class FullStateDQN(NamedTuple):
             return np.asarray([
                 self.data_quality,
                 self.data_quality_target,
-                self.throughput,
-                self.throughput_target,
+                self.completion_rate,
+                self.completion_target,
                 self.model_size if 'model_size' in self.bounds else 1.0,
                 self.model_size_target if 'model_size' in self.bounds else 1.0,
                 self.cores,

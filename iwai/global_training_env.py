@@ -82,4 +82,8 @@ if __name__ == "__main__":
     joint_env.reset()
 
     for _ in range(10):
-        print(joint_env.step(ESServiceAction.INC_CORES, ESServiceAction.DEC_CORES, ESServiceAction.DILLY_DALLY))
+        state, reward, _ = joint_env.step(ESServiceAction.INC_CORES, ESServiceAction.DEC_CORES, ESServiceAction.DILLY_DALLY)
+        print(state[0])
+        print(state[1])
+        print(state[2])
+        print("")

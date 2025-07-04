@@ -21,8 +21,19 @@ from iwai.lgbn_training_env import LGBNTrainingEnv
 from iwai.proj_types import ESServiceAction
 
 ROOT = os.path.dirname(__file__)
+
 logger = logging.getLogger("multiscale")
 logger.setLevel(logging.DEBUG)
+
+# Add handler only if it doesn't exist yet
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
 
 
 class JointDQNTrainer:

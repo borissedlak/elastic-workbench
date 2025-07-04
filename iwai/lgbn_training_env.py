@@ -26,8 +26,9 @@ INVALID_ACTION_PUNISHMENT = -5
 
 DEFAULT_CLIENTS = {ServiceType.QR: 80, ServiceType.CV: 5, ServiceType.PC: 50}
 
+
 class LGBNTrainingEnv(gymnasium.Env):
-    def __init__(self, service_type, step_data_quality, step_cores=1, step_model_size=1):
+    def __init__(self, service_type, step_data_quality, step_cores=0.5, step_model_size=1):
         super().__init__()
         self.state: FullStateDQN = None
         # self.lgbn: LGBN = None
@@ -44,7 +45,7 @@ class LGBNTrainingEnv(gymnasium.Env):
             self.service_type, MAX_CORES
         )
         self.client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(
-            self.service_type, {"C_1": DEFAULT_CLIENTS[service_type]}
+            self.service_type, {"C_1": DEFAULT_CLIENTS[self.service_type]}
         )[0]
 
     def step(self, action: ESServiceAction):
@@ -75,7 +76,7 @@ class LGBNTrainingEnv(gymnasium.Env):
             delta_cores = -self.step_cores if action.value == 3 else self.step_cores
             new_core = self.state.cores + delta_cores
 
-            if new_core <= 0:  # Wants to go lower than 0 core
+            if new_core <= 0.5:  # Wants to go lower than 0.5 core
                 # behavioral_punishment = INVALID_ACTION_PUNISHMENT
                 # done = True
                 pass
@@ -107,12 +108,15 @@ class LGBNTrainingEnv(gymnasium.Env):
         new_state["throughput"] = self.sample_throughput_from_lgbn(
             new_state["data_quality"], new_state["cores"], new_state["model_size"]
         )
-        self.state = FullStateDQN(**new_state)
+        new_state["completion_rate"] = new_state["throughput"] / DEFAULT_CLIENTS[self.service_type]
 
         reward = to_normalized_slo_f(
-            calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
+            calculate_slo_fulfillment(new_state, self.client_slos),
             self.client_slos,
         ) + additional_reward_punishment
+
+        del new_state["throughput"]
+        self.state = FullStateDQN(**new_state)
 
         return self.state, reward, done, False, {}
 
@@ -144,7 +148,7 @@ class LGBNTrainingEnv(gymnasium.Env):
         free_cores = MAX_CORES - ass_cores
 
         throughput = self.sample_throughput_from_lgbn(data_quality, ass_cores, model_size)
-        completion_rate = throughput / DEFAULT_CLIENTS[self.service_type]  # TODO: Needs current rps
+        completion_rate = throughput / DEFAULT_CLIENTS[self.service_type]
         completion_target = self.client_slos["completion_rate"].target
 
         self.state = FullStateDQN(
@@ -178,6 +182,7 @@ if __name__ == "__main__":
     boundaries = env.es_registry.get_boundaries_minimalistic(ServiceType.CV, MAX_CORES)
     env.state = FullStateDQN(256, 288, 0, 2, 3, 5, 2, 6, boundaries)
     for i in range(1, 100):
-        print(env.step(ESServiceAction.DILLY_DALLY))
+        state, reward, _, _, _ = env.step(ESServiceAction.INC_CORES)
+        print(reward, state)
         # print(env.state.discretize(ServiceType.CV))
         # print(env.state.discretize(ServiceType.QR))
