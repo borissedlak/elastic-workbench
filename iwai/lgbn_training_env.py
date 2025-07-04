@@ -5,14 +5,16 @@ import gymnasium
 import pandas as pd
 
 import utils
-from agent.components.es_registry import ServiceType, ESRegistry
+from agent.ScalingAgent import CV_DATA_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT, QR_DATA_QUALITY_DEFAULT, PC_DISTANCE_DEFAULT
+from agent.agent_utils import FullStateDQN
 from agent.components.LGBN import LGBN
 from agent.components.SLORegistry import (
     calculate_slo_fulfillment,
     to_normalized_slo_f,
     SLO_Registry,
 )
-from agent.agent_utils import FullStateDQN
+from agent.components.es_registry import ServiceType, ESRegistry
+# from experiments.tsc.E1.E1 import QR_RPS, CV_RPS, PC_RPS
 from iwai.proj_types import ESServiceAction
 
 logger = logging.getLogger("multiscale")
@@ -21,6 +23,7 @@ ROOT = os.path.dirname(__file__)
 MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
 INVALID_ACTION_PUNISHMENT = -5
 
+DEFAULT_CLIENTS = {ServiceType.QR: 80, ServiceType.CV: 5, ServiceType.PC: 50}
 
 class LGBNTrainingEnv(gymnasium.Env):
     def __init__(self, service_type, step_data_quality, step_cores=1, step_model_size=1):
@@ -39,7 +42,7 @@ class LGBNTrainingEnv(gymnasium.Env):
             self.service_type, MAX_CORES
         )
         self.client_slos = self.slo_registry.get_all_SLOs_for_assigned_clients(
-            self.service_type, {"C_1": 100}
+            self.service_type, {"C_1": DEFAULT_CLIENTS[service_type]}
         )[0]
 
     def step(self, action: ESServiceAction):
@@ -108,47 +111,47 @@ class LGBNTrainingEnv(gymnasium.Env):
             calculate_slo_fulfillment(self.state.to_normalized_dict(), self.client_slos),
             self.client_slos,
         ) + additional_reward_punishment
-        # reward += 0.1 if action == 0 and reward > 0.8 else 0.0
 
         return self.state, reward, done, False, {}
 
     def sample_throughput_from_lgbn(self, data_quality, cores, model_size):
         partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
         full_state = self.lgbn.predict_lgbn_vars(partial_state, self.service_type)
-        return full_state['throughput']
+        return full_state['max_tp']
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        # data_quality = randint(
-        #     self.boundaries["data_quality"]["min"], self.boundaries["data_quality"]["max"]
-        # )
-        # data_quality = round(data_quality / self.step_data_quality) * self.step_data_quality
-        data_quality = 256 if self.service_type == ServiceType.CV else 700
+        # TODO: Change to default assignments
+
         data_quality_target = self.client_slos["data_quality"].target
 
-        if self.service_type == ServiceType.CV:
-            # model_size = randint(
-            #     self.boundaries["model_size"]["min"],
-            #     self.boundaries["model_size"]["max"],
-            # )
-            model_size = 3
-            model_size_target = self.client_slos["model_size"].target
-        else:
-            model_size = 1
-            model_size_target = 1
+        model_size = 1
+        model_size_target = 1
 
-        ass_cores = 2  # randint(1, int(MAX_CORES / 2))
+        if self.service_type == ServiceType.QR:
+            data_quality = QR_DATA_QUALITY_DEFAULT
+        elif self.service_type == ServiceType.CV:
+            model_size = CV_M_SIZE_DEFAULT
+            model_size_target = self.client_slos["model_size"].target
+            data_quality = CV_DATA_QUALITY_DEFAULT
+        elif self.service_type == ServiceType.PC:
+            data_quality = PC_DISTANCE_DEFAULT
+        else:
+            raise RuntimeWarning("Unknown service type")
+
+        ass_cores = MAX_CORES / 3
         free_cores = MAX_CORES - ass_cores
 
         throughput = self.sample_throughput_from_lgbn(data_quality, ass_cores, model_size)
-        tp_target = self.client_slos["throughput"].target
+        completion_rate = throughput / DEFAULT_CLIENTS[self.service_type]  # TODO: Needs current rps
+        completion_target = self.client_slos["completion_rate"].target
 
         self.state = FullStateDQN(
             data_quality,
             data_quality_target,
-            throughput,
-            tp_target,
+            completion_rate,
+            completion_target,
             model_size,
             model_size_target,
             ass_cores,

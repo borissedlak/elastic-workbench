@@ -40,17 +40,17 @@ class LGBN:
             sample_val = np.random.normal(mu, sigma / 5, 1)[0] # TODO: Hard fix, decrease sigma
             samples = samples | {v: int(sample_val)}
 
-        if sanitize:
-            for var, min, max in [("throughput", 0, 100)]:
-                if var in samples.keys():
-                    samples[var] = np.clip(samples[var], min, max)
+        # if sanitize:
+        #     for var, min, max in [("throughput", 0, 10000)]:
+        #         if var in samples.keys():
+        #             samples[var] = np.clip(samples[var], min, max)
 
         return partial_state | samples
 
-    def get_expected_state(self, partial_state, service_type: ServiceType, total_rps):
-        partial_state_extended = self.predict_lgbn_vars(partial_state, service_type)
-        full_state_expected = calculate_missing_vars(partial_state_extended, total_rps)
-        return full_state_expected
+    # def get_expected_state(self, partial_state, service_type: ServiceType, total_rps):
+    #     partial_state_extended = self.predict_lgbn_vars(partial_state, service_type)
+    #     full_state_expected = calculate_missing_vars(partial_state_extended, total_rps)
+    #     return full_state_expected
 
     def get_linear_relations(self, service_type: ServiceType) -> Dict[str, LinearGaussianCPD]:
         linear_relations = {}
@@ -100,11 +100,11 @@ def train_lgbn_model(df, show_result=False, structure_training=False):
 
 def get_edges_for_service_type(service_type: ServiceType):
     if service_type == ServiceType.QR:
-        return [('data_quality', 'throughput'), ('cores', 'throughput')]
+        return [('data_quality', 'max_tp'), ('cores', 'max_tp')]
     elif service_type == ServiceType.CV:
-        return [('cores', 'throughput'), ('model_size', 'throughput'), ('data_quality', 'throughput')]
-    # elif service_type == ServiceType.QR_DEPRECATED:
-    #     return [('quality', 'throughput'), ('cores', 'throughput')]
+        return [('cores', 'max_tp'), ('model_size', 'max_tp'), ('data_quality', 'max_tp')]
+    elif service_type == ServiceType.PC:
+        return [('data_quality', 'max_tp'), ('cores', 'max_tp')]
     else:
         raise RuntimeError(f"Service type {service_type} not supported")
 

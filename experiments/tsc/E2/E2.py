@@ -17,6 +17,8 @@ from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
+from iwai.dqn_agent import DQNAgent
+from iwai.dqn_trainer import DQN, STATE_DIM, ACTION_DIM_QR, ACTION_DIM_CV, ACTION_DIM_PC
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -167,5 +169,22 @@ if __name__ == '__main__':
 
         eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
 
-    # visualize_data(["agent_experience_RASK_0_bursty.csv", "agent_experience_k8_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    # visualize_data(["agent_experience_RASK_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+        # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/networks")
+        # dqn_qr.load("Q_QR_joint.pt")
+        # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/networks")
+        # dqn_cv.load("Q_CV_joint.pt")
+        # dqn_pc = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_PC, nn_folder=ROOT + "/networks")
+        # dqn_pc.load("Q_PC_joint.pt")
+
+        # agent_fact_dqn = lambda repetition: DQNAgent(
+        #     prom_server=PROMETHEUS,
+        #     services_monitored=[qr_local, cv_local, pc_local],
+        #     dqn_for_services=[dqn_qr, dqn_cv, pc_local],
+        #     evaluation_cycle=EVALUATION_FREQUENCY,
+        #     log_experience=repetition
+        # )
+
+        # eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
+
+    # visualize_data(["/run_2/agent_experience_RASK_0_bursty.csv", "agent_experience_k8_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    # visualize_data(["agent_experience_RASK_0_diurnal.csv", "agent_experience_k8_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")

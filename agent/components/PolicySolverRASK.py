@@ -13,7 +13,7 @@ def local_obj(x, service_type: ServiceType, parameter_bounds, slos_all_clients, 
 
     dependent_variables = rask.get_all_dependent_vars_ass(service_type, independent_variables)
     full_state = independent_variables | dependent_variables
-    full_state |= calculate_missing_vars(service_type, full_state, total_rps)
+    full_state |= calculate_missing_vars(full_state, total_rps)
 
     # ---------- Part 2: Client SLOs ----------
 

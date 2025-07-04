@@ -12,7 +12,8 @@ import torch.optim as optim
 from matplotlib import pyplot as plt
 
 import utils
-from agent.components.es_registry import ServiceType
+from agent.agent_utils import FullStateDQN
+from agent.components.es_registry import ServiceType, ServiceID, ESType
 from iwai.lgbn_training_env import LGBNTrainingEnv
 from iwai.proj_types import ESServiceAction
 
@@ -31,13 +32,43 @@ torch.autograd.set_detect_anomaly(True)
 STATE_DIM = 8
 ACTION_DIM_QR = 5
 ACTION_DIM_CV = 7
+ACTION_DIM_PC = 5
 
 CV_DATA_QUALITY_STEP = 32
 QR_DATA_QUALITY_STEP = 100
+PC_DATA_QUALITY_STEP = 6
+CV_MODEL_SIZE_STEP = 1
+CORE_ALLOCATION_STEP = 0.25
 
 EPISODE_LENGTH = 25
 NO_EPISODES = 200
 
+def convert_action_to_real_ES(service:ServiceID, state_pw:FullStateDQN, action_pw: int, free_cores):
+    step_data_quality = (
+        QR_DATA_QUALITY_STEP
+        if service.service_type == ServiceType.QR
+        else CV_DATA_QUALITY_STEP
+    )
+    if 1 <= action_pw <= 2:
+        delta_data_quality = -step_data_quality if action_pw == 1 else step_data_quality
+        return ESType.QUALITY_SCALE, {
+            "data_quality": int(state_pw.data_quality + delta_data_quality)
+        }
+    if 3 <= action_pw <= 4:
+
+        if action_pw == 4 and free_cores <= 0:
+            logger.warning(f"{service.service_type} wants to consume cores, but none free")
+            return ESType.IDLE, {}
+
+        delta_cores = -CORE_ALLOCATION_STEP if action_pw == 3 else CORE_ALLOCATION_STEP
+        return ESType.RESOURCE_SCALE, {"cores": state_pw.cores + delta_cores}
+    if 5 <= action_pw <= 6:
+        delta_model_size = -CV_MODEL_SIZE_STEP if action_pw == 5 else CV_MODEL_SIZE_STEP
+        return ESType.MODEL_SCALE, {
+            "model_size": int(state_pw.model_size + delta_model_size)
+        }
+
+    return ESType.IDLE, {}
 
 class DQN:
     def __init__(
