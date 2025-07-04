@@ -1,24 +1,20 @@
 import logging
 import os
 import time
-import pandas as pd
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
-from pandas import DataFrame
 
-from HttpClient import HttpClient
-from agent.k8_Agent import k8_Agent
-from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std
 import utils
+from HttpClient import HttpClient
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
+from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std
 from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
-from iwai.dqn_agent import DQNAgent
-from iwai.dqn_trainer import DQN, STATE_DIM, ACTION_DIM_QR, ACTION_DIM_CV, ACTION_DIM_PC
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -26,11 +22,10 @@ plt.rcParams.update({'font.size': 12})
 http_client = HttpClient()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
-nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 2
+EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -38,6 +33,7 @@ EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 MAX_EXPLORE = 0
 GAUSSIAN_NOISE = 0
 EVALUATION_FREQUENCY = 10
+REQUEST_PATTERN = RequestPattern.BURSTY
 
 ########## Service Definitions ############
 
@@ -80,7 +76,8 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
         agent = agent_factory(rep)
         if isinstance(agent, RASK_Global_Agent):
-            last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
+            num_es = len(agent.es_registry.get_active_ES_for_service(ServiceType.CV))
+            last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv", num_es)
             agent.set_last_assignments(last_assignments)
 
         agent.reset_services_states()
@@ -97,7 +94,8 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
             agent.experience_buffer.clear()
 
         agent.terminate_gracefully()
-        print(f"Run #{rep}| {agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
+        print(
+            f"Run #{rep}| {agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
 
 
 def visualize_data(agent_types: list[str], output_file: str):
@@ -128,48 +126,24 @@ def visualize_data(agent_types: list[str], output_file: str):
     plt.savefig(output_file, dpi=600, bbox_inches="tight")
     plt.show()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    # for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
-        # agent_fact_rask = lambda repetition: RASK_Global_Agent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition,
-        #     max_explore=MAX_EXPLORE,
-        #     gaussian_noise=GAUSSIAN_NOISE
-        # )
-        #
-        # eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
-        #
-        # agent_fact_k8 = lambda repetition: k8_Agent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition,
-        # )
-        #
-        # eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
+    for es_file, es_num in [('es_registry_lim_1.json', 1), ('es_registry_lim_2.json', 2), ('es_registry.json', 3)]:
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=MAX_EXPLORE,
+            gaussian_noise=GAUSSIAN_NOISE,
+            es_registry_path=ROOT + f"/../../../config/{es_file}"
+        )
 
-        # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_qr.load("Q_QR_joint.pt")
-        # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_cv.load("Q_CV_joint.pt")
-        # dqn_pc = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_PC, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_pc.load("Q_PC_joint.pt")
-        #
-        # agent_fact_dqn = lambda repetition: DQNAgent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     dqn_for_services=[dqn_qr, dqn_cv, dqn_pc],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition
-        # )
-        #
-        # eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK_{es_num}", REQUEST_PATTERN)
 
     # The run_2 are also nice ...
     # visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv",
+                    "agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
