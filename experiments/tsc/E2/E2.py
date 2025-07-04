@@ -30,7 +30,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 2
+EXPERIMENT_REPETITIONS = 3
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -171,5 +171,5 @@ if __name__ == '__main__':
         # eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
 
     # The run_2 are also nice ...
-    # visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    # visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
