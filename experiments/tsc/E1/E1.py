@@ -115,7 +115,7 @@ def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
         })
 
         paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
-        s_mean, s_std = calculate_mean_and_std(paired_df)
+        s_mean, s_std = calculate_mean_and_std(paired_df, EXPERIMENT_REPETITIONS)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
         plt.plot(x, s_mean, color=FILE_COLOR_MAP[file], label=f"{name}", linewidth=2,
@@ -133,13 +133,12 @@ def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
     plt.show()
 
 
-def calculate_mean_and_std(df: DataFrame):
-    # del df['timestamp']
+def calculate_mean_and_std(df: DataFrame, experiment_repetitions: int):
 
     slo_fs_index = []
 
     # Step 2: Reindex each part
-    for j in range(1, EXPERIMENT_REPETITIONS + 1):
+    for j in range(1, experiment_repetitions + 1):
         slo_f_run = df[df['rep'] == j]['slo_f']
         slo_fs_index.append(slo_f_run.to_list())
 
