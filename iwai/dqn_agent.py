@@ -58,21 +58,21 @@ class DQNAgent(ScalingAgent):
             self.evaluate_slos_and_buffer(service, service_state, all_client_slos)
 
         model_size, model_size_t = 1, 1
-        if "model_size" in service_state or "model_size" in all_client_slos[0]:
+        if service.service_type == ServiceType.CV:
             model_size, model_size_t = (
                 service_state["model_size"],
                 all_client_slos[0]["model_size"].target,
             )
 
-        data_quality_t, throughput_t = (
+        data_quality_t, completion_target = (
             all_client_slos[0]["data_quality"].target,
-            all_client_slos[0]["throughput"].target,
+            all_client_slos[0]["completion_rate"].target,
         )
         state_pw = FullStateDQN(
             service_state["data_quality"],
             data_quality_t,
-            service_state["throughput"],
-            throughput_t,
+            service_state["completion_rate"],
+            completion_target,
             model_size,
             model_size_t,
             service_state["cores"],
