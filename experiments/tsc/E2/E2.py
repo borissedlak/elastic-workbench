@@ -30,7 +30,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 3
+EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -132,44 +132,44 @@ if __name__ == '__main__':
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    # for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
-        # agent_fact_rask = lambda repetition: RASK_Global_Agent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition,
-        #     max_explore=MAX_EXPLORE,
-        #     gaussian_noise=GAUSSIAN_NOISE
-        # )
-        #
-        # eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
-        #
-        # agent_fact_k8 = lambda repetition: k8_Agent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition,
-        # )
-        #
-        # eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
+    for request_pattern in [RequestPattern.BURSTY]:
+        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            max_explore=MAX_EXPLORE,
+            gaussian_noise=GAUSSIAN_NOISE
+        )
 
-        # dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_qr.load("Q_QR_joint.pt")
-        # dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_cv.load("Q_CV_joint.pt")
-        # dqn_pc = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_PC, nn_folder=ROOT + "/../../../share/networks")
-        # dqn_pc.load("Q_PC_joint.pt")
-        #
-        # agent_fact_dqn = lambda repetition: DQNAgent(
-        #     prom_server=PROMETHEUS,
-        #     services_monitored=[qr_local, cv_local, pc_local],
-        #     dqn_for_services=[dqn_qr, dqn_cv, dqn_pc],
-        #     evaluation_cycle=EVALUATION_FREQUENCY,
-        #     log_experience=repetition
-        # )
-        #
-        # eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
+        eval_scaling_agent(agent_fact_rask, f"RASK_{GAUSSIAN_NOISE}", request_pattern)
+
+        agent_fact_k8 = lambda repetition: k8_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+        )
+
+        eval_scaling_agent(agent_fact_k8, f"k8_{GAUSSIAN_NOISE}", request_pattern)
+
+        dqn_qr = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_QR, nn_folder=ROOT + "/../../../share/networks")
+        dqn_qr.load("Q_QR_joint.pt")
+        dqn_cv = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_CV, nn_folder=ROOT + "/../../../share/networks")
+        dqn_cv.load("Q_CV_joint.pt")
+        dqn_pc = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM_PC, nn_folder=ROOT + "/../../../share/networks")
+        dqn_pc.load("Q_PC_joint.pt")
+
+        agent_fact_dqn = lambda repetition: DQNAgent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            dqn_for_services=[dqn_qr, dqn_cv, dqn_pc],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition
+        )
+
+        eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
 
     # The run_2 are also nice ...
-    visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    # visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    # visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","run_3/agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
+    # visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","run_3/agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
