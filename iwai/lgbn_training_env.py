@@ -7,7 +7,8 @@ import pandas as pd
 import utils
 from agent.ScalingAgent import CV_DATA_QUALITY_DEFAULT, CV_M_SIZE_DEFAULT, QR_DATA_QUALITY_DEFAULT, PC_DISTANCE_DEFAULT
 from agent.agent_utils import FullStateDQN
-from agent.components.LGBN import LGBN
+from agent.components.RASK import RASK
+# from agent.components.LGBN import LGBN
 from agent.components.SLORegistry import (
     calculate_slo_fulfillment,
     to_normalized_slo_f,
@@ -29,7 +30,8 @@ class LGBNTrainingEnv(gymnasium.Env):
     def __init__(self, service_type, step_data_quality, step_cores=1, step_model_size=1):
         super().__init__()
         self.state: FullStateDQN = None
-        self.lgbn: LGBN = None
+        # self.lgbn: LGBN = None
+        self.rask = RASK(show_figures=False)
         self.service_type: ServiceType = service_type
         self.es_registry = ESRegistry(ROOT + "/../config/es_registry.json")
         self.slo_registry = SLO_Registry(ROOT + "/../config/slo_config.json")
@@ -116,16 +118,14 @@ class LGBNTrainingEnv(gymnasium.Env):
 
     def sample_throughput_from_lgbn(self, data_quality, cores, model_size):
         partial_state = {"data_quality": data_quality, "cores": cores, "model_size": model_size}
-        full_state = self.lgbn.predict_lgbn_vars(partial_state, self.service_type)
-        return full_state['max_tp']
+        max_tp = self.rask.predict_single_sample(self.service_type, 'max_tp', partial_state)
+        # full_state = self.lgbn.predict_lgbn_vars(partial_state, self.service_type)
+        return max_tp
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        # TODO: Change to default assignments
-
         data_quality_target = self.client_slos["data_quality"].target
-
         model_size = 1
         model_size_target = 1
 
@@ -161,8 +161,9 @@ class LGBNTrainingEnv(gymnasium.Env):
         return self.state, {}
 
     def reload_lgbn_model(self, df):
-        self.lgbn = LGBN(show_figures=False, structural_training=False, df=df)
-        logger.info("Retrained LGBN model for Env")
+        self.rask.init_models(df)
+        # self.lgbn = LGBN(show_figures=False, structural_training=False, df=df)
+        logger.info("Retrained RASK model for Env")
 
 
 if __name__ == "__main__":
