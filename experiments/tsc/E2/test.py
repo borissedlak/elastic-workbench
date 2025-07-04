@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load your CSV
-df = pd.read_csv("agent_experience_k8_0_bursty.csv")
+df = pd.read_csv("run_2/agent_experience_RASK_0_diurnal.csv")
 
 # Column to check the sequence
 column = "service"
