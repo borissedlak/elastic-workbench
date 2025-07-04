@@ -30,8 +30,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-# r2.1,r2.2,r2.3, r2.5
-EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_REPETITIONS = 3
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -147,7 +146,7 @@ def visualize_data(agent_types: list[str], output_file: str):
 
 if __name__ == '__main__':
 
-    agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     for request_pattern in [RequestPattern.BURSTY, RequestPattern.DIURNAL]:
         # agent_fact_rask = lambda repetition: RASK_Global_Agent(
