@@ -208,7 +208,7 @@ def stream_remote_metrics_file(remote_server: str, cycle_delay_seconds: int):
     thread.start()
 
 
-def get_last_assignment_from_metrics(file: str, num_es=3):
+def get_last_assignment_from_metrics(file: str):
     # Load CSV
     df = pd.read_csv(file)
 
@@ -220,12 +220,5 @@ def get_last_assignment_from_metrics(file: str, num_es=3):
     assignments = [{'data_quality': quality_qr, 'cores': df.iloc[-3]['cores']},
                    {'model_size': model_s_cv, 'data_quality': quality_cv, 'cores': df.iloc[-2]['cores']},
                    {'data_quality': quality_pc, 'cores': df.iloc[-1]['cores']}]
-
-    if num_es < 3:
-        del assignments[1]['model_size']
-    if num_es < 2:
-        del assignments[0]['data_quality']
-        del assignments[1]['data_quality']
-        del assignments[2]['data_quality']
 
     return assignments

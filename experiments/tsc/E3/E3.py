@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -18,6 +19,7 @@ from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
+METRICS_FILE_PATH = ROOT + "/../../../share/metrics/metrics.csv"
 
 http_client = HttpClient()
 logging.basicConfig(level=logging.INFO)
@@ -71,13 +73,12 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
     for rep in range(1, EXPERIMENT_REPETITIONS + 1):
 
         runtime_sec = 0
-        delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+        delete_file_if_exists(METRICS_FILE_PATH)
         ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")
 
         agent = agent_factory(rep)
-        if isinstance(agent, RASK_Global_Agent):
-            num_es = len(agent.es_registry.get_active_ES_for_service(ServiceType.CV))
-            last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv", num_es)
+        if agent.update_last_assignment:
+            last_assignments = agent_utils.get_last_assignment_from_metrics(METRICS_FILE_PATH)
             agent.set_last_assignments(last_assignments)
 
         agent.reset_services_states()
@@ -130,7 +131,7 @@ def visualize_data(agent_types: list[str], output_file: str):
 if __name__ == '__main__':
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    for es_file, es_num in [('es_registry_lim_1.json', 1), ('es_registry_lim_2.json', 2), ('es_registry.json', 3)]:
+    for es_file_ext, update_last_ass in itertools.product(['_lim_1', '_lim_2', ''], [True, False]):
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
             prom_server=PROMETHEUS,
             services_monitored=[qr_local, cv_local, pc_local],
@@ -138,12 +139,13 @@ if __name__ == '__main__':
             log_experience=repetition,
             max_explore=MAX_EXPLORE,
             gaussian_noise=GAUSSIAN_NOISE,
-            es_registry_path=ROOT + f"/../../../config/{es_file}"
+            es_registry_path=ROOT + f"/../../../config/es_registry{es_file_ext}.json",
+            update_last_assignment=update_last_ass
         )
 
-        eval_scaling_agent(agent_fact_rask, f"RASK_{es_num}", REQUEST_PATTERN)
+        eval_scaling_agent(agent_fact_rask, f"RASK{es_file_ext}_{update_last_ass}", REQUEST_PATTERN)
 
     # The run_2 are also nice ...
     # visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv",
-                    "agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    # visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv",
+    #                 "agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")

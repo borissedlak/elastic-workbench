@@ -32,7 +32,8 @@ class RASK_Global_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
-                 log_experience=None, max_explore=25, gaussian_noise=0.05):
+                 log_experience=None, max_explore=25, gaussian_noise=0.05,
+                 update_last_assignment=True):
 
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path,
                          es_registry_path, log_experience)
@@ -40,7 +41,8 @@ class RASK_Global_Agent(ScalingAgent):
         self.explore_count = 0
         self.max_explore = max_explore
         self.gaussian_noise = gaussian_noise
-        # TODO: Remove this hard coding again at a later stage
+        self.update_last_assignment = update_last_assignment
+
         self.last_assignments = [{'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
                                  {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT,
                                   'cores': MAX_CORES / 3},
@@ -64,8 +66,10 @@ class RASK_Global_Agent(ScalingAgent):
             self.rask.init_models()  # Reloads the RASK model from the metrics.csv
             assignments = solve_global(service_contexts, MAX_CORES, self.rask, self.last_assignments)
             assignments = apply_gaussian_noise_to_asses(assignments, self.gaussian_noise)
-            self.last_assignments = assignments
             self.call_all_ES_deterministic(services_m, assignments)
+
+            if self.update_last_assignment:
+                self.last_assignments = assignments
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
