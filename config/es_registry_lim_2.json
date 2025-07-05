@@ -11,17 +11,6 @@
         }
       }
     },
-    "parallelism_scaling": {
-      "cooldown": 2000,
-      "active": false,
-      "endpoint": "/parallelism_scaling",
-      "parameters": {
-        "parallelism": {
-          "min": 1,
-          "max": 8
-        }
-      }
-    },
     "resource_scaling": {
       "cooldown": 2000,
       "active": true,
@@ -37,12 +26,12 @@
   "elastic-workbench-cv-analyzer": {
     "model_scaling": {
       "cooldown": 2000,
-      "active": false,
+      "active": true,
       "endpoint": "/model_scaling",
       "parameters": {
         "model_size": {
-          "min": 1,
-          "max": 4
+          "min": 3,
+          "max": 3
         }
       }
     },
@@ -54,17 +43,6 @@
         "data_quality": {
           "min": 128,
           "max": 320
-        }
-      }
-    },
-    "parallelism_scaling": {
-      "cooldown": 2000,
-      "active": false,
-      "endpoint": "/parallelism_scaling",
-      "parameters": {
-        "parallelism": {
-          "min": 1,
-          "max": 8
         }
       }
     },
@@ -81,28 +59,6 @@
     }
   },
   "elastic-workbench-pc-visualizer": {
-    "model_scaling": {
-      "cooldown": 2000,
-      "active": false,
-      "endpoint": "/model_scaling",
-      "parameters": {
-        "model_size": {
-          "min": 1,
-          "max": 10
-        }
-      }
-    },
-    "parallelism_scaling": {
-      "cooldown": 2000,
-      "active": false,
-      "endpoint": "/parallelism_scaling",
-      "parameters": {
-        "parallelism": {
-          "min": 1,
-          "max": 8
-        }
-      }
-    },
     "quality_scaling": {
       "cooldown": 2000,
       "active": true,
