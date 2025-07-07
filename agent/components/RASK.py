@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -258,5 +259,5 @@ if __name__ == "__main__":
         logger.addHandler(ch)
 
     rask = RASK(show_figures=True)
-    df = pd.read_csv("../../share/metrics/metrics.csv")
+    df = pd.read_csv("../../experiments/tsc/E1/run_3/metrics_20_0.csv")
     rask.init_models(df)
