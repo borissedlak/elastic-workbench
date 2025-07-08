@@ -1,24 +1,20 @@
 import logging
 import os
 import time
-import pandas as pd
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
-from pandas import DataFrame
 
-from HttpClient import HttpClient
-from agent.k8_Agent import k8_Agent
-from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std
 import utils
+from HttpClient import HttpClient
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
+from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std
 from experiments.tsc.E1.E1 import moving_average
 from experiments.tsc.E2.pattern.PatternRPS import PatternRPS, RequestPattern
-from iwai.dqn_agent import DQNAgent
-from iwai.dqn_trainer import DQN, STATE_DIM, ACTION_DIM_QR, ACTION_DIM_CV, ACTION_DIM_PC
 
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
@@ -30,7 +26,7 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 3
+EXPERIMENT_REPETITIONS = 5
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
@@ -51,6 +47,8 @@ pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visuali
 
 MAX_RPS_QR = 100
 MAX_RPS_CV = 10
+
+LINE_STYLE_DICT = {"DQN": "--", "VPA": ":", "RASK": "-"}
 
 
 def ingest_metrics_data(source):
@@ -80,7 +78,8 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
         agent = agent_factory(rep)
         if isinstance(agent, RASK_Global_Agent):
-            last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
+            last_assignments = agent_utils.get_last_assignment_from_metrics(
+                ROOT + "/../../../share/metrics/metrics.csv")
             agent.set_last_assignments(last_assignments)
 
         agent.reset_services_states()
@@ -97,36 +96,42 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
             agent.experience_buffer.clear()
 
         agent.terminate_gracefully()
-        print(f"Run #{rep}| {agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
+        print(
+            f"Run #{rep}| {agent_suffix} agent finished {request_pattern.value} evaluation after {runtime_sec} seconds")
 
 
-def visualize_data(agent_types: list[str], output_file: str):
-    x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
-    # plt.figure(figsize=(6.0, 3.8))
-    plt.figure(figsize=(18.0, 4.8))
+def visualize_data(agent_types: list[tuple], output_file: str):
+    num_points = int(EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1
+    x = np.arange(0, (num_points + 1) * EVALUATION_FREQUENCY, EVALUATION_FREQUENCY)
 
-    for agent in agent_types:
-        df = pd.read_csv(ROOT + f"/{agent}")
+    plt.figure(figsize=(4.5, 3.2))
+
+    for file, agent in agent_types:
+        df = pd.read_csv(ROOT + f"/{file}")
         paired_df = df.groupby(df.index // 3).agg({
             'rep': 'first',
             'timestamp': 'first',
             'slo_f': 'mean'
         })
-        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
+        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=20)
+
         s_mean, s_std = calculate_mean_and_std(paired_df, EXPERIMENT_REPETITIONS)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
-        plt.plot(x, s_mean, label=f"{agent}", linewidth=2)
-        plt.fill_between(x, lower_bound, upper_bound, alpha=0.1)
 
-    plt.xlim(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 2)
-    # plt.ylim(0.5, 0.95)
+        plt.plot(x[:len(s_mean)], s_mean, label=f"{agent}", linewidth=2, linestyle=LINE_STYLE_DICT[agent])
+        plt.fill_between(x[:len(s_mean)], lower_bound, upper_bound, alpha=0.1)
 
-    plt.xlabel('Scaling Agent Iterations')
+    plt.xlim(0, x[len(s_mean) - 1])
+    plt.ylim(0.55, 1.0)
+    plt.xlabel("Time in Experiment (s)")
     plt.ylabel('Global SLO Fulfillment')
     plt.legend()
+    plt.tight_layout()
     plt.savefig(output_file, dpi=600, bbox_inches="tight")
     plt.show()
+
+
 
 if __name__ == '__main__':
 
@@ -171,7 +176,24 @@ if __name__ == '__main__':
 
         # eval_scaling_agent(agent_fact_dqn, f"dqn_{GAUSSIAN_NOISE}", request_pattern)
 
-    # The run_2 are also nice ...
-    visualize_data(["run_4/agent_experience_RASK_0_bursty.csv", "run_4/agent_experience_k8_0_bursty.csv", "run_4/agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_4/agent_experience_k8_0_bursty.csv","run_4/agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    # visualize_data(["run_3/agent_experience_RASK_0_diurnal.csv", "run_3/agent_experience_k8_0_diurnal.csv","run_3/agent_experience_dqn_0_diurnal.csv"], ROOT + "/plots/slo_f_diurnal.eps")
+    # bursty_runs_1 = [
+    #     ("run_4/agent_experience_RASK_0_bursty.csv", "RASK"),
+    #     ("run_4/agent_experience_k8_0_bursty.csv", "VPA"),
+    #     ("run_4/agent_experience_dqn_0_bursty.csv", "DQN"),
+    # ]
+    # visualize_data(bursty_runs_1, ROOT + "/plots/E2_SLO_F_bursty.pdf")
+
+    bursty_runs_2 = [
+        ("run_3/agent_experience_RASK_0_bursty.csv", "RASK"),
+        ("run_4/agent_experience_k8_0_bursty.csv", "VPA"),
+        ("run_4/agent_experience_dqn_0_bursty.csv", "DQN"),
+    ]
+    visualize_data(bursty_runs_2, ROOT + "/plots/E2_SLO_F_bursty_2.pdf")
+
+    diurnal_runs = [
+        ("run_3/agent_experience_RASK_0_diurnal.csv", "RASK"),
+        ("run_3/agent_experience_k8_0_diurnal.csv", "VPA"),
+        ("run_3/agent_experience_dqn_0_diurnal.csv", "DQN")
+    ]
+
+    visualize_data(diurnal_runs, ROOT + "/plots/E2_SLO_F_diurnal.pdf")

@@ -67,7 +67,6 @@ def eval_scaling_agent(agent_factory, agent_suffix):
         print(f"{agent_suffix} agent finished evaluation round #{rep} after {EXPERIMENT_DURATION * rep} seconds")
 
 
-COLOR_DICT = {"elastic-workbench-qr-detector-1": "red", "elastic-workbench-cv-analyzer-1": "green"}
 COLOR_DICT_AGENT = {"DQN": "red", "ASK": "green", "AIF": "blue", "DACI": "grey"}
 LINE_STYLE_DICT = {"DQN": "--", "ASK": "-", "AIF": "-.", "DACI": ':'}
 
@@ -97,13 +96,32 @@ LINE_STYLE_DICT = {
 }
 
 def moving_average(data, window_size=3):
-    return np.convolve(data, np.ones(window_size) / window_size, mode='same')
+    data = np.array(data)
+    smoothed = np.zeros_like(data, dtype=float)
+    n = len(data)
+
+    for i in range(n):
+        # Determine dynamic window size
+        if i >= n - 10:
+            # Linearly decrease window size from `window_size` to 1 over last 10 elements
+            decay = (n - i - 1) / 9  # goes from ~1 to 0
+            current_window = int(round(1 + (window_size - 1) * decay))
+        else:
+            current_window = window_size
+
+        half = current_window // 2
+        start = max(0, i - half)
+        end = min(n, i + half + 1)
+
+        smoothed[i] = data[start:end].mean()
+
+    return smoothed
 
 
 def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
     x = np.arange(1, (EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1)
-    # plt.figure(figsize=(6.0, 3.8))
-    plt.figure(figsize=(18.0, 4.8))
+    # plt.figure(figsize=(9.0, 3.8))
+    plt.figure(figsize=(9, 4.8))
 
     for file, name in rask_configs:
         df = pd.read_csv(ROOT + f"/run_6/{file}")
@@ -129,7 +147,8 @@ def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
     plt.xlabel('Scaling Agent Iterations')
     plt.ylabel('Global SLO Fulfillment')
     plt.legend()
-    plt.savefig(output_file, dpi=600, bbox_inches="tight", format="png")
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=600, bbox_inches="tight")
     plt.show()
 
 
@@ -176,4 +195,4 @@ if __name__ == '__main__':
     #
     # eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
 
-    visualize_data(files, ROOT + "/plots/slo_f_run6.png")
+    visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")
