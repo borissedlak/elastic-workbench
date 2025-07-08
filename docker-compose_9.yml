@@ -1,0 +1,241 @@
+services:
+
+  # --- QR DETECTOR INSTANCES ---
+  qr-detector-1:
+    container_name: elastic-workbench-qr-detector-1
+    build:
+      context: .
+      dockerfile: iot_services/QrDetector/QrDetector.Dockerfile
+    image: elastic-workbench-qr-detector:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-qr-detector-1
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  qr-detector-2:
+    container_name: elastic-workbench-qr-detector-2
+    image: elastic-workbench-qr-detector:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-qr-detector-2
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8083:8080"
+    depends_on:
+      - redis
+
+  qr-detector-3:
+    container_name: elastic-workbench-qr-detector-3
+    image: elastic-workbench-qr-detector:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-qr-detector-3
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8086:8080"
+    depends_on:
+      - redis
+
+  # --- CV ANALYZER INSTANCES ---
+  cv-analyzer-1:
+    container_name: elastic-workbench-cv-analyzer-1
+    build:
+      context: .
+      dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
+    image: elastic-workbench-cv-analyzer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-cv-analyzer-1
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:30
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8080"
+    depends_on:
+      - redis
+
+  cv-analyzer-2:
+    container_name: elastic-workbench-cv-analyzer-2
+    image: elastic-workbench-cv-analyzer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-cv-analyzer-2
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:30
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8084:8080"
+    depends_on:
+      - redis
+
+  cv-analyzer-3:
+    container_name: elastic-workbench-cv-analyzer-3
+    image: elastic-workbench-cv-analyzer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-cv-analyzer-3
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:30
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8087:8080"
+    depends_on:
+      - redis
+
+  # --- PC VISUALIZER INSTANCES ---
+  pc-visualizer-1:
+    container_name: elastic-workbench-pc-visualizer-1
+    build:
+      context: .
+      dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
+    image: elastic-workbench-pc-visualizer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-pc-visualizer-1
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8082:8080"
+    depends_on:
+      - redis
+
+  pc-visualizer-2:
+    container_name: elastic-workbench-pc-visualizer-2
+    image: elastic-workbench-pc-visualizer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-pc-visualizer-2
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8085:8080"
+    depends_on:
+      - redis
+
+  pc-visualizer-3:
+    container_name: elastic-workbench-pc-visualizer-3
+    image: elastic-workbench-pc-visualizer:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-pc-visualizer-3
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna
+    volumes:
+      - ./share:/src/share
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8088:8080"
+    depends_on:
+      - redis
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    networks:
+      docker_network:
+    ports:
+      - "9090:9090" # Prometheus UI
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-admin-api
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    networks:
+      docker_network:
+    ports:
+      - "3000:3000" # Grafana UI
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=adminadmin
+    depends_on:
+      - prometheus
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    networks:
+      docker_network:
+    ports:
+      - "8090:8080" # Expose the cAdvisor UI and metrics endpoint
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+
+networks:
+  docker_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

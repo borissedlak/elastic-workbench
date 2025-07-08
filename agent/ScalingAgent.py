@@ -129,9 +129,18 @@ class ScalingAgent(Thread, ABC):
     #     return cores_per_service
 
     # Between the experiments, we need to reset the processing environment to a default state
-    def reset_services_states(self):
+    def reset_services_states(self, mute_first=None):
+
+        if mute_first:
+            for service_m in mute_first:
+                self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': 0}, respect_cooldown=False)
+                self.http_client.call_ES_endpoint(service_m, "/stop_processing", {})
 
         for service_m in self.services_monitored:  # For all monitored services
+
+            if mute_first:
+                self.http_client.call_ES_endpoint(service_m, "/start_processing", {})
+
             if service_m.service_type == ServiceType.QR:
                 self.execute_ES(service_m, ESType.RESOURCE_SCALE, {'cores': MAX_CORES / 3}, respect_cooldown=False)
                 self.execute_ES(service_m, ESType.QUALITY_SCALE, {'data_quality': QR_DATA_QUALITY_DEFAULT}, respect_cooldown=False)

@@ -51,8 +51,8 @@ class ServiceWrapper:
                     self.service.change_request_arrival(client.split(":")[0], int(client.split(":")[1]))
 
         self.app = Flask(__name__)
-        self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['POST'])
-        self.app.add_url_rule('/stop_all', 'stop_all', self.terminate_processing, methods=['POST'])
+        self.app.add_url_rule('/start_processing', 'start_processing', self.start_processing, methods=['PUT'])
+        self.app.add_url_rule('/stop_processing', 'stop_processing', self.terminate_processing, methods=['PUT'])
         # self.app.add_url_rule('/change_config', 'change_config', self.change_config, methods=['PUT'])
         self.app.add_url_rule('/quality_scaling', 'quality_scaling', self.quality_scaling, methods=['PUT'])
         self.app.add_url_rule('/model_scaling', 'model_scaling', self.model_scaling, methods=['PUT'])
