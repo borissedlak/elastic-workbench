@@ -10,13 +10,14 @@ plt.rcParams.update({'font.size': 12})
 files = [
     "agent_experience_RASK_3_diurnal.csv",
     "agent_experience_RASK_6_diurnal.csv",
+    "agent_experience_RASK_9_diurnal_temp.csv",
 ]
 
 # Clean aliases for nicer labeling
 aliases = {
     "agent_experience_RASK_3_diurnal.csv": "3 Services\n8 Cores",
     "agent_experience_RASK_6_diurnal.csv": "6 Services\n16 Cores",
-    "agent_experience_RASK_9_diurnal.csv": "9 Services\n24 Cores",
+    "agent_experience_RASK_9_diurnal_temp.csv": "9 Services\n24 Cores",
 }
 
 
