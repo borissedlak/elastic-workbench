@@ -172,8 +172,3 @@ if __name__ == '__main__':
         )
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{len(agent_list)}", REQUEST_PATTERN)
-
-    # The run_2 are also nice ...
-    # visualize_data(["run_2/agent_experience_RASK_0_bursty.csv","run_3/agent_experience_k8_0_bursty.csv","agent_experience_dqn_0_bursty.csv"], ROOT + "/plots/slo_f_bursty.eps")
-    # visualize_data(["agent_experience_RASK_False_bursty.csv", "agent_experience_RASK_lim_1_False_bursty.csv","agent_experience_RASK_lim_2_False_bursty.csv"], ROOT + "/plots/slo_f_diurnal.eps")
-    # "agent_experience_RASK_True_bursty.csv","agent_experience_RASK_lim_1_True_bursty.csv","agent_experience_RASK_lim_2_True_bursty.csv",
