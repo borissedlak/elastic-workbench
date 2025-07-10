@@ -28,7 +28,7 @@
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {
-          "min": 0,
+          "min": 1,
           "max": 8
         }
       }
@@ -74,7 +74,7 @@
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {
-          "min": 0,
+          "min": 1,
           "max": 8
         }
       }
@@ -120,7 +120,7 @@
       "endpoint": "/resource_scaling",
       "parameters": {
         "cores": {
-          "min": 0,
+          "min": 1,
           "max": 8
         }
       }

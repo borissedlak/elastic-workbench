@@ -75,7 +75,7 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
     http_client.update_service_rps(qr_local_1, QR_RPS)
     http_client.update_service_rps(cv_local_1, CV_RPS)
-    http_client.update_service_rps(pc_local_1, PC_RPS)
+    http_client.update_service_rps(pc_local_1, PC_RPS) # RESET
 
     if service_replication >= 2:
         http_client.update_service_rps(qr_local_2, QR_RPS)
@@ -92,14 +92,11 @@ def eval_scaling_agent(agent_factory, agent_suffix, request_pattern: RequestPatt
 
         runtime_sec = 0
         delete_file_if_exists(METRICS_FILE_PATH)
-        ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")  # TODO: This might not be accurate anymore?
+        ingest_metrics_data(ROOT + "/../E1/run_6/metrics_20_0.csv")
 
         agent = agent_factory(rep)
-        if agent.update_last_assignment:
-            last_assignments = agent_utils.get_last_assignment_from_metrics(METRICS_FILE_PATH)
-            agent.set_last_assignments(last_assignments)
 
-        agent.reset_services_states(mute_first=services_9)
+        agent.reset_services_states()
         time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services (i.e., calling ES)
         agent.start()
         agent.last_assignments = None
@@ -163,7 +160,7 @@ if __name__ == '__main__':
     services_9 = services_6 + [qr_local_3, cv_local_3, pc_local_3]
     # services_12 = services_9 + [qr_local_4, cv_local_4, pc_local_4]
 
-    for agent_list in [services_3, services_6, services_9]:
+    for agent_list in [services_9]:
         agent_fact_rask = lambda repetition: RASK_Global_Agent(
             prom_server=PROMETHEUS,
             services_monitored=agent_list,
@@ -171,6 +168,7 @@ if __name__ == '__main__':
             log_experience=repetition,
             max_explore=MAX_EXPLORE,
             gaussian_noise=GAUSSIAN_NOISE,
+            update_last_assignment=True
         )
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{len(agent_list)}", REQUEST_PATTERN)
