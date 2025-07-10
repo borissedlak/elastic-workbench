@@ -26,7 +26,7 @@ logger = logging.getLogger("multiscale")
 
 ######## Experimental Parameters ##########
 
-EXPERIMENT_REPETITIONS = 5
+EXPERIMENT_REPETITIONS = 3
 EXPERIMENT_DURATION = 3600  # seconds, so its 1 hour
 
 ##### Scaling Agent Hyperparameters #######
