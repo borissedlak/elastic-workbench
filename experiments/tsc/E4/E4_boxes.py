@@ -6,18 +6,17 @@ import pandas as pd
 ROOT = os.path.dirname(__file__)
 plt.rcParams.update({'font.size': 12})
 
-# TODO: If I really want, I can rerun the RASK 3, but I dont think it should be necessary
 files = [
     "agent_experience_RASK_3_diurnal.csv",
     "agent_experience_RASK_6_diurnal.csv",
-    "agent_experience_RASK_9_diurnal_temp.csv",
+    "agent_experience_RASK_9_diurnal.csv",
 ]
 
 # Clean aliases for nicer labeling
 aliases = {
     "agent_experience_RASK_3_diurnal.csv": "3 Services\n8 Cores",
     "agent_experience_RASK_6_diurnal.csv": "6 Services\n16 Cores",
-    "agent_experience_RASK_9_diurnal_temp.csv": "9 Services\n24 Cores",
+    "agent_experience_RASK_9_diurnal.csv": "9 Services\n24 Cores",
 }
 
 
@@ -62,7 +61,7 @@ def main():
     ax1.tick_params(axis='x')
     ax1.grid(True, axis='y', linestyle='--', alpha=0.6)
     fig1.tight_layout()
-    fig1.savefig("plots/E3_runtime.pdf")
+    fig1.savefig("plots/E4_runtime.pdf")
     plt.show()
     plt.close(fig1)
 
@@ -79,7 +78,7 @@ def main():
     ax2.grid(True, axis='y', linestyle='--', alpha=0.6)
     ax2.legend(loc='upper left')
     fig2.tight_layout()
-    fig2.savefig("plots/E3_SLO_F.pdf")
+    fig2.savefig("plots/E4_SLO_F.pdf")
     plt.show()
     plt.close(fig2)
 
