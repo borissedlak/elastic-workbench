@@ -120,7 +120,7 @@ def visualize_data(agent_types: list[tuple], output_file: str):
         upper_bound = np.array(s_mean) + np.array(s_std)
 
         plt.plot(x[:len(s_mean)], s_mean, label=f"{agent}", linewidth=2, linestyle=LINE_STYLE_DICT[agent])
-        plt.fill_between(x[:len(s_mean)], lower_bound, upper_bound, alpha=0.1)
+        plt.fill_between(x[:len(s_mean)], lower_bound, upper_bound, alpha=0.125)
 
     plt.xlim(0, x[len(s_mean) - 1])
     plt.ylim(0.55, 1.0)

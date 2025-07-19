@@ -132,7 +132,7 @@ def visualize_data(rask_configs: list[Tuple[str,str]], output_file: str):
             'slo_f': 'mean'
         })
 
-        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=2)
+        paired_df['slo_f'] = moving_average(paired_df['slo_f'], window_size=1)
         s_mean, s_std = calculate_mean_and_std(paired_df, EXPERIMENT_REPETITIONS)
         lower_bound = np.array(s_mean) - np.array(s_std)
         upper_bound = np.array(s_mean) + np.array(s_std)
@@ -173,11 +173,11 @@ if __name__ == '__main__':
         ('agent_experience_RASK_0_0.csv', 'RASK, no exploration, no noise'),
         ('agent_experience_RASK_0_0.1.csv', 'RASK, no exploration, 10% noise'),
         # ('agent_experience_RASK_0_0.05.csv', 'RASK, no exploration, 5% noise'),
-        ('agent_experience_RASK_10_0.csv', 'RASK, exploration=0, no noise'),
-        ('agent_experience_RASK_10_0.1.csv', 'RASK, exploration=10, 10% noise'),
+        ('agent_experience_RASK_10_0.csv', 'RASK, explore 10 iterations, no noise'),
+        ('agent_experience_RASK_10_0.1.csv', 'RASK, explore 10 iterations, 10% noise'),
         # ('agent_experience_RASK_10_0.05.csv', 'RASK, 10 exploration steps, 5% noise'),
-        ('agent_experience_RASK_20_0.csv', 'RASK, exploration=20, no noise'),
-        ('agent_experience_RASK_20_0.1.csv', 'RASK, exploration=20, 10% noise'),
+        ('agent_experience_RASK_20_0.csv', 'RASK, explore 20 iterations, no noise'),
+        ('agent_experience_RASK_20_0.1.csv', 'RASK, explore 20 iterations, 10% noise'),
         # ('agent_experience_RASK_20_0.05.csv', 'RASK, 20 exploration steps, 5% noise'),
     ]
 

@@ -31,6 +31,7 @@ for pattern in ['bursty', 'diurnal']:
         plt.figure(figsize=(4.5, 3.2))
         plt.plot(x, y, linewidth=2)
         plt.xlim(0,3600)
+        plt.ylim(0.18, 1.02)
         plt.ylabel("% Request Load")
         plt.xlabel("Time in Experiment (s)")
         plt.savefig(f"{pattern}.pdf", bbox_inches='tight')

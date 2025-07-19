@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
 DEFAULT_SCALEUP_T = 0.95
-DEFAULT_SCALEDOWN_T = 0.80
+DEFAULT_SCALEDOWN_T = 0.85
 DEFAULT_SCALING_STEP = 0.25
 
 
