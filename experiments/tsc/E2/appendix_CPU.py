@@ -56,18 +56,11 @@ def calculate_mean_and_std(df: pd.DataFrame, experiment_repetitions: int, metric
     return mean_over_time, std_over_time
 
 
-def calculate_custom_slo_fulfillment(row):
-    try:
-        state = ast.literal_eval(row['state'])
-    except Exception:
-        return pd.Series([np.nan, np.nan, np.nan])
+def calculate_cores(row):
+    state = ast.literal_eval(row['state'])
 
-    # Apply custom SLO logic
-    f_quality = smoothstep(float(state.get('data_quality', 0)) / THRESHOLDS[row['service']]['data_quality'])
-    f_model_size = smoothstep(float(state.get('model_size', 0)) / THRESHOLDS[row['service']]['model_size'])
-    f_completion_rate = smoothstep(float(state.get('completion_rate', 0)) / THRESHOLDS[row['service']]['completion_rate'])
-    return pd.Series([f_quality, f_model_size, f_completion_rate],
-                     index=['slo_f_quality', 'slo_f_model_size', 'slo_f_completion_rate'])
+    cores = float(state.get('cores', 0))
+    return pd.Series([cores], index=['cores'])
 
 
 num_points = int(EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1
@@ -85,44 +78,29 @@ for file, agent, color in agent_types:
     df = pd.read_csv(ROOT + f"/{file}")
 
     # Add custom SLO columns
-    df[['slo_f_quality', 'slo_f_model_size', 'slo_f_completion_rate']] = df.apply(calculate_custom_slo_fulfillment,
-                                                                                  axis=1)
+    df[['cores']] = df.apply(calculate_cores, axis=1)
 
     # You can pick which one to visualize: e.g., data_quality
     # slo_metric = 'slo_f_quality'
+    plt.figure(figsize=(5.4, 3.2))
 
-    # paired_df = df.groupby(df.index // 3).agg({
-    #     'rep': 'first',
-    #     'service': 'first',
-    #     'timestamp': 'first',
-    #     'slo_f': 'mean',
-    #     'slo_f_quality': 'mean',
-    #     'slo_f_model_size': 'mean',
-    #     'slo_f_completion_rate': 'mean'
-    # })
-
-    for service, alias in [("elastic-workbench-qr-detector-1", "QR"), ("elastic-workbench-cv-analyzer-1", "CV"),
-                    ("elastic-workbench-pc-visualizer-1", "PC")]:
-
-        plt.figure(figsize=(5.4, 3.2))
+    for service, alias, line in [("elastic-workbench-qr-detector-1", "QR", "-"), ("elastic-workbench-cv-analyzer-1", "CV", ":"), ("elastic-workbench-pc-visualizer-1", "PC", "--")]:
 
         subset_df = df[df['service'] == service]
-        for slo_metric, label, linestyle in [('slo_f', "global weighted", "-"), ('slo_f_quality', 'data quality', ":"),
-                                  ('slo_f_completion_rate', 'completion rate', "--"), ('slo_f_model_size', 'model size', '-.')]:
+
+        for metric, label, linestyle in [('cores', "CPU Cores", line)]:
             # Group every 3 rows (assumes they are time-step related)
 
-            if service != "elastic-workbench-cv-analyzer-1" and slo_metric == 'slo_f_model_size':
-                continue
+            subset_df[metric] = moving_average(subset_df[metric], window_size=20)
+            s_mean, _ = calculate_mean_and_std(subset_df, EXPERIMENT_REPETITIONS, "cores")
 
-            subset_df[slo_metric] = moving_average(subset_df[slo_metric], window_size=20)
-            s_mean, _ = calculate_mean_and_std(subset_df, EXPERIMENT_REPETITIONS, slo_metric)
-            plt.plot(x[:len(s_mean)], s_mean, label=f"{label}", linewidth=2, linestyle=linestyle)
+        plt.plot(x[:len(s_mean)], s_mean, label=f"{alias}", linewidth=2, linestyle=linestyle)
 
-        plt.xlim(0, x[len(s_mean) - 1])
-        plt.ylim(0.0, 1.02)
-        plt.xlabel("Time in Experiment (s)")
-        plt.ylabel(f"{alias}: SLO Fulfillment")
-        plt.legend(loc='lower left')
-        plt.tight_layout()
-        plt.savefig(ROOT + f"/plots/appendix/E2_SLO_F_{agent}_{alias}.pdf", dpi=600, bbox_inches="tight")
-        plt.show()
+    plt.xlim(0, x[len(s_mean) - 1])
+    plt.ylim(0.9, 6.1)
+    plt.xlabel("Time in Experiment (s)")
+    plt.ylabel(f"CPU Core Allocation")
+    plt.legend(loc='upper left')
+    plt.tight_layout()
+    plt.savefig(ROOT + f"/plots/appendix/E2_CPU_{agent}.pdf", dpi=600, bbox_inches="tight")
+    plt.show()
