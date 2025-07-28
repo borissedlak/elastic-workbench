@@ -66,41 +66,47 @@ def calculate_cores(row):
 num_points = int(EXPERIMENT_DURATION / EVALUATION_FREQUENCY) + 1
 x = np.arange(0, (num_points + 1) * EVALUATION_FREQUENCY, EVALUATION_FREQUENCY)
 
-plt.figure(figsize=(4.5, 3.2))
+def visualize_data(data, pattern):
 
-agent_types = [
+    for file, agent, color in data:
+        df = pd.read_csv(ROOT + f"/{file}")
+
+        # Add custom SLO columns
+        df[['cores']] = df.apply(calculate_cores, axis=1)
+
+        plt.figure(figsize=(5.4, 3.2))
+        for service, alias, line in [("elastic-workbench-qr-detector-1", "QR", "-"), ("elastic-workbench-cv-analyzer-1", "CV", ":"), ("elastic-workbench-pc-visualizer-1", "PC", "--")]:
+
+            subset_df = df[df['service'] == service]
+
+            for metric, label, linestyle in [('cores', "CPU Cores", line)]:
+                # Group every 3 rows (assumes they are time-step related)
+
+                subset_df[metric] = moving_average(subset_df[metric], window_size=20)
+                s_mean, _ = calculate_mean_and_std(subset_df, EXPERIMENT_REPETITIONS, "cores")
+
+            plt.plot(x[:len(s_mean)], s_mean, label=f"{alias}", linewidth=2, linestyle=linestyle)
+
+        plt.xlim(0, x[len(s_mean) - 1])
+        plt.ylim(0, 6.1)
+        plt.xlabel("Time in Experiment (s)")
+        plt.ylabel(f"CPU Core Allocation")
+        plt.legend(loc='upper left')
+        plt.tight_layout()
+        plt.savefig(ROOT + f"/plots/appendix/E2_CPU_{pattern}_{agent}.pdf", dpi=600, bbox_inches="tight")
+        plt.show()
+
+bursty_runs_2 = [
     ("run_3/agent_experience_RASK_0_bursty.csv", "RASK", "blue"),
     ("run_4/agent_experience_k8_0_bursty.csv", "VPA", "orange"),
     ("run_4/agent_experience_dqn_0_bursty.csv", "DQN", "green"),
 ]
+visualize_data(bursty_runs_2, "bursty")
 
-for file, agent, color in agent_types:
-    df = pd.read_csv(ROOT + f"/{file}")
+diurnal_runs = [
+    ("run_3/agent_experience_RASK_0_diurnal.csv", "RASK", "blue"),
+    ("run_3/agent_experience_k8_0_diurnal.csv", "VPA", "orange"),
+    ("run_3/agent_experience_dqn_0_diurnal.csv", "DQN", "green")
+]
 
-    # Add custom SLO columns
-    df[['cores']] = df.apply(calculate_cores, axis=1)
-
-    # You can pick which one to visualize: e.g., data_quality
-    # slo_metric = 'slo_f_quality'
-    plt.figure(figsize=(5.4, 3.2))
-
-    for service, alias, line in [("elastic-workbench-qr-detector-1", "QR", "-"), ("elastic-workbench-cv-analyzer-1", "CV", ":"), ("elastic-workbench-pc-visualizer-1", "PC", "--")]:
-
-        subset_df = df[df['service'] == service]
-
-        for metric, label, linestyle in [('cores', "CPU Cores", line)]:
-            # Group every 3 rows (assumes they are time-step related)
-
-            subset_df[metric] = moving_average(subset_df[metric], window_size=20)
-            s_mean, _ = calculate_mean_and_std(subset_df, EXPERIMENT_REPETITIONS, "cores")
-
-        plt.plot(x[:len(s_mean)], s_mean, label=f"{alias}", linewidth=2, linestyle=linestyle)
-
-    plt.xlim(0, x[len(s_mean) - 1])
-    plt.ylim(0.9, 6.1)
-    plt.xlabel("Time in Experiment (s)")
-    plt.ylabel(f"CPU Core Allocation")
-    plt.legend(loc='upper left')
-    plt.tight_layout()
-    plt.savefig(ROOT + f"/plots/appendix/E2_CPU_{agent}.pdf", dpi=600, bbox_inches="tight")
-    plt.show()
+visualize_data(diurnal_runs, "diurnal")
