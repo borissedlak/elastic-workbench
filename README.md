@@ -1,6 +1,6 @@
 # IWAI - Comparison of Agents
 
-This project demonstrated the capability of different agents to solve a complex scaling problem. 
+This project demonstrated the capability of different agents to solve a complex scaling problem.  
 
 
 ## Installation
