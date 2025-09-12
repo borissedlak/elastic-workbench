@@ -313,11 +313,13 @@ def train_fast_pymdp_agent(action_selection, alpha, motivate_cores):
     for steps in range(50):
         start_time_loop = time.time()
 
-        a_s = pymdp_agent.infer_states(pymdp_state)
+        # NOTE: The bug was here, as it did not update the B matrix
+        qs_prev = pymdp_agent.qs.copy()
+        pymdp_agent.infer_states(pymdp_state)
         elapsed_state_inference = time.time() - start_time_loop
-        
+
         if steps > 0 and learning_agent:
-            pymdp_agent.update_B(a_s)
+            pymdp_agent.update_B(qs_prev)
 
         # 策略推理
         result = pymdp_agent.infer_policies()

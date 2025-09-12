@@ -141,11 +141,18 @@ class AIF_agent(ScalingAgent):
         
         try:
             # 状态推理
-            a_s = self.pymdp_agent.infer_states(pymdp_state)
-            
-            # 参数学习 (从第二步开始)
+            # a_s = self.pymdp_agent.infer_states(pymdp_state)
+            #
+            # # 参数学习 (从第二步开始)
+            # if self.step_count > 0:
+            #     self.pymdp_agent.update_B(a_s)
+
+            # NOTE: The bug was here, as it did not update the B matrix
+            qs_prev = self.pymdp_agent.qs.copy()
+            self.pymdp_agent.infer_states(pymdp_state)
+
             if self.step_count > 0:
-                self.pymdp_agent.update_B(a_s)
+                self.pymdp_agent.update_B(qs_prev)
             
             # 策略推理（静默模式）
             import sys
