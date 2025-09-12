@@ -196,8 +196,8 @@ if __name__ == '__main__':
     )
     # eval_scaling_agent(agent_fact_ASK, "ASK")
     # eval_scaling_agent(agent_fact_dqn, "DQN")
-    # eval_scaling_agent(agent_fact_aif, "AIF")
+    eval_scaling_agent(agent_fact_aif, "AIF")
     # eval_scaling_agent(agent_fact_daci, "DACI")
-    # import_pymdp_logs(filenames=pymdp_files)
 
-    visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")
+    # import_pymdp_logs(filenames=pymdp_files)
+    # visualize_data(["DQN", "ASK", "AIF", "DACI"], ROOT + "/plots/slo_f.png")

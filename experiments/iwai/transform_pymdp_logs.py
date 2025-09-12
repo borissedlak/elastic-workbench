@@ -11,6 +11,9 @@ FullStateDQN(None, None, None, None, None, None, None, None, None)  # Keep here 
 ROOT = os.path.dirname(__file__)
 
 def import_pymdp_logs(filenames: list[str]):
+    """
+    Needed to transform the raw pymdp logs into the same format as the other agents produce
+    """
 
     rows = []
     for index, file in enumerate(filenames):

@@ -33,7 +33,7 @@ class AIF_agent(ScalingAgent):
                  learning_rate=1,
                  alpha=8,
                  action_selection="stochastic",
-                 motivate_cores=True):
+                 motivate_cores=False):
         
         super().__init__(prom_server, services_monitored, evaluation_cycle,
                          slo_registry_path, es_registry_path, log_experience)
