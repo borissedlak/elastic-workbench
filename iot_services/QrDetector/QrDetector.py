@@ -4,6 +4,7 @@ import time
 from typing import Any
 
 import cv2
+from PIL.Image import Image
 from pyzbar.pyzbar import decode
 
 import utils
@@ -46,6 +47,21 @@ class QrDetector(IoTService):
         combined_img = video_utils.highlight_qr_codes(frame, decoded_objects)
         duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
+
+    def write_result_to_sink(self, result, timestep):
+        directory = ROOT + f"/../../share/service_output/{self.service_type.value}"
+
+        # Ensure the directory exists
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if result is not None:
+            filename = f"{directory}/{timestep}.jpg"
+            # output_bgr = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+            cv2.imwrite(filename, result)
+            print(f"Write image {filename}")
+            pass
+
 
 
 if __name__ == '__main__':

@@ -45,15 +45,16 @@ class YOLOv8:
 
 
 if __name__ == '__main__':
-    model_path = "./models/yolov8x.onnx"
+    model_path = "./models/yolov8m.onnx"
     detector = YOLOv8(model_path)
 
     img = cv2.imread("./data/CV_Image.png")
-    img = cv2.resize(img, (700, 701))  # match training shape
+    # img = cv2.resize(img, (700, 701))  # match training shape
     class_ids, boxes, confidences = detector(img)
     print(boxes)
 
     combined_img = video_utils.draw_detections(img, boxes, confidences, class_ids)
+    # combined_img = video_utils.draw_detections_simple(img, boxes)
     cv2.namedWindow("Output", cv2.WINDOW_NORMAL)
     cv2.imshow("Output", combined_img)
     cv2.waitKey(0)

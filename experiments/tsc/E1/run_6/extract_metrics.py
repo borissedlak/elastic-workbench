@@ -31,7 +31,7 @@ def extract_fields(row):
         "cooldown": -1  # static
     })
 
-files = [
+default_files = [
         'agent_experience_RASK_0_0.1.csv',
              # 'agent_experience_RASK_0_0.05.csv',
              'agent_experience_RASK_0_0.csv',
@@ -43,17 +43,21 @@ files = [
              'agent_experience_RASK_20_0.csv'
     ]
 
-for f in files:
-    # Load the original CSV file
-    df = pd.read_csv(f)
+def extract_metrics(files):
+    for f in files:
+        # Load the original CSV file
+        df = pd.read_csv(f)
 
-    # Parse the 'state' string to dict
-    df["state"] = df["state"].apply(ast.literal_eval)
-    suffix= f.replace('agent_experience_RASK_', "").replace(".csv", "")
+        # Parse the 'state' string to dict
+        df["state"] = df["state"].apply(ast.literal_eval)
+        suffix= f.replace('agent_experience_RASK_', "").replace(".csv", "")
 
-    # Transform the data
-    transformed_df = df.apply(extract_fields, axis=1)
+        # Transform the data
+        transformed_df = df.apply(extract_fields, axis=1)
 
-    # Save or display
-    transformed_df.to_csv(f"metrics_{suffix}.csv", index=False)
-    print(transformed_df)
+        # Save or display
+        transformed_df.to_csv(f"metrics_{suffix}.csv", index=False)
+        # print(transformed_df)
+
+if __name__ == "__main__":
+    extract_metrics(default_files)

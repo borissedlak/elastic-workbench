@@ -57,6 +57,18 @@ class CvAnalyzer(IoTService):
         duration = (time.perf_counter() - start) * 1000
         return combined_img, duration
 
+    def write_result_to_sink(self, result, timestep):
+        directory = ROOT + f"/../../share/service_output/{self.service_type.value}"
+
+        # Ensure the directory exists
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if result is not None:
+            filename = f"{directory}/{timestep}.jpg"
+            cv2.imwrite(filename, result)
+            print(f"Write image {filename}")
+            pass
 
 if __name__ == '__main__':
     qd = CvAnalyzer(store_to_csv=False)

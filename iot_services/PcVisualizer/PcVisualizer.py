@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import cv2
 from typing import Any
 
 from agent.components.es_registry import ServiceType
@@ -25,14 +26,14 @@ class PcVisualizer(IoTService):
         self.service_type = ServiceType.PC
         self.data_stream = KittiReader(ROOT + "/data", "2011_09_26", "0001")
         self.fusion_buffer = []
+        self.tracklets = parse_tracklets(ROOT + "/data/2011_09_26/tracklet_labels.xml")
+        # self.frame_idx = 0
 
     def get_service_parallelism(self) -> int:
         return self.service_conf['parallelism']
 
     def process_one_iteration(self, frame) -> (Any, int):
         start = time.perf_counter()
-
-        tracklets = parse_tracklets(ROOT + "/data/2011_09_26/tracklet_labels.xml")
 
         self.fusion_buffer.append(frame)
         if len(self.fusion_buffer) > self.service_conf['model_size']:
@@ -43,11 +44,12 @@ class PcVisualizer(IoTService):
 
         # Overlay 3D boxes
         i = self.data_stream.get_current_index()
-        for obj in tracklets:
+        for obj in self.tracklets:
             if i < obj["first_frame"] or i - obj["first_frame"] >= len(obj["poses"]):
                 continue
             pose = obj["poses"][i - obj["first_frame"]]
-            draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
+            # TODO: There is some problem with the object highlighting. Disable for now
+            # draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
 
         # cv2.imshow("LIDAR BEV with Fused Frames", bev)
         # if cv2.waitKey(10) == 27:
@@ -57,6 +59,18 @@ class PcVisualizer(IoTService):
         duration = (time.perf_counter() - start) * 1000
         return bev, duration
 
+    def write_result_to_sink(self, result, timestep):
+        directory = ROOT + f"/../../share/service_output/{self.service_type.value}"
+
+        # Ensure the directory exists
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if result is not None:
+            filename = f"{directory}/{timestep}.jpg"
+            cv2.imwrite(filename, result)
+            print(f"Write image {filename}")
+            pass
 
 if __name__ == '__main__':
     qd = PcVisualizer(store_to_csv=True)

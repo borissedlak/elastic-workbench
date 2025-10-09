@@ -37,8 +37,6 @@ class IoTService(ABC):
         self.client_arrivals: Dict[str, int] = {}
 
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
-        # self.docker_client = DockerClient()
-        # self.host_ip = HOST_IP  # self.docker_client.get_container_ip(self.docker_container_ref)
         self.flag_metric_cooldown = 0
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
@@ -97,15 +95,18 @@ class IoTService(ABC):
         return self._running
 
     def process_loop(self):
+        global_iteration_counter = 0
         while self._running:
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.get_service_parallelism())
             start_time = time.perf_counter()
             processed_item_counter = 0
+            global_iteration_counter += 1
             processed_item_durations = []
+            last_result = None
 
             try:
-                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals))
+                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = global_iteration_counter)
                 future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
                 while future_dict:
@@ -120,12 +121,14 @@ class IoTService(ABC):
                         processed_item_durations.append(np.abs(result[1]))
                         processed_item_counter += 1
                         del future_dict[future]
+                        last_result = result[0]
 
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
+                self.write_result_to_sink(last_result, global_iteration_counter)
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 
@@ -169,13 +172,20 @@ class IoTService(ABC):
         self.flag_metric_cooldown = self.es_registry.get_es_cooldown(self.service_type, es_type)
         self.redis_client.store_cooldown(self.get_service_id(), es_type, self.flag_metric_cooldown)
 
+    def write_result_to_sink(self, result, timestep):
+        pass
+
 class DataReader(ABC):
     def __init__(self, buffer_size=200):
         self.buffer_size = buffer_size
         self.buffer = []
 
-    def get_batch(self, batch_size):
+    def get_batch(self, batch_size, shift=0):
+        shift = shift % self.buffer_size  # wrap around if shift > buffer_size
         full_repeats = batch_size // self.buffer_size
         remainder = batch_size % self.buffer_size
 
-        return (self.buffer * full_repeats) + self.buffer[:remainder]
+        # circularly shifted buffer
+        shifted_buffer = self.buffer[shift:] + self.buffer[:shift]
+
+        return (shifted_buffer * full_repeats) + shifted_buffer[:remainder]
