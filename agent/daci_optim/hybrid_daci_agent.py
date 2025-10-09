@@ -11,7 +11,7 @@ from typing import Dict, Tuple
 import numpy as np
 import torch
 
-from agent.components.LGBN import LGBN
+from agent.daci_optim.LGBN import LGBN
 from agent.components.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
 from agent.agent_utils import FullStateDQN, min_max_scale
 from agent.daci.aif_utils import calculate_expected_free_energy

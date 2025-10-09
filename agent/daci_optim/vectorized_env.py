@@ -4,7 +4,7 @@ import os
 import torch
 from typing import Tuple, Dict
 
-from agent.components.LGBN import LGBN
+from agent.daci_optim.LGBN import LGBN
 from agent.components.SLORegistry import SLO_Registry, calculate_slo_fulfillment, to_normalized_slo_f
 from agent.agent_utils import FullStateDQN
 from agent.components.es_registry import ESRegistry, ServiceType
