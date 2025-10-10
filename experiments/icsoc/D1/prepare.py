@@ -217,10 +217,9 @@ def create_rask_model_renderings(demo_part):
 
     current = start
     iteration = 0
-    rask_models_store = {}  # if you want to capture models per step
 
-    df_train = pd.read_csv(ROOT + "/../E1/metrics_TRAIN.csv") if demo_part == "OPERATE" else pd.DataFrame()
-    df_train['timestamp'] = pd.to_datetime(df['timestamp'])
+    df_train = pd.read_csv(ROOT + "/../E1/metrics_EXPLORE.csv") if demo_part == "OPERATE" else pd.DataFrame([])
+    df_train['timestamp'] = pd.to_datetime(df['timestamp']) if demo_part == "OPERATE" else None
 
     rask = RASK(show_figures=True)
     while current <= end:
@@ -240,7 +239,6 @@ def create_rask_model_renderings(demo_part):
         current = current + timedelta(seconds=10)
 
     logger.info(f"Completed {iteration} iterations from {start} to {end}")
-    return rask_models_store
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -249,8 +247,8 @@ if __name__ == "__main__":
     )
 
     # agent_utils.delete_folder_if_exists(ROOT + "/rask_plots")
-    # create_rask_model_renderings("TRAIN")
-    create_rask_model_renderings("OPERATE")
+    # create_rask_model_renderings("EXPLORE")
+    # create_rask_model_renderings("OPERATE")
 
-    # app = LeverGUI()
-    # app.mainloop()
+    app = LeverGUI()
+    app.mainloop()

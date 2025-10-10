@@ -67,7 +67,7 @@ def train_scaling_agent(rask_agent, agent_suffix):
     time.sleep(DURATION_EXPLORE)
     rask_agent.terminate_gracefully()
     export_experience_buffer(rask_agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
-    extract_metrics([ROOT + f"/agent_experience_TRAIN.csv"])
+    extract_metrics([ROOT + f"/agent_experience_EXPLORE.csv"])
     print(f"{agent_suffix} agent finished evaluation after {DURATION_EXPLORE} seconds")
 
 
@@ -79,7 +79,7 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
     delete_file_if_exists(experience_file)
     delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
     # delete_folder_if_exists(ROOT + "/../../../share/service_output")
-    ingest_metrics_data(ROOT + "/../E1/metrics_TRAIN.csv")
+    ingest_metrics_data(ROOT + "/../E1/metrics_EXPLORE.csv")
 
     # Don't know if that's actually needed anymore
     last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         gaussian_noise=GAUSSIAN_NOISE
     )
     
-    train_scaling_agent(exploring_agent, f"TRAIN")
+    train_scaling_agent(exploring_agent, f"EXPLORE")
 
     operating_agent = RASK_Global_Agent(
         prom_server=PROMETHEUS,

@@ -348,7 +348,7 @@ def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, g
     # Scatter actual points
     ax.scatter(x_actual, y_actual, z_actual, s=10, c='r', depthshade=True)
 
-    ax.set_title(f'3D Surface for {var}')
+    # ax.set_title(f'3D Surface for {var}')
     ax.set_xlabel(x_axis)
     ax.set_ylabel(y_axis)
     ax.set_zlabel(var)
