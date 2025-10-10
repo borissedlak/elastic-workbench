@@ -8,7 +8,7 @@ import utils
 from HttpClient import HttpClient
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
-from agent.agent_utils import export_experience_buffer, delete_file_if_exists
+from agent.agent_utils import export_experience_buffer, delete_file_if_exists, delete_folder_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.run_6.extract_metrics import extract_metrics
 from experiments.tsc.E2.E2 import ingest_metrics_data, MAX_RPS_QR, MAX_RPS_CV
@@ -76,7 +76,9 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
 
     reset_services_default_rps()
     experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
+    delete_file_if_exists(experience_file)
     delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+    delete_folder_if_exists(ROOT + "/../../../share/service_output")
     ingest_metrics_data(ROOT + "/../E1/metrics_agent_experience_TRAIN.csv")
     time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
 

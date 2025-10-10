@@ -173,6 +173,13 @@ def delete_file_if_exists(file_path="./agent_experience.csv"):
     else:
         print(f"{file_path} does not exist.")
 
+def delete_folder_if_exists(folder_path):
+    if os.path.exists(folder_path) and os.path.isdir(folder_path):
+        shutil.rmtree(folder_path)
+        print(f"Deleted: {folder_path}")
+    else:
+        print("Folder does not exist or is not a directory.")
+
 
 def cache_file_if_exists(source: str, target: str):
     # source_path = os.path.join(source)
