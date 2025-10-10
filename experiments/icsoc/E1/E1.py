@@ -24,11 +24,11 @@ nn_folder = "./networks"
 ######## Experimental Parameters ##########
 
 DURATION_EXPLORE = 5 * 60  # = 5min
-DURATION_OPERATE = 10 * 60  # = 10min
+DURATION_OPERATE = 9 * 60  # = 9min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = 20
+MAX_EXPLORE = 24 # 4min
 GAUSSIAN_NOISE = 0.05
 EVALUATION_FREQUENCY = 10
 
@@ -75,16 +75,16 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
     print(f"Agent starting actual operation")
 
     reset_services_default_rps()
-    experience_file = ROOT + f"/agent_experience_{agent_suffix}_{request_pattern.value}.csv"
+    experience_file = ROOT + f"/agent_experience_{agent_suffix}.csv"
     delete_file_if_exists(experience_file)
     delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-    delete_folder_if_exists(ROOT + "/../../../share/service_output")
+    # delete_folder_if_exists(ROOT + "/../../../share/service_output")
     ingest_metrics_data(ROOT + "/../E1/metrics_TRAIN.csv")
-    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
 
     # Don't know if that's actually needed anymore
     last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
     rask_agent.set_last_assignments(last_assignments)
+    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
 
     rask_agent.start()
     runtime_sec = 0
@@ -102,7 +102,7 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
     rask_agent.terminate_gracefully()
     extract_metrics([experience_file])
     # export_experience_buffer(rask_agent.experience_buffer, ROOT + f"/agent_experience_{agent_suffix}.csv")
-    print(f"{agent_suffix} agent finished evaluation after {DURATION_EXPLORE} seconds")
+    print(f"{agent_suffix} agent finished evaluation after {DURATION_OPERATE} seconds")
 
 
 if __name__ == '__main__':
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         gaussian_noise=GAUSSIAN_NOISE
     )
     
-    # train_scaling_agent(exploring_agent, f"TRAIN")
+    train_scaling_agent(exploring_agent, f"TRAIN")
 
     operating_agent = RASK_Global_Agent(
         prom_server=PROMETHEUS,
