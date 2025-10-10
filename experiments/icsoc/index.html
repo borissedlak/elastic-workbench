@@ -19,7 +19,7 @@
             margin-bottom: 10px;
         }
 
-        #page-label {
+        #time-slider-label {
             margin-bottom: 20px;
         }
 
@@ -53,19 +53,39 @@
 <body>
 
 <div id="slider-container">
-    <label for="page-slider"></label>
-    <input type="range" id="page-slider" min="1" max="1" step="1" value="1" style="width:100%;">
+    <label for="time-slider"></label>
+    <input type="range" id="time-slider" min="1" max="1" step="1" value="1" style="width:100%;">
 </div>
-<div id="page-label">Page 1 / 1</div>
+<div id="time-slider-label"></div>
 
 <div id="grid">
     <div class="service-output" id="qr-output"><img src="" alt=""></div>
     <div class="service-output" id="cv-output"><img src="" alt=""></div>
     <div class="service-output" id="pc-output"><img src="" alt=""></div>
 
-    <div class="slo-f" id="qr-slo-f">SLOs</div>
-    <div class="slo-f" id="cv-slo-f">SLOs</div>
-    <div class="slo-f" id="pc-slo-f">SLOs</div>
+    <div class="slo-f" id="qr-slo-f">
+        <div><span>0</span> <progress id="qr-slo-f-abs" max="1"></progress> <span>1</span></div>
+        <div><span>0</span> <progress id="qr-slo-f-quality" max="800"></progress> <span>800</span></div>
+        <div><span>0</span> <progress id="qr-slo-f-cores" max="8"></progress> <span>8</span></div>
+        <div><span>0</span> <progress id="qr-slo-f-tp" max="80"></progress> <span>80</span></div>
+    </div>
+
+    <div class="slo-f" id="cv-slo-f">
+        <div><span>0</span> <progress id="cv-slo-f-abs" max="1"></progress> <span>1</span></div>
+        <div><span>0</span> <progress id="cv-slo-f-quality" max="288"></progress> <span>288</span></div>
+        <div><span>0</span> <progress id="cv-slo-f-cores" max="8"></progress> <span>8</span></div>
+        <div><span>0</span> <progress id="cv-slo-f-tp" max="5"></progress> <span>5</span></div>
+        <div><span>0</span> <progress id="cv-slo-f-model" max="3"></progress> <span>3</span></div>
+    </div>
+
+    <div class="slo-f" id="pc-slo-f">
+        <div><span>0</span> <progress id="pc-slo-f-abs" max="1"></progress> <span>1</span></div>
+        <div><span>0</span> <progress id="pc-slo-f-quality" max="40"></progress> <span>40</span></div>
+        <div><span>0</span> <progress id="pc-slo-f-cores" max="8"></progress> <span>8</span></div>
+        <div><span>0</span> <progress id="pc-slo-f-tp" max="50"></progress> <span>50</span></div>
+    </div>
+
+
 
     <div class="rask-model" id="qr-rask"><img src="" alt=""></div>
     <div class="rask-model" id="cv-rask"><img src="" alt=""></div>
@@ -74,8 +94,8 @@
 
 <script>
 
-    const slider = document.getElementById('page-slider');
-    const sliderLabel = document.getElementById('page-label');
+    const slider = document.getElementById('time-slider');
+    const sliderLabel = document.getElementById('time-slider-label');
 
     const service_outputs_qr = document.getElementById('qr-output').querySelector('img');
     const service_outputs_cv = document.getElementById('cv-output').querySelector('img');
@@ -88,13 +108,14 @@
     slider.max = 60 * 14;
 
     let csv_data = 0
-    fetch("agent_experience_EXPLORE.csv")  // CSV in 'data' subfolder
+    fetch("agent_experience_EXPLORE.csv")
         .then(res => res.text())
         .then(text => {
             Papa.parse(text, {
                 header: true,
                 skipEmptyLines: true,
                 complete: function (results) {
+                    results.data.forEach(r => r.state = Function('"use strict";return(' + r.state.replace(/\bNone\b/g, "null").replace(/\bTrue\b/g, "true").replace(/\bFalse\b/g, "false") + ')')());
                     csv_data = results.data;
                     console.log("CSV loaded:", csv_data);
                 }
@@ -120,15 +141,26 @@
         console.log(agent_cycle, csv_data[(agent_cycle * 3) - 3])
 
         // Because the first cycle = 1, I subtract from the cycle * 3
-        document.getElementById('qr-slo-f').textContent = csv_data[(agent_cycle * 3) - 3]['slo_f']
-        document.getElementById('cv-slo-f').textContent = csv_data[(agent_cycle * 3) - 2]['slo_f']
-        document.getElementById('pc-slo-f').textContent = csv_data[(agent_cycle * 3) - 1]['slo_f']
+        document.getElementById('qr-slo-f-abs').value = csv_data[(agent_cycle * 3) - 3]['slo_f']
+        document.getElementById('qr-slo-f-quality').value = csv_data[(agent_cycle * 3) - 3]['state']['data_quality']
+        document.getElementById('qr-slo-f-cores').value = csv_data[(agent_cycle * 3) - 3]['state']['cores']
+        document.getElementById('qr-slo-f-tp').value = csv_data[(agent_cycle * 3) - 3]['state']['throughput']
+
+        document.getElementById('cv-slo-f-abs').value = csv_data[(agent_cycle * 3) - 2]['slo_f']
+        document.getElementById('cv-slo-f-quality').value = csv_data[(agent_cycle * 3) - 2]['state']['data_quality']
+        document.getElementById('cv-slo-f-cores').value = csv_data[(agent_cycle * 3) - 2]['state']['cores']
+        document.getElementById('cv-slo-f-tp').value = csv_data[(agent_cycle * 3) - 2]['state']['throughput']
+        document.getElementById('cv-slo-f-model').value = csv_data[(agent_cycle * 3) - 2]['state']['model_size']
+
+        document.getElementById('pc-slo-f-abs').value = csv_data[(agent_cycle * 3) - 1]['slo_f']
+        document.getElementById('pc-slo-f-quality').value = csv_data[(agent_cycle * 3) - 1]['state']['data_quality']
+        document.getElementById('pc-slo-f-cores').value = csv_data[(agent_cycle * 3) - 1]['state']['cores']
+        document.getElementById('pc-slo-f-tp').value = csv_data[(agent_cycle * 3) - 1]['state']['throughput']
 
         const path = "rask_plots/rask_plot_elastic-workbench-"
         rask_model_qr.src = `${path}qr-detector_EXPLORE_${agent_cycle}.jpg`
         rask_model_cv.src = `${path}cv-analyzer_EXPLORE_${agent_cycle}.jpg`
         rask_model_pc.src = `${path}pc-visualizer_EXPLORE_${agent_cycle}.jpg`
-
 
         sliderLabel.textContent = `Time in Process ${progress_time} / ${slider.max}`;
     }
