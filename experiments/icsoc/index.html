@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Image Grid Slider</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #slider-container {
+            width: 80%;
+            margin-bottom: 10px;
+        }
+
+        #page-label {
+            margin-bottom: 20px;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns:repeat(3, 1fr);
+            grid-template-rows:repeat(3, 1fr);
+            gap: 10px;
+            width: 80%;
+            max-width: 900px;
+        }
+
+        .service-output,
+        .rask-model {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            background-color: #eee;
+        }
+
+        .service-output img,
+        .rask-model img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div id="slider-container">
+    <label for="page-slider"></label>
+    <input type="range" id="page-slider" min="1" max="1" step="1" value="1" style="width:100%;">
+</div>
+<div id="page-label">Page 1 / 1</div>
+
+<div id="grid">
+    <div class="service-output" id="qr-output"><img src="" alt=""></div>
+    <div class="service-output" id="cv-output"><img src="" alt=""></div>
+    <div class="service-output" id="pc-output"><img src="" alt=""></div>
+
+    <div class="slo-f" id="qr-slo-f">SLOs</div>
+    <div class="slo-f" id="cv-slo-f">SLOs</div>
+    <div class="slo-f" id="pc-slo-f">SLOs</div>
+
+    <div class="rask-model" id="qr-rask"><img src="" alt=""></div>
+    <div class="rask-model" id="cv-rask"><img src="" alt=""></div>
+    <div class="rask-model" id="pc-rask"><img src="" alt=""></div>
+</div>
+
+<script>
+
+    const slider = document.getElementById('page-slider');
+    const sliderLabel = document.getElementById('page-label');
+
+    const service_outputs_qr = document.getElementById('qr-output').querySelector('img');
+    const service_outputs_cv = document.getElementById('cv-output').querySelector('img');
+    const service_outputs_pc = document.getElementById('pc-output').querySelector('img');
+
+    const rask_model_qr = document.getElementById('qr-rask').querySelector('img');
+    const rask_model_cv = document.getElementById('cv-rask').querySelector('img');
+    const rask_model_pc = document.getElementById('pc-rask').querySelector('img');
+
+    slider.max = 60 * 14;
+
+    let csv_data = 0
+    fetch("agent_experience_EXPLORE.csv")  // CSV in 'data' subfolder
+        .then(res => res.text())
+        .then(text => {
+            Papa.parse(text, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function (results) {
+                    csv_data = results.data;
+                    console.log("CSV loaded:", csv_data);
+                }
+            });
+        }).then(None => {
+            loadUI(1);
+        }
+    );
+
+    function loadUI(progress_time) {
+
+        const share = "../../share/service_output/"
+        service_outputs_qr.src = `${share}/elastic-workbench-qr-detector/${progress_time}.jpg`
+        service_outputs_cv.src = `${share}/elastic-workbench-cv-analyzer/${progress_time}.jpg`
+        service_outputs_pc.src = `${share}/elastic-workbench-pc-visualizer/${progress_time}.jpg`
+
+        // TODO: Current SLO-F in a non-changeable slider --> agent experience file
+        // Expected SLO-F in a non-changeable slider --x not directly supported
+        // TODO: All interventionable parameters + SLO range --> agent experience file + static threshold
+        // TODO: Actual throughput + SLO range --> agent experience file + static threshold
+
+        const agent_cycle = 1 + Math.floor(progress_time / 10)
+        console.log(agent_cycle, csv_data[(agent_cycle * 3) - 3])
+
+        // Because the first cycle = 1, I subtract from the cycle * 3
+        document.getElementById('qr-slo-f').textContent = csv_data[(agent_cycle * 3) - 3]['slo_f']
+        document.getElementById('cv-slo-f').textContent = csv_data[(agent_cycle * 3) - 2]['slo_f']
+        document.getElementById('pc-slo-f').textContent = csv_data[(agent_cycle * 3) - 1]['slo_f']
+
+        const path = "rask_plots/rask_plot_elastic-workbench-"
+        rask_model_qr.src = `${path}qr-detector_EXPLORE_${agent_cycle}.jpg`
+        rask_model_cv.src = `${path}cv-analyzer_EXPLORE_${agent_cycle}.jpg`
+        rask_model_pc.src = `${path}pc-visualizer_EXPLORE_${agent_cycle}.jpg`
+
+
+        sliderLabel.textContent = `Time in Process ${progress_time} / ${slider.max}`;
+    }
+
+    slider.addEventListener('input', e => loadUI(parseInt(e.target.value)));
+</script>
+
+</body>
+</html>
