@@ -1,3 +1,4 @@
 venv
 share/metrics
+share/service_output
 agent/obsolete
