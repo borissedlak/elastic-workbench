@@ -27,12 +27,12 @@ class RASK:
         self.models: Dict[ServiceType, Dict] = None
 
     @utils.print_execution_time
-    def init_models(self, df_combined=None):
+    def init_models(self, df_combined=None, img_suffix=None):
         if df_combined is None:
             df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
-        self.models = train_rask_models(df_cleared, self.show_figures)
+        self.models = train_rask_models(df_cleared, self.show_figures, img_suffix)
 
     def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
         dependent_variables = list(get_dependent_variable_mapping(service_type).keys())
@@ -100,7 +100,7 @@ def get_local_metric_file(path=ROOT + "/../../share/metrics/metrics.csv"):
 
 
 # @print_execution_time  # Roughly 10ms
-def train_rask_models(df, show_result=False):
+def train_rask_models(df, show_result=False, img_suffix=None):
     service_models = {}
 
     for degree in [2]:  # range(1,10):
@@ -133,8 +133,8 @@ def train_rask_models(df, show_result=False):
 
                 service_models[ServiceType(service_type_s)] |= {var: (poly, model)}
                 if show_result:
-                    draw_3d_plot(df_service, var, deps, poly, model, service_type_s)
-                    draw_3d_plot_fast(df_service, var, deps, poly, model, service_type_s)
+                    # draw_3d_plot(df_service, var, deps, poly, model, service_type_s)
+                    draw_3d_plot_fast(df_service, var, deps, poly, model, service_type_s, img_suffix= f"_{img_suffix}")
 
     return service_models
 
@@ -250,7 +250,7 @@ def draw_3d_plot(df, var, deps, poly, model, service_type_s: ServiceType):
 
 # @utils.print_execution_time # Fast option takes ~400ms, while other take 2.5s
 # TODO: Merge two functions into one
-def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, grid_size: int = 30, out_dir: str = "./rask_plots"):
+def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, grid_size: int = 30, out_dir: str = "./rask_plots", img_suffix=""):
     # put these *before* any matplotlib use
     import matplotlib
     matplotlib.use("Agg")  # very important: use non-interactive backend for speed
@@ -339,10 +339,11 @@ def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, g
     # --- Plot with matplotlib (fast, non-interactive) ---
     fig = plt.figure(figsize=(7, 6), dpi=100)
     ax = fig.add_subplot(111, projection='3d')
+    ax.invert_yaxis() # Added for presentation purpose
 
     # Surface: use rstride/cstride for faster plotting? but with small grids it's fine
     # Use facecolors via cmap; let matplotlib choose default colormap
-    ax.plot_surface(x1_grid, x2_grid, z_pred, linewidth=0, antialiased=False, alpha=0.8)
+    ax.plot_surface(x1_grid, x2_grid, z_pred, linewidth=0, antialiased=False, alpha=0.8, cmap='viridis')
 
     # Scatter actual points
     ax.scatter(x_actual, y_actual, z_actual, s=10, c='r', depthshade=True)
@@ -353,10 +354,10 @@ def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, g
     ax.set_zlabel(var)
 
     # Tight layout + save as JPEG
-    out_path = os.path.join(out_dir, f"rask_plot_{service_type_s}_{var}.jpg")
+    out_path = os.path.join(out_dir, f"rask_plot_{service_type_s}{img_suffix}.jpg")
     try:
         plt.tight_layout()
-        fig.savefig(out_path, format="jpg", dpi=100)  # you can lower quality for smaller files/faster saving
+        fig.savefig(out_path, format="jpg", dpi=200)  # you can lower quality for smaller files/faster saving
     except Exception as e:
         logger.error(f"Failed to save JPG {out_path}: {e}")
     finally:

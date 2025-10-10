@@ -125,7 +125,7 @@ if __name__ == '__main__':
         evaluation_cycle=EVALUATION_FREQUENCY,
         log_experience=1,
         max_explore=0,
-        gaussian_noise=0
+        gaussian_noise=0.01
     )
 
     operate_scaling_agent(operating_agent, "OPERATE", RequestPattern.DIURNAL)
