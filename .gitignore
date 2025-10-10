@@ -1,6 +1,7 @@
 .idea
 venv
 **/share/models/*
+**/share/service_output/*
 **/share/metrics/*
 /iot_services/QrDetector/share/metrics/metrics.csv
 /iot_services/CvAnalyzer/share/metrics/metrics.csv

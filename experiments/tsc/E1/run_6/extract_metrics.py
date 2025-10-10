@@ -50,13 +50,13 @@ def extract_metrics(files):
 
         # Parse the 'state' string to dict
         df["state"] = df["state"].apply(ast.literal_eval)
-        suffix= f.replace('agent_experience_RASK_', "").replace(".csv", "")
+        new_file = f.replace('agent_experience_', "metrics_")
 
         # Transform the data
         transformed_df = df.apply(extract_fields, axis=1)
 
         # Save or display
-        transformed_df.to_csv(f"metrics_{suffix}.csv", index=False)
+        transformed_df.to_csv(new_file, index=False)
         # print(transformed_df)
 
 if __name__ == "__main__":
