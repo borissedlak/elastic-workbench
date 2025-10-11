@@ -1,181 +1,91 @@
 timestamp,service_type,container_id,avg_p_latency,s_config,cores,rps,throughput,cooldown
-2025-10-11 12:06:26.155083,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 519, 'parallelism': 1}",1.0,-1,44,-1
-2025-10-11 12:06:26.161637,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,290,"{'data_quality': 262, 'model_size': 2, 'parallelism': 1}",5.72,-1,3,-1
-2025-10-11 12:06:26.164779,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 39, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:06:36.155046,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 522, 'parallelism': 1}",1.0,-1,42,-1
-2025-10-11 12:06:36.158663,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,175,"{'data_quality': 244, 'model_size': 2, 'parallelism': 1}",5.98,-1,4,-1
-2025-10-11 12:06:36.162051,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:06:46.154884,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 516, 'parallelism': 1}",1.01,-1,42,-1
-2025-10-11 12:06:46.157895,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,275,"{'data_quality': 242, 'model_size': 2, 'parallelism': 1}",6.02,-1,3,-1
-2025-10-11 12:06:46.160720,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:06:56.156111,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,29,"{'data_quality': 527, 'parallelism': 1}",1.62,-1,66,-1
-2025-10-11 12:06:56.158998,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,342,"{'data_quality': 196, 'model_size': 3, 'parallelism': 1}",5.39,-1,1,-1
-2025-10-11 12:06:56.165679,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:07:06.156297,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,30,"{'data_quality': 533, 'parallelism': 1}",1.65,-1,65,-1
-2025-10-11 12:07:06.158989,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,300,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.35,-1,3,-1
-2025-10-11 12:07:06.162437,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:07:16.159040,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,30,"{'data_quality': 539, 'parallelism': 1}",1.69,-1,64,-1
-2025-10-11 12:07:16.162179,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,204,"{'data_quality': 191, 'model_size': 2, 'parallelism': 1}",5.36,-1,4,-1
-2025-10-11 12:07:16.172754,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:07:26.159719,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 535, 'parallelism': 1}",1.76,-1,69,-1
-2025-10-11 12:07:26.162576,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,236,"{'data_quality': 190, 'model_size': 2, 'parallelism': 1}",5.19,-1,3,-1
-2025-10-11 12:07:26.165094,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:07:36.160421,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,30,"{'data_quality': 543, 'parallelism': 1}",1.73,-1,65,-1
-2025-10-11 12:07:36.163428,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,245,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.31,-1,3,-1
-2025-10-11 12:07:36.166258,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:07:46.160789,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 546, 'parallelism': 1}",1.82,-1,68,-1
-2025-10-11 12:07:46.164490,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,228,"{'data_quality': 191, 'model_size': 2, 'parallelism': 1}",5.21,-1,4,-1
-2025-10-11 12:07:46.167196,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:07:56.160297,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 537, 'parallelism': 1}",1.85,-1,73,-1
-2025-10-11 12:07:56.162853,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,227,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.14,-1,3,-1
-2025-10-11 12:07:56.170215,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:08:06.161064,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 530, 'parallelism': 1}",1.8,-1,70,-1
-2025-10-11 12:08:06.163960,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,201,"{'data_quality': 185, 'model_size': 2, 'parallelism': 1}",5.19,-1,4,-1
-2025-10-11 12:08:06.166851,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:08:16.161175,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 534, 'parallelism': 1}",1.76,-1,69,-1
-2025-10-11 12:08:16.167913,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,203,"{'data_quality': 183, 'model_size': 2, 'parallelism': 1}",5.23,-1,4,-1
-2025-10-11 12:08:16.170875,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:08:26.161419,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 533, 'parallelism': 1}",1.77,-1,70,-1
-2025-10-11 12:08:26.164262,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,178,"{'data_quality': 183, 'model_size': 2, 'parallelism': 1}",5.22,-1,4,-1
-2025-10-11 12:08:26.166887,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:08:36.161864,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 538, 'parallelism': 1}",1.77,-1,70,-1
-2025-10-11 12:08:36.168661,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,253,"{'data_quality': 183, 'model_size': 2, 'parallelism': 1}",5.23,-1,3,-1
-2025-10-11 12:08:36.171512,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:08:46.161826,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 533, 'parallelism': 1}",1.81,-1,72,-1
-2025-10-11 12:08:46.164574,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,221,"{'data_quality': 182, 'model_size': 2, 'parallelism': 1}",5.14,-1,4,-1
-2025-10-11 12:08:46.167174,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:08:56.166116,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 531, 'parallelism': 1}",1.79,-1,73,-1
-2025-10-11 12:08:56.169779,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,211,"{'data_quality': 185, 'model_size': 2, 'parallelism': 1}",5.2,-1,4,-1
-2025-10-11 12:08:56.172616,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:09:06.162374,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 536, 'parallelism': 1}",1.76,-1,72,-1
-2025-10-11 12:09:06.165119,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,241,"{'data_quality': 187, 'model_size': 2, 'parallelism': 1}",5.25,-1,3,-1
-2025-10-11 12:09:06.167703,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:09:16.163244,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 533, 'parallelism': 1}",1.82,-1,76,-1
-2025-10-11 12:09:16.166082,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,170,"{'data_quality': 189, 'model_size': 2, 'parallelism': 1}",5.23,-1,4,-1
-2025-10-11 12:09:16.173091,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:09:26.163746,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 533, 'parallelism': 1}",1.79,-1,74,-1
-2025-10-11 12:09:26.166954,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,168,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.26,-1,4,-1
-2025-10-11 12:09:26.169573,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:09:36.163714,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 528, 'parallelism': 1}",1.81,-1,76,-1
-2025-10-11 12:09:36.166502,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,194,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.15,-1,4,-1
-2025-10-11 12:09:36.172999,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:09:46.164937,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 528, 'parallelism': 1}",1.79,-1,74,-1
-2025-10-11 12:09:46.167515,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,204,"{'data_quality': 191, 'model_size': 2, 'parallelism': 1}",5.23,-1,4,-1
-2025-10-11 12:09:46.170365,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:09:56.165016,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,25,"{'data_quality': 525, 'parallelism': 1}",1.77,-1,78,-1
-2025-10-11 12:09:56.172058,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,171,"{'data_quality': 191, 'model_size': 2, 'parallelism': 1}",5.25,-1,4,-1
-2025-10-11 12:09:56.174827,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:10:06.165839,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 520, 'parallelism': 1}",1.74,-1,74,-1
-2025-10-11 12:10:06.168719,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,256,"{'data_quality': 190, 'model_size': 2, 'parallelism': 1}",5.17,-1,4,-1
-2025-10-11 12:10:06.172500,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:10:16.166399,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 514, 'parallelism': 1}",1.71,-1,74,-1
-2025-10-11 12:10:16.169359,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,165,"{'data_quality': 190, 'model_size': 2, 'parallelism': 1}",5.28,-1,4,-1
-2025-10-11 12:10:16.171963,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:10:26.167096,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 517, 'parallelism': 1}",1.7,-1,72,-1
-2025-10-11 12:10:26.169696,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,161,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.33,-1,4,-1
-2025-10-11 12:10:26.173261,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:10:36.166824,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 522, 'parallelism': 1}",1.68,-1,71,-1
-2025-10-11 12:10:36.169360,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,182,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.3,-1,4,-1
-2025-10-11 12:10:36.172030,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:10:46.167639,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 520, 'parallelism': 1}",1.74,-1,73,-1
-2025-10-11 12:10:46.170508,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,271,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.29,-1,3,-1
-2025-10-11 12:10:46.173391,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:10:56.168181,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 523, 'parallelism': 1}",1.71,-1,72,-1
-2025-10-11 12:10:56.170875,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,161,"{'data_quality': 189, 'model_size': 2, 'parallelism': 1}",5.34,-1,4,-1
-2025-10-11 12:10:56.173293,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:11:06.168801,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 522, 'parallelism': 1}",1.74,-1,72,-1
-2025-10-11 12:11:06.171440,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,171,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.26,-1,4,-1
-2025-10-11 12:11:06.173912,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:11:16.169877,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 520, 'parallelism': 1}",1.74,-1,73,-1
-2025-10-11 12:11:16.172843,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,208,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.27,-1,4,-1
-2025-10-11 12:11:16.175378,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:11:26.170864,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 516, 'parallelism': 1}",1.71,-1,74,-1
-2025-10-11 12:11:26.173573,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,214,"{'data_quality': 196, 'model_size': 2, 'parallelism': 1}",5.23,-1,4,-1
-2025-10-11 12:11:26.176147,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:11:36.171941,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 511, 'parallelism': 1}",1.69,-1,73,-1
-2025-10-11 12:11:36.174499,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,193,"{'data_quality': 200, 'model_size': 2, 'parallelism': 1}",5.37,-1,4,-1
-2025-10-11 12:11:36.177178,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:11:46.172906,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 507, 'parallelism': 1}",1.67,-1,73,-1
-2025-10-11 12:11:46.175668,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,276,"{'data_quality': 199, 'model_size': 2, 'parallelism': 1}",5.35,-1,3,-1
-2025-10-11 12:11:46.178137,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:11:56.173264,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 507, 'parallelism': 1}",1.64,-1,73,-1
-2025-10-11 12:11:56.175878,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,251,"{'data_quality': 199, 'model_size': 2, 'parallelism': 1}",5.35,-1,4,-1
-2025-10-11 12:11:56.178377,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 44, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:12:06.173702,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 517, 'parallelism': 1}",1.64,-1,71,-1
-2025-10-11 12:12:06.176177,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,189,"{'data_quality': 201, 'model_size': 2, 'parallelism': 1}",5.4,-1,4,-1
-2025-10-11 12:12:06.179077,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.03,-1,50,-1
-2025-10-11 12:12:16.174136,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 516, 'parallelism': 1}",1.71,-1,75,-1
-2025-10-11 12:12:16.177177,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,218,"{'data_quality': 201, 'model_size': 2, 'parallelism': 1}",5.36,-1,4,-1
-2025-10-11 12:12:16.179737,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.02,-1,50,-1
-2025-10-11 12:12:26.174688,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 518, 'parallelism': 1}",1.71,-1,75,-1
-2025-10-11 12:12:26.177416,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,271,"{'data_quality': 200, 'model_size': 2, 'parallelism': 1}",5.27,-1,4,-1
-2025-10-11 12:12:26.183738,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:12:36.175033,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 507, 'parallelism': 1}",1.71,-1,80,-1
-2025-10-11 12:12:36.179378,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,195,"{'data_quality': 200, 'model_size': 2, 'parallelism': 1}",5.27,-1,3,-1
-2025-10-11 12:12:36.181963,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:12:46.175799,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 505, 'parallelism': 1}",1.63,-1,76,-1
-2025-10-11 12:12:46.183842,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,194,"{'data_quality': 196, 'model_size': 2, 'parallelism': 1}",5.41,-1,4,-1
-2025-10-11 12:12:46.186739,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:12:56.177072,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 511, 'parallelism': 1}",1.61,-1,73,-1
-2025-10-11 12:12:56.179848,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,227,"{'data_quality': 194, 'model_size': 2, 'parallelism': 1}",5.3,-1,3,-1
-2025-10-11 12:12:56.182368,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:13:06.180493,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 514, 'parallelism': 1}",1.68,-1,75,-1
-2025-10-11 12:13:06.183795,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,267,"{'data_quality': 195, 'model_size': 2, 'parallelism': 1}",5.26,-1,3,-1
-2025-10-11 12:13:06.186697,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:13:16.177961,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,25,"{'data_quality': 509, 'parallelism': 1}",1.71,-1,77,-1
-2025-10-11 12:13:16.180693,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,240,"{'data_quality': 196, 'model_size': 2, 'parallelism': 1}",5.34,-1,3,-1
-2025-10-11 12:13:16.183465,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:13:26.178102,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 503, 'parallelism': 1}",1.66,-1,75,-1
-2025-10-11 12:13:26.180970,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,208,"{'data_quality': 195, 'model_size': 2, 'parallelism': 1}",5.34,-1,4,-1
-2025-10-11 12:13:26.183618,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:13:36.178938,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 507, 'parallelism': 1}",1.58,-1,70,-1
-2025-10-11 12:13:36.181437,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,208,"{'data_quality': 195, 'model_size': 2, 'parallelism': 1}",5.48,-1,4,-1
-2025-10-11 12:13:36.187793,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:13:46.179422,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 508, 'parallelism': 1}",1.62,-1,71,-1
-2025-10-11 12:13:46.182189,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,251,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.42,-1,3,-1
-2025-10-11 12:13:46.184870,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:13:56.185134,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 510, 'parallelism': 1}",1.64,-1,71,-1
-2025-10-11 12:13:56.187828,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,221,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.35,-1,4,-1
-2025-10-11 12:13:56.191417,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:06.180418,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 504, 'parallelism': 1}",1.62,-1,71,-1
-2025-10-11 12:14:06.183208,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,295,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.32,-1,2,-1
-2025-10-11 12:14:06.185731,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:16.181571,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 505, 'parallelism': 1}",1.6,-1,69,-1
-2025-10-11 12:14:16.186137,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,318,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.39,-1,2,-1
-2025-10-11 12:14:16.188998,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:26.181484,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 504, 'parallelism': 1}",1.62,-1,71,-1
-2025-10-11 12:14:26.184218,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,255,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.32,-1,3,-1
-2025-10-11 12:14:26.186939,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:36.185806,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 504, 'parallelism': 1}",1.62,-1,71,-1
-2025-10-11 12:14:36.188660,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,222,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.34,-1,4,-1
-2025-10-11 12:14:36.191281,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:46.183173,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 507, 'parallelism': 1}",1.63,-1,70,-1
-2025-10-11 12:14:46.185947,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,226,"{'data_quality': 193, 'model_size': 2, 'parallelism': 1}",5.37,-1,3,-1
-2025-10-11 12:14:46.188773,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:14:56.184228,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,28,"{'data_quality': 511, 'parallelism': 1}",1.62,-1,70,-1
-2025-10-11 12:14:56.187052,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,198,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.39,-1,4,-1
-2025-10-11 12:14:56.189653,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:15:06.185627,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 504, 'parallelism': 1}",1.68,-1,75,-1
-2025-10-11 12:15:06.191247,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,217,"{'data_quality': 191, 'model_size': 2, 'parallelism': 1}",5.34,-1,3,-1
-2025-10-11 12:15:06.193917,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:15:16.185032,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 510, 'parallelism': 1}",1.64,-1,73,-1
-2025-10-11 12:15:16.188124,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,276,"{'data_quality': 192, 'model_size': 2, 'parallelism': 1}",5.37,-1,4,-1
-2025-10-11 12:15:16.191821,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:15:26.185843,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,25,"{'data_quality': 504, 'parallelism': 1}",1.68,-1,76,-1
-2025-10-11 12:15:26.188568,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,279,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.33,-1,3,-1
-2025-10-11 12:15:26.191187,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:15:36.190882,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 504, 'parallelism': 1}",1.64,-1,76,-1
-2025-10-11 12:15:36.197202,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,304,"{'data_quality': 189, 'model_size': 2, 'parallelism': 1}",5.41,-1,3,-1
-2025-10-11 12:15:36.206867,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:15:46.187146,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 515, 'parallelism': 1}",1.62,-1,72,-1
-2025-10-11 12:15:46.190034,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,216,"{'data_quality': 187, 'model_size': 2, 'parallelism': 1}",5.43,-1,4,-1
-2025-10-11 12:15:46.192611,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:15:56.187735,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,26,"{'data_quality': 520, 'parallelism': 1}",1.69,-1,75,-1
-2025-10-11 12:15:56.190547,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,233,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.28,-1,3,-1
-2025-10-11 12:15:56.193774,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
-2025-10-11 12:16:06.188979,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,27,"{'data_quality': 526, 'parallelism': 1}",1.73,-1,73,-1
-2025-10-11 12:16:06.191684,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,185,"{'data_quality': 186, 'model_size': 2, 'parallelism': 1}",5.27,-1,4,-1
-2025-10-11 12:16:06.194182,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
-2025-10-11 12:16:16.188993,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 522, 'parallelism': 1}",1.81,-1,80,-1
-2025-10-11 12:16:16.197281,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,272,"{'data_quality': 188, 'model_size': 2, 'parallelism': 1}",5.12,-1,3,-1
-2025-10-11 12:16:16.199942,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:11:19.582869,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,18,"{'data_quality': 536, 'parallelism': 1}",2.5,-1,80,-1
+2025-10-11 13:11:19.585656,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,228,"{'data_quality': 209, 'model_size': 2, 'parallelism': 1}",4.13,-1,3,-1
+2025-10-11 13:11:19.588163,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 45, 'model_size': 1, 'parallelism': 1}",1.03,-1,50,-1
+2025-10-11 13:11:29.586542,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,25,"{'data_quality': 547, 'parallelism': 1}",2.7,-1,80,-1
+2025-10-11 13:11:29.589542,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,190,"{'data_quality': 235, 'model_size': 2, 'parallelism': 1}",4.38,-1,4,-1
+2025-10-11 13:11:29.592236,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:11:39.582437,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,20,"{'data_quality': 549, 'parallelism': 1}",2.4,-1,80,-1
+2025-10-11 13:11:39.585303,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,208,"{'data_quality': 235, 'model_size': 2, 'parallelism': 1}",4.62,-1,4,-1
+2025-10-11 13:11:39.588233,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
+2025-10-11 13:11:49.583353,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 554, 'parallelism': 1}",2.34,-1,80,-1
+2025-10-11 13:11:49.585919,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,217,"{'data_quality': 236, 'model_size': 2, 'parallelism': 1}",4.59,-1,4,-1
+2025-10-11 13:11:49.588654,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:11:59.584500,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 550, 'parallelism': 1}",2.38,-1,80,-1
+2025-10-11 13:11:59.587271,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,264,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.65,-1,3,-1
+2025-10-11 13:11:59.589753,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:09.584978,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 550, 'parallelism': 1}",2.3,-1,80,-1
+2025-10-11 13:12:09.592714,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,443,"{'data_quality': 236, 'model_size': 3, 'parallelism': 1}",4.7,-1,1,-1
+2025-10-11 13:12:09.595353,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:19.585181,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 549, 'parallelism': 1}",2.26,-1,80,-1
+2025-10-11 13:12:19.587827,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,307,"{'data_quality': 237, 'model_size': 2, 'parallelism': 1}",4.7,-1,3,-1
+2025-10-11 13:12:19.591052,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:29.586361,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 550, 'parallelism': 1}",2.25,-1,80,-1
+2025-10-11 13:12:29.589846,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,258,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.74,-1,3,-1
+2025-10-11 13:12:29.593514,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:39.586741,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 549, 'parallelism': 1}",2.25,-1,80,-1
+2025-10-11 13:12:39.589631,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,208,"{'data_quality': 233, 'model_size': 2, 'parallelism': 1}",4.84,-1,4,-1
+2025-10-11 13:12:39.592149,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:49.587382,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 547, 'parallelism': 1}",2.21,-1,80,-1
+2025-10-11 13:12:49.589941,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,226,"{'data_quality': 236, 'model_size': 2, 'parallelism': 1}",4.9,-1,4,-1
+2025-10-11 13:12:49.592491,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:12:59.587691,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 553, 'parallelism': 1}",2.11,-1,80,-1
+2025-10-11 13:12:59.590395,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,151,"{'data_quality': 232, 'model_size': 2, 'parallelism': 1}",4.83,-1,5,-1
+2025-10-11 13:12:59.593217,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:13:09.588241,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 553, 'parallelism': 1}",2.19,-1,80,-1
+2025-10-11 13:13:09.590967,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,166,"{'data_quality': 232, 'model_size': 2, 'parallelism': 1}",4.79,-1,4,-1
+2025-10-11 13:13:09.593591,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:13:19.593065,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 558, 'parallelism': 1}",2.23,-1,80,-1
+2025-10-11 13:13:19.597346,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,195,"{'data_quality': 232, 'model_size': 2, 'parallelism': 1}",4.83,-1,5,-1
+2025-10-11 13:13:19.600253,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:13:29.590089,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 556, 'parallelism': 1}",2.22,-1,80,-1
+2025-10-11 13:13:29.593654,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,181,"{'data_quality': 233, 'model_size': 2, 'parallelism': 1}",4.84,-1,5,-1
+2025-10-11 13:13:29.597438,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:13:39.590243,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 546, 'parallelism': 1}",2.21,-1,80,-1
+2025-10-11 13:13:39.593304,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,195,"{'data_quality': 232, 'model_size': 2, 'parallelism': 1}",4.77,-1,4,-1
+2025-10-11 13:13:39.597160,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
+2025-10-11 13:13:49.590614,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 540, 'parallelism': 1}",2.15,-1,80,-1
+2025-10-11 13:13:49.594723,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,161,"{'data_quality': 231, 'model_size': 2, 'parallelism': 1}",4.91,-1,5,-1
+2025-10-11 13:13:49.608586,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:13:59.591668,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 555, 'parallelism': 1}",2.05,-1,80,-1
+2025-10-11 13:13:59.594454,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,150,"{'data_quality': 233, 'model_size': 2, 'parallelism': 1}",5.02,-1,5,-1
+2025-10-11 13:13:59.597109,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:14:09.591406,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 553, 'parallelism': 1}",2.17,-1,80,-1
+2025-10-11 13:14:09.594389,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,203,"{'data_quality': 232, 'model_size': 2, 'parallelism': 1}",4.82,-1,4,-1
+2025-10-11 13:14:09.597354,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:14:19.592580,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 554, 'parallelism': 1}",2.14,-1,80,-1
+2025-10-11 13:14:19.595952,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,192,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.83,-1,4,-1
+2025-10-11 13:14:19.599517,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:14:29.592566,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 560, 'parallelism': 1}",2.15,-1,80,-1
+2025-10-11 13:14:29.595479,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,193,"{'data_quality': 233, 'model_size': 2, 'parallelism': 1}",4.84,-1,4,-1
+2025-10-11 13:14:29.597897,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:14:39.593075,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,21,"{'data_quality': 559, 'parallelism': 1}",2.23,-1,80,-1
+2025-10-11 13:14:39.596660,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,201,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.85,-1,4,-1
+2025-10-11 13:14:39.599464,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
+2025-10-11 13:14:49.593597,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 564, 'parallelism': 1}",2.21,-1,80,-1
+2025-10-11 13:14:49.597274,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,236,"{'data_quality': 236, 'model_size': 2, 'parallelism': 1}",4.84,-1,4,-1
+2025-10-11 13:14:49.600812,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:14:59.596100,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 560, 'parallelism': 1}",2.25,-1,80,-1
+2025-10-11 13:14:59.598846,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,195,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.74,-1,4,-1
+2025-10-11 13:14:59.601945,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:15:09.594603,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 556, 'parallelism': 1}",2.2,-1,80,-1
+2025-10-11 13:15:09.600848,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,223,"{'data_quality': 237, 'model_size': 2, 'parallelism': 1}",4.83,-1,4,-1
+2025-10-11 13:15:09.604506,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 40, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
+2025-10-11 13:15:19.594814,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,22,"{'data_quality': 553, 'parallelism': 1}",2.16,-1,80,-1
+2025-10-11 13:15:19.597596,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,187,"{'data_quality': 239, 'model_size': 2, 'parallelism': 1}",4.89,-1,5,-1
+2025-10-11 13:15:19.600151,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.02,-1,50,-1
+2025-10-11 13:15:29.595245,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 556, 'parallelism': 1}",2.07,-1,80,-1
+2025-10-11 13:15:29.599089,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,183,"{'data_quality': 239, 'model_size': 2, 'parallelism': 1}",4.86,-1,4,-1
+2025-10-11 13:15:29.612518,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 41, 'model_size': 1, 'parallelism': 1}",1.01,-1,50,-1
+2025-10-11 13:15:39.596043,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,24,"{'data_quality': 559, 'parallelism': 1}",2.14,-1,80,-1
+2025-10-11 13:15:39.598952,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,225,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.78,-1,4,-1
+2025-10-11 13:15:39.601477,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:15:49.596871,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,25,"{'data_quality': 566, 'parallelism': 1}",2.16,-1,78,-1
+2025-10-11 13:15:49.601092,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,162,"{'data_quality': 234, 'model_size': 2, 'parallelism': 1}",4.79,-1,5,-1
+2025-10-11 13:15:49.604213,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
+2025-10-11 13:15:59.596880,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 564, 'parallelism': 1}",2.21,-1,80,-1
+2025-10-11 13:15:59.599730,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,196,"{'data_quality': 235, 'model_size': 2, 'parallelism': 1}",4.8,-1,4,-1
+2025-10-11 13:15:59.602308,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 42, 'model_size': 1, 'parallelism': 1}",1.02,-1,50,-1
+2025-10-11 13:16:09.598099,elastic-workbench-qr-detector,elastic-workbench-qr-detector-1,23,"{'data_quality': 560, 'parallelism': 1}",2.21,-1,80,-1
+2025-10-11 13:16:09.601076,elastic-workbench-cv-analyzer,elastic-workbench-cv-analyzer-1,223,"{'data_quality': 233, 'model_size': 2, 'parallelism': 1}",4.81,-1,4,-1
+2025-10-11 13:16:09.603850,elastic-workbench-pc-visualizer,elastic-workbench-pc-visualizer-1,5,"{'data_quality': 43, 'model_size': 1, 'parallelism': 1}",1.0,-1,50,-1
