@@ -49,7 +49,7 @@
             gap: 5px;
             width: 80%;
             /* add bottom spacing of 20px */
-            height: calc(100vh - var(--controls-h) - 80px); /* 40px padding + 20px extra bottom space */
+            height: calc(100vh - var(--controls-h) - 80px); /* 40px padding -10px extra bottom space */
         }
 
 
@@ -181,14 +181,14 @@
             }));
     }
 
-    let csv_data_train, csv_data_operate;
+    let csv_data;
     loadCSV("agent_experience_EXPLORE.csv")
     .then(data => {
-        csv_data_train = data;
+        csv_data = data;
         return loadCSV("agent_experience_OPERATE.csv");
     })
     .then(data => {
-        csv_data_operate = data;
+        csv_data.push(...data);
     })
     .then(() => {
         loadUI(1);
@@ -198,9 +198,9 @@
     function loadUI(progress_time) {
 
         const share = "../../share/service_output"
-        service_outputs_qr.src = `${share}/elastic-workbench-qr-detector/${progress_time+1}.jpg`
-        service_outputs_cv.src = `${share}/elastic-workbench-cv-analyzer/${progress_time+1}.jpg`
-        service_outputs_pc.src = `${share}/elastic-workbench-pc-visualizer/${progress_time+1}.jpg`
+        service_outputs_qr.src = `${share}/elastic-workbench-qr-detector/${progress_time}.jpg`
+        service_outputs_cv.src = `${share}/elastic-workbench-cv-analyzer/${progress_time}.jpg`
+        service_outputs_pc.src = `${share}/elastic-workbench-pc-visualizer/${progress_time}.jpg`
 
         // TODO: Current SLO-F in a non-changeable slider --> agent experience file
         // Expected SLO-F in a non-changeable slider --x not directly supported
@@ -208,27 +208,27 @@
         // TODO: Actual throughput + SLO range --> agent experience file + static threshold
 
         const agent_cycle = 1 + Math.floor(progress_time / 10)
-        const csv_data = progress_time <= 90 ? csv_data_train : csv_data_operate
-        console.log(agent_cycle, csv_data[(agent_cycle * 3)])
+        console.log(agent_cycle, csv_data[(agent_cycle * 3) -3])
 
 
         // Because the first cycle = 1, I subtract from the cycle * 3
-        document.getElementById('qr-slo-f-abs').value = csv_data[(agent_cycle * 3)]['slo_f']
-        document.getElementById('qr-slo-f-quality').value = csv_data[(agent_cycle * 3)]['state']['data_quality']
-        document.getElementById('qr-slo-f-cores').value = csv_data[(agent_cycle * 3)]['state']['cores']
-        document.getElementById('qr-slo-f-tp').value = csv_data[(agent_cycle * 3)]['state']['throughput']
+        document.getElementById('qr-slo-f-abs').value = csv_data[(agent_cycle * 3) -3]['slo_f']
+        document.getElementById('qr-slo-f-quality').value = csv_data[(agent_cycle * 3) -3]['state']['data_quality']
+        document.getElementById('qr-slo-f-cores').value = csv_data[(agent_cycle * 3) -3]['state']['cores']
+        document.getElementById('qr-slo-f-tp').value = csv_data[(agent_cycle * 3) -3]['state']['throughput']
 
-        document.getElementById('cv-slo-f-abs').value = csv_data[(agent_cycle * 3) + 1]['slo_f']
-        document.getElementById('cv-slo-f-quality').value = csv_data[(agent_cycle * 3) + 1]['state']['data_quality']
-        document.getElementById('cv-slo-f-cores').value = csv_data[(agent_cycle * 3) + 1]['state']['cores']
-        document.getElementById('cv-slo-f-tp').value = csv_data[(agent_cycle * 3) + 1]['state']['throughput']
-        document.getElementById('cv-slo-f-model').value = csv_data[(agent_cycle * 3) + 1]['state']['model_size']
+        document.getElementById('cv-slo-f-abs').value = csv_data[(agent_cycle * 3) -2]['slo_f']
+        document.getElementById('cv-slo-f-quality').value = csv_data[(agent_cycle * 3) -2]['state']['data_quality']
+        document.getElementById('cv-slo-f-cores').value = csv_data[(agent_cycle * 3) -2]['state']['cores']
+        document.getElementById('cv-slo-f-tp').value = csv_data[(agent_cycle * 3) -2]['state']['throughput']
+        document.getElementById('cv-slo-f-model').value = csv_data[(agent_cycle * 3) -2]['state']['model_size']
 
-        document.getElementById('pc-slo-f-abs').value = csv_data[(agent_cycle * 3) + 2]['slo_f']
-        document.getElementById('pc-slo-f-quality').value = csv_data[(agent_cycle * 3) + 2]['state']['data_quality']
-        document.getElementById('pc-slo-f-cores').value = csv_data[(agent_cycle * 3) + 2]['state']['cores']
-        document.getElementById('pc-slo-f-tp').value = csv_data[(agent_cycle * 3) + 2]['state']['throughput']
+        document.getElementById('pc-slo-f-abs').value = csv_data[(agent_cycle * 3) -1]['slo_f']
+        document.getElementById('pc-slo-f-quality').value = csv_data[(agent_cycle * 3) -1]['state']['data_quality']
+        document.getElementById('pc-slo-f-cores').value = csv_data[(agent_cycle * 3) -1]['state']['cores']
+        document.getElementById('pc-slo-f-tp').value = csv_data[(agent_cycle * 3) -1]['state']['throughput']
 
+        // TODO: At the very beginning, add three empty areas
         const path = "rask_plots/rask_plot_elastic-workbench-"
         rask_model_qr.src = `${path}qr-detector_${agent_cycle}.jpg`
         rask_model_cv.src = `${path}cv-analyzer_${agent_cycle}.jpg`

@@ -27,7 +27,7 @@ def create_rask_model_renderings(demo_part):
     logger.info(f"Iterating from {start} to {end} by 1s steps")
 
     current = start
-    iteration = 0 if demo_part == "EXPLORE" else 30
+    iteration = 1 if demo_part == "EXPLORE" else 31
 
     df_train = pd.read_csv(ROOT + "/metrics_EXPLORE.csv") if demo_part == "OPERATE" else pd.DataFrame([])
     df_train['timestamp'] = pd.to_datetime(df['timestamp']) if demo_part == "OPERATE" else None
@@ -37,13 +37,13 @@ def create_rask_model_renderings(demo_part):
         filter_df = df[df['timestamp'] <= current].copy()
         merge_df = pd.concat([df_train, filter_df], axis=0, ignore_index=True)
 
-        if len(merge_df) >= 2:
-            try:
-                rask.init_models(merge_df, f"{iteration}")
-            except Exception as e:
-                logger.exception(f"Training failed at {current}: {e}")
-        else:
-            logger.debug(f"At time {current} not enough rows ({len(merge_df)}) to train")
+        # if len(merge_df) >= 2:
+        try:
+            rask.init_models(merge_df, f"{iteration}")
+        except Exception as e:
+            logger.exception(f"Training failed at {current}: {e}")
+        # else:
+        #     logger.debug(f"At time {current} not enough rows ({len(merge_df)}) to train")
 
         iteration += 1
         logger.debug(f"Finished iteration {iteration} after {current} time in df")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    agent_utils.delete_folder_if_exists(ROOT + "/rask_plots")
+    # agent_utils.delete_folder_if_exists(ROOT + "/rask_plots")
     create_rask_model_renderings("EXPLORE")
     create_rask_model_renderings("OPERATE")
 
