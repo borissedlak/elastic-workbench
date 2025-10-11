@@ -24,7 +24,7 @@ nn_folder = "./networks"
 ######## Experimental Parameters ##########
 
 DURATION_EXPLORE = 5 * 60  # = 5min
-DURATION_OPERATE = 10 * 60  # = 9min
+DURATION_OPERATE = 5 * 60  # = 9min
 
 ##### Scaling Agent Hyperparameters #######
 
