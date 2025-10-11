@@ -129,7 +129,8 @@ class IoTService(ABC):
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
-                self.write_result_to_sink(last_result, self.global_iteration_counter)
+                if self.global_iteration_counter <= 1000:
+                    self.write_result_to_sink(last_result, self.global_iteration_counter)
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 
