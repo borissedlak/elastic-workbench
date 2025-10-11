@@ -59,7 +59,12 @@ class ServiceWrapper:
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
         self.app.add_url_rule('/parallelism_scaling', 'parallelism_scaling', self.parallelism_scaling, methods=['PUT'])
         self.app.add_url_rule('/change_rps', 'change_rps', self.alter_client_connection, methods=['PUT'])
+        self.app.add_url_rule('/reset_processing_count', 'reset_processing_count', self.reset_processing_count, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
+
+    def reset_processing_count(self):
+        self.service.reset_processing_count()
+        return ""
 
     # @utils.print_execution_time
     # @app.route("/start_processing", methods=['POST'])

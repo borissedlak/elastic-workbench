@@ -58,10 +58,12 @@ def train_scaling_agent(rask_agent, agent_suffix):
 
     reset_services_default_rps()
     rask_agent.reset_services_states()
-    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
+    delete_folder_if_exists(ROOT + "/../../share/service_output")
+    delete_file_if_exists(ROOT + "/../../share/metrics/metrics.csv")
     delete_file_if_exists(ROOT + f"/agent_experience_{agent_suffix}.csv")
     delete_file_if_exists(ROOT + f"/metrics_{agent_suffix}.csv")
     time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
+    rask_agent.reset_services_counters()
 
     rask_agent.start()
     time.sleep(DURATION_EXPLORE)
@@ -74,17 +76,16 @@ def train_scaling_agent(rask_agent, agent_suffix):
 def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPattern):
     print(f"Agent starting actual operation")
 
-    reset_services_default_rps()
+    # reset_services_default_rps()
     experience_file = ROOT + f"/agent_experience_{agent_suffix}.csv"
     delete_file_if_exists(experience_file)
-    delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
-    # delete_folder_if_exists(ROOT + "/../../../share/service_output")
+    delete_file_if_exists(ROOT + "/../../share/metrics/metrics.csv")
     ingest_metrics_data(ROOT + "/metrics_EXPLORE.csv")
 
     # Don't know if that's actually needed anymore
-    last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
+    last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../share/metrics/metrics.csv")
     rask_agent.set_last_assignments(last_assignments)
-    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
+    # time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
 
     rask_agent.start()
     runtime_sec = 0
@@ -117,6 +118,7 @@ if __name__ == '__main__':
         gaussian_noise=GAUSSIAN_NOISE
     )
     
+
     train_scaling_agent(exploring_agent, f"EXPLORE")
 
     operating_agent = RASK_Global_Agent(

@@ -128,6 +128,10 @@ class ScalingAgent(Thread, ABC):
     #         cores_per_service[service_id.container_id] = s_cores
     #     return cores_per_service
 
+    def reset_services_counters(self):
+        for service_m in self.services_monitored:
+            self.http_client.call_ES_endpoint(service_m, "/reset_processing_count", {})
+
     # Between the experiments, we need to reset the processing environment to a default state
     def reset_services_states(self, mute_first=None):
 

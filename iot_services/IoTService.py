@@ -38,7 +38,7 @@ class IoTService(ABC):
 
         self.redis_client = RedisClient(host=REDIS_INSTANCE)
         self.flag_metric_cooldown = 0
-        self.global_iteration_counter = 0
+        self.global_cycle_counter = 0
 
         start_http_server(8000)  # Last time I tried to get rid of the metric_id I had problems when querying the data
         self.prom_throughput = Gauge('throughput', 'Actual throughput', ['service_type', 'container_id', 'metric_id'])
@@ -81,10 +81,12 @@ class IoTService(ABC):
     def get_service_parallelism(self) -> int:
         pass
 
+    def reset_processing_count(self):
+        self.global_cycle_counter = 0
+
     def start_process(self):
         self._terminated = False
         self._running = True
-        self.global_iteration_counter = 0
 
         processing_thread = threading.Thread(target=self.process_loop, daemon=True)
         processing_thread.start()
@@ -102,12 +104,12 @@ class IoTService(ABC):
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.get_service_parallelism())
             start_time = time.perf_counter()
             processed_item_counter = 0
-            self.global_iteration_counter += 1
+            self.global_cycle_counter += 1
             processed_item_durations = []
             first_result = None
 
             try:
-                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = self.global_iteration_counter)
+                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = self.global_cycle_counter)
                 future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
                 while future_dict:
@@ -129,8 +131,8 @@ class IoTService(ABC):
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
-                if self.global_iteration_counter <= 1000:
-                    self.write_result_to_sink(first_result, self.global_iteration_counter)
+                if self.global_cycle_counter <= 1000:
+                    self.write_result_to_sink(first_result, self.global_cycle_counter)
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 
