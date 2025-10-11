@@ -29,7 +29,7 @@
             grid-template-rows:repeat(3, 1fr);
             gap: 10px;
             width: 80%;
-            max-width: 900px;
+            {#max-width: 900px;#}
         }
 
         .service-output,
@@ -47,14 +47,39 @@
             object-fit: cover;
         }
 
+        /* playback controls row */
+        #playback-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        button {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #bbb;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
 
     </style>
 </head>
 <body>
 
+<!-- TODO: Create a controls box on the left of the scene -->
 <div id="slider-container">
     <label for="time-slider"></label>
     <input type="range" id="time-slider" min="1" max="1" step="1" value="1" style="width:100%;">
+    <div id="playback-controls">
+        <button id="play-btn">Play ▶</button>
+        <button id="pause-btn" disabled>Pause ⏸</button>
+    </div>
 </div>
 <div id="time-slider-label"></div>
 
@@ -64,10 +89,10 @@
     <div class="service-output" id="pc-output"><img src="" alt=""></div>
 
     <div class="slo-f" id="qr-slo-f">
-        <div><span>0</span> <progress id="qr-slo-f-abs" max="1"></progress> <span>1</span></div>
-        <div><span>0</span> <progress id="qr-slo-f-quality" max="800"></progress> <span>800</span></div>
-        <div><span>0</span> <progress id="qr-slo-f-cores" max="8"></progress> <span>8</span></div>
-        <div><span>0</span> <progress id="qr-slo-f-tp" max="80"></progress> <span>80</span></div>
+        <div><span>SLO-F 0</span> <progress id="qr-slo-f-abs" max="1"></progress> <span>1</span></div>
+        <div><span>Quality 0</span> <progress id="qr-slo-f-quality" max="800"></progress> <span>800</span></div>
+        <div><span>Cores 0</span> <progress id="qr-slo-f-cores" max="8"></progress> <span>8</span></div>
+        <div><span>Tp 0</span> <progress id="qr-slo-f-tp" max="80"></progress> <span>80</span></div>
     </div>
 
     <div class="slo-f" id="cv-slo-f">
@@ -162,10 +187,72 @@
         rask_model_cv.src = `${path}cv-analyzer_EXPLORE_${agent_cycle}.jpg`
         rask_model_pc.src = `${path}pc-visualizer_EXPLORE_${agent_cycle}.jpg`
 
-        sliderLabel.textContent = `Time in Process ${progress_time} / ${slider.max}`;
+        sliderLabel.textContent = `Time in Demo ${progress_time} / ${slider.max}s`;
     }
 
     slider.addEventListener('input', e => loadUI(parseInt(e.target.value)));
+
+    const playBtn = document.getElementById('play-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+
+    // Playback logic
+    let playInterval = null;
+
+    function startPlayback() {
+        if (playInterval) return;
+        playBtn.disabled = true;
+        pauseBtn.disabled = false;
+
+        playInterval = setInterval(() => {
+            let current = parseInt(slider.value, 10);
+            const max = parseInt(slider.max, 10);
+            if (current >= max) {
+                stopPlayback();
+                return;
+            }
+            let next = current + 1;
+            slider.value = next;
+            loadUI(next);
+        }, 120); // 1 step per second
+    }
+
+    function stopPlayback() {
+        if (playInterval) {
+            clearInterval(playInterval);
+            playInterval = null;
+        }
+        playBtn.disabled = false;
+        pauseBtn.disabled = true;
+    }
+
+    playBtn.addEventListener('click', () => {
+        const current = parseInt(slider.value, 10);
+        const max = parseInt(slider.max, 10);
+        if (current >= max) {
+            // already at end — keep at max (or set slider.value = 1 to restart)
+            slider.value = max;
+            loadUI(max);
+            return;
+        }
+        startPlayback();
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        stopPlayback();
+    });
+
+    // If user drags to end, stop playback so buttons stay consistent
+    slider.addEventListener('change', () => {
+        const current = parseInt(slider.value, 10);
+        const max = parseInt(slider.max, 10);
+        if (current >= max) stopPlayback();
+    });
+
+    // cleanup on unload
+    window.addEventListener('beforeunload', () => {
+        if (playInterval) clearInterval(playInterval);
+    });
+
 </script>
 
 </body>

@@ -4,7 +4,6 @@ import time
 from typing import Any
 
 import cv2
-from PIL.Image import Image
 from pyzbar.pyzbar import decode
 
 import utils

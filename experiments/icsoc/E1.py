@@ -79,7 +79,7 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
     delete_file_if_exists(experience_file)
     delete_file_if_exists(ROOT + "/../../../share/metrics/metrics.csv")
     # delete_folder_if_exists(ROOT + "/../../../share/service_output")
-    ingest_metrics_data(ROOT + "/../E1/metrics_EXPLORE.csv")
+    ingest_metrics_data(ROOT + "/metrics_EXPLORE.csv")
 
     # Don't know if that's actually needed anymore
     last_assignments = agent_utils.get_last_assignment_from_metrics(ROOT + "/../../../share/metrics/metrics.csv")
