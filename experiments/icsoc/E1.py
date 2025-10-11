@@ -58,7 +58,7 @@ def train_scaling_agent(rask_agent, agent_suffix):
 
     reset_services_default_rps()
     rask_agent.reset_services_states()
-    delete_folder_if_exists(ROOT + "/../../share/service_output")
+    # delete_folder_if_exists(ROOT + "/../../share/service_output")
     delete_file_if_exists(ROOT + "/../../share/metrics/metrics.csv")
     delete_file_if_exists(ROOT + f"/agent_experience_{agent_suffix}.csv")
     delete_file_if_exists(ROOT + f"/metrics_{agent_suffix}.csv")
