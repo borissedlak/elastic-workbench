@@ -104,7 +104,7 @@ class IoTService(ABC):
             processed_item_counter = 0
             self.global_iteration_counter += 1
             processed_item_durations = []
-            last_result = None
+            first_result = None
 
             try:
                 buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = self.global_iteration_counter)
@@ -122,14 +122,14 @@ class IoTService(ABC):
                         processed_item_durations.append(np.abs(result[1]))
                         processed_item_counter += 1
                         del future_dict[future]
-                        last_result = result[0]
+                        first_result = result[0] if first_result is None else first_result
 
                     if self.has_processing_timeout(start_time):
                         executor.shutdown(wait=False, cancel_futures=True)
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
-                self.write_result_to_sink(last_result, self.global_iteration_counter)
+                self.write_result_to_sink(first_result, self.global_iteration_counter)
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 
