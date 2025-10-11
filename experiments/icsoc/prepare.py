@@ -27,7 +27,7 @@ def create_rask_model_renderings(demo_part):
     logger.info(f"Iterating from {start} to {end} by 1s steps")
 
     current = start
-    iteration = 0
+    iteration = 0 if demo_part == "EXPLORE" else 30
 
     df_train = pd.read_csv(ROOT + "/metrics_EXPLORE.csv") if demo_part == "OPERATE" else pd.DataFrame([])
     df_train['timestamp'] = pd.to_datetime(df['timestamp']) if demo_part == "OPERATE" else None
@@ -39,7 +39,7 @@ def create_rask_model_renderings(demo_part):
 
         if len(merge_df) >= 2:
             try:
-                rask.init_models(merge_df, f"{demo_part}_{iteration}")
+                rask.init_models(merge_df, f"{iteration}")
             except Exception as e:
                 logger.exception(f"Training failed at {current}: {e}")
         else:

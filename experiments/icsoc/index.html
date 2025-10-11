@@ -4,48 +4,75 @@
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>Local Image Grid Slider</title>
     <style>
+        :root { --controls-h: 64px; /* adjust if your controls row is taller */ }
+
+        html, body {
+            height: 100%;
+            margin: 0;         /* remove default margin so 100vh is exact */
+            overflow: hidden;  /* prevent page scrolling */
+        }
+
         body {
-            font-family: sans-serif;
-            margin: 20px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 20px;     /* use padding instead of margin */
+            height: 100vh;     /* explicit viewport height */
         }
+
+
 
         #slider-container {
             width: 80%;
+            height: var(--controls-h);
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+
 
         #time-slider-label {
             margin-bottom: 20px;
         }
 
+        /* grid takes the remaining viewport height after the slider-container */
         #grid {
             display: grid;
-            grid-template-columns:repeat(3, 1fr);
-            grid-template-rows:repeat(3, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: 1fr 0.45fr 1fr; /* middle row smaller */
+            gap: 5px;
             width: 80%;
-            {#max-width: 900px;#}
+            /* add bottom spacing of 20px */
+            height: calc(100vh - var(--controls-h) - 80px); /* 40px padding + 20px extra bottom space */
         }
 
+
+
+        /* let grid cells size to the grid row height (don't force aspect-ratio) */
         .service-output,
-        .rask-model {
+        .rask-model,
+        .slo-f {
             position: relative;
-            overflow: hidden;
-            aspect-ratio: 4/3;
+            overflow: auto;
             background-color: #eee;
+            height: 100%;
         }
 
+        /* ensure images fill the grid cell */
         .service-output img,
         .rask-model img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
+
 
         /* playback controls row */
         #playback-controls {
@@ -132,23 +159,41 @@
 
     slider.max = 60 * 10;
 
-    let csv_data = 0
-    fetch("agent_experience_EXPLORE.csv")
-        .then(res => res.text())
-        .then(text => {
-            Papa.parse(text, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function (results) {
-                    results.data.forEach(r => r.state = Function('"use strict";return(' + r.state.replace(/\bNone\b/g, "null").replace(/\bTrue\b/g, "true").replace(/\bFalse\b/g, "false") + ')')());
-                    csv_data = results.data;
-                    console.log("CSV loaded:", csv_data);
-                }
-            });
-        }).then(None => {
-            loadUI(1);
-        }
-    );
+    function loadCSV(path) {
+        return fetch(path)
+            .then(res => res.text())
+            .then(text => new Promise(resolve => {
+                Papa.parse(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function (results) {
+                        results.data.forEach(r =>
+                            r.state = Function('"use strict";return(' +
+                                r.state.replace(/\bNone\b/g, "null")
+                                       .replace(/\bTrue\b/g, "true")
+                                       .replace(/\bFalse\b/g, "false") +
+                            ')')()
+                        );
+                        console.log(`CSV loaded: ${path}`, results.data);
+                        resolve(results.data);
+                    }
+                });
+            }));
+    }
+
+    let csv_data_train, csv_data_operate;
+    loadCSV("agent_experience_EXPLORE.csv")
+    .then(data => {
+        csv_data_train = data;
+        return loadCSV("agent_experience_OPERATE.csv");
+    })
+    .then(data => {
+        csv_data_operate = data;
+    })
+    .then(() => {
+        loadUI(1);
+    });
+
 
     function loadUI(progress_time) {
 
@@ -163,7 +208,9 @@
         // TODO: Actual throughput + SLO range --> agent experience file + static threshold
 
         const agent_cycle = 1 + Math.floor(progress_time / 10)
-        console.log(agent_cycle, csv_data[(agent_cycle * 3) - 3])
+        const csv_data = progress_time <= 90 ? csv_data_train : csv_data_operate
+        console.log(agent_cycle, csv_data[(agent_cycle * 3)])
+
 
         // Because the first cycle = 1, I subtract from the cycle * 3
         document.getElementById('qr-slo-f-abs').value = csv_data[(agent_cycle * 3)]['slo_f']
@@ -183,9 +230,9 @@
         document.getElementById('pc-slo-f-tp').value = csv_data[(agent_cycle * 3) + 2]['state']['throughput']
 
         const path = "rask_plots/rask_plot_elastic-workbench-"
-        rask_model_qr.src = `${path}qr-detector_EXPLORE_${agent_cycle}.jpg`
-        rask_model_cv.src = `${path}cv-analyzer_EXPLORE_${agent_cycle}.jpg`
-        rask_model_pc.src = `${path}pc-visualizer_EXPLORE_${agent_cycle}.jpg`
+        rask_model_qr.src = `${path}qr-detector_${agent_cycle}.jpg`
+        rask_model_cv.src = `${path}cv-analyzer_${agent_cycle}.jpg`
+        rask_model_pc.src = `${path}pc-visualizer_${agent_cycle}.jpg`
 
         sliderLabel.textContent = `Time in Demo ${progress_time} / ${slider.max}s`;
     }
@@ -252,6 +299,19 @@
     window.addEventListener('beforeunload', () => {
         if (playInterval) clearInterval(playInterval);
     });
+
+    // Toggle playback with space bar
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault(); // prevent scrolling
+            if (playInterval) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        }
+    });
+
 
 </script>
 
