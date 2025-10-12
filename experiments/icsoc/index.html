@@ -49,7 +49,7 @@
             gap: 5px;
             width: 80%;
             /* add bottom spacing of 20px */
-            height: calc(100vh - var(--controls-h) - 80px); /* 40px padding -10px extra bottom space */
+            height: calc(100vh - var(--controls-h) - 80px); /* 40px padding+20px extra bottom space */
         }
 
 
@@ -60,7 +60,7 @@
         .slo-f {
             position: relative;
             overflow: auto;
-            background-color: #eee;
+            {#background-color: #eee;#}
             height: 100%;
         }
 
@@ -95,6 +95,39 @@
             cursor: default;
         }
 
+        .skill-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+            margin-right: 10px;
+        }
+
+        .skill-label {
+            width: 100px;       /* fixed width for labels */
+            text-align: left;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+
+        .skill-container {
+            flex-grow: 1;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .skill-bar {
+            background-color: red;
+            text-align: center;
+            color: white;
+            line-height: 20px;
+            transition: width 0.5s ease, background-color 0.3s ease;
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -116,26 +149,68 @@
     <div class="service-output" id="pc-output"><img src="" alt=""></div>
 
     <div class="slo-f" id="qr-slo-f">
-        <div><span>SLO-F 0</span> <progress id="qr-slo-f-abs" max="1"></progress> <span>1</span></div>
-        <div><span>Quality 0</span> <progress id="qr-slo-f-quality" max="800"></progress> <span>800</span></div>
-        <div><span>Cores 0</span> <progress id="qr-slo-f-cores" max="8"></progress> <span>8</span></div>
-        <div><span>Tp 0</span> <progress id="qr-slo-f-tp" max="80"></progress> <span>80</span></div>
+        <div class="skill-wrapper" id="qr-slo-f-abs">
+            <span class="skill-label">QR SLOs:</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="qr-slo-f-quality">
+            <span class="skill-label label-right"> -- Quality</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="qr-slo-f-tp">
+            <span class="skill-label label-right"> -- RPS</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="qr-slo-f-cores">
+            <span class="skill-label">Cores</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
     </div>
 
+    <!-- replace old cv-slo-f block with this -->
     <div class="slo-f" id="cv-slo-f">
-        <div><span>0</span> <progress id="cv-slo-f-abs" max="1"></progress> <span>1</span></div>
-        <div><span>0</span> <progress id="cv-slo-f-quality" max="288"></progress> <span>288</span></div>
-        <div><span>0</span> <progress id="cv-slo-f-cores" max="8"></progress> <span>8</span></div>
-        <div><span>0</span> <progress id="cv-slo-f-tp" max="5"></progress> <span>5</span></div>
-        <div><span>0</span> <progress id="cv-slo-f-model" max="3"></progress> <span>3</span></div>
+        <div class="skill-wrapper" id="cv-slo-f-abs">
+            <span class="skill-label">CV SLOs:</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="cv-slo-f-quality">
+            <span class="skill-label">Quality</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="cv-slo-f-tp">
+            <span class="skill-label">RPS</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="cv-slo-f-model">
+            <span class="skill-label">Model</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="cv-slo-f-cores">
+            <span class="skill-label">Cores:</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
     </div>
 
+    <!-- replace old pc-slo-f block with this -->
     <div class="slo-f" id="pc-slo-f">
-        <div><span>0</span> <progress id="pc-slo-f-abs" max="1"></progress> <span>1</span></div>
-        <div><span>0</span> <progress id="pc-slo-f-quality" max="40"></progress> <span>40</span></div>
-        <div><span>0</span> <progress id="pc-slo-f-cores" max="8"></progress> <span>8</span></div>
-        <div><span>0</span> <progress id="pc-slo-f-tp" max="50"></progress> <span>50</span></div>
+        <div class="skill-wrapper" id="pc-slo-f-abs">
+            <span class="skill-label">PC SLOs:</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="pc-slo-f-quality">
+            <span class="skill-label">Quality</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="pc-slo-f-tp">
+            <span class="skill-label">RPS</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper" id="pc-slo-f-cores">
+            <span class="skill-label">Cores</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
     </div>
+
 
 
 
@@ -208,27 +283,25 @@
         // TODO: Actual throughput + SLO range --> agent experience file + static threshold
 
         const agent_cycle = 1 + Math.floor(progress_time / 10)
-        console.log(agent_cycle, csv_data[(agent_cycle * 3) -3])
+        console.log(agent_cycle, csv_data[(agent_cycle * 3)])
+
+        updateSkillBar("qr-slo-f-abs", csv_data[(agent_cycle * 3)]['slo_f'], 1, 1);
+        updateSkillBar("qr-slo-f-quality", csv_data[(agent_cycle * 3)]['state']['data_quality'], 800, 800);
+        updateSkillBar("qr-slo-f-cores", csv_data[(agent_cycle * 3)]['state']['cores'], 8, 8);
+        updateSkillBar("qr-slo-f-tp", csv_data[(agent_cycle * 3)]['state']['throughput'], 80, 80);
+
+        updateSkillBar("cv-slo-f-abs", csv_data[(agent_cycle * 3)+1]['slo_f'], 1, 1);
+        updateSkillBar("cv-slo-f-quality", csv_data[(agent_cycle * 3)+1]['state']['data_quality'], 288, 288);
+        updateSkillBar("cv-slo-f-cores", csv_data[(agent_cycle * 3)+1]['state']['cores'], 8, 8);
+        updateSkillBar("cv-slo-f-tp", csv_data[(agent_cycle * 3)+1]['state']['throughput'], 5, 5);
+        updateSkillBar("cv-slo-f-model", csv_data[(agent_cycle * 3)+1]['state']['model_size'], 3, 3);
+
+        updateSkillBar("pc-slo-f-abs", csv_data[(agent_cycle * 3)+2]['slo_f'], 1, 1);
+        updateSkillBar("pc-slo-f-quality", csv_data[(agent_cycle * 3)+2]['state']['data_quality'], 40, 40);
+        updateSkillBar("pc-slo-f-cores", csv_data[(agent_cycle * 3)+2]['state']['cores'], 8, 8);
+        updateSkillBar("pc-slo-f-tp", csv_data[(agent_cycle * 3)+2]['state']['throughput'], 50, 50);
 
 
-        // Because the first cycle = 1, I subtract from the cycle * 3
-        document.getElementById('qr-slo-f-abs').value = csv_data[(agent_cycle * 3) -3]['slo_f']
-        document.getElementById('qr-slo-f-quality').value = csv_data[(agent_cycle * 3) -3]['state']['data_quality']
-        document.getElementById('qr-slo-f-cores').value = csv_data[(agent_cycle * 3) -3]['state']['cores']
-        document.getElementById('qr-slo-f-tp').value = csv_data[(agent_cycle * 3) -3]['state']['throughput']
-
-        document.getElementById('cv-slo-f-abs').value = csv_data[(agent_cycle * 3) -2]['slo_f']
-        document.getElementById('cv-slo-f-quality').value = csv_data[(agent_cycle * 3) -2]['state']['data_quality']
-        document.getElementById('cv-slo-f-cores').value = csv_data[(agent_cycle * 3) -2]['state']['cores']
-        document.getElementById('cv-slo-f-tp').value = csv_data[(agent_cycle * 3) -2]['state']['throughput']
-        document.getElementById('cv-slo-f-model').value = csv_data[(agent_cycle * 3) -2]['state']['model_size']
-
-        document.getElementById('pc-slo-f-abs').value = csv_data[(agent_cycle * 3) -1]['slo_f']
-        document.getElementById('pc-slo-f-quality').value = csv_data[(agent_cycle * 3) -1]['state']['data_quality']
-        document.getElementById('pc-slo-f-cores').value = csv_data[(agent_cycle * 3) -1]['state']['cores']
-        document.getElementById('pc-slo-f-tp').value = csv_data[(agent_cycle * 3) -1]['state']['throughput']
-
-        // TODO: At the very beginning, add three empty areas
         const path = "rask_plots/rask_plot_elastic-workbench-"
         rask_model_qr.src = `${path}qr-detector_${agent_cycle}.jpg`
         rask_model_cv.src = `${path}cv-analyzer_${agent_cycle}.jpg`
@@ -311,6 +384,23 @@
             }
         }
     });
+
+    function updateSkillBar(id, value, threshold, max = 100) {
+        const wrapper = document.getElementById(id);
+        const bar = wrapper.querySelector('.skill-bar');
+        if (threshold === 1) {
+            const percentage = Math.min(Math.max(value, 0), max) / max * 100;
+            bar.style.width = percentage + '%';
+            bar.textContent = Math.round(percentage) + '%';
+            bar.style.backgroundColor = (value >= threshold) ? 'green' : 'red';
+        } else {
+            const percentage = Math.min(Math.max(Math.round(value), 0), max) / max * 100;
+            bar.style.width = percentage + '%';
+            bar.textContent = `${Math.round(value)} / ${threshold}`;
+            bar.style.backgroundColor = (Math.round(value) >= threshold) ? 'green' : 'red';
+        }
+
+    }
 
 
 </script>
