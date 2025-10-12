@@ -24,8 +24,6 @@
             height: 100vh;     /* explicit viewport height */
         }
 
-
-
         #slider-container {
             width: 80%;
             height: var(--controls-h);
@@ -52,8 +50,6 @@
             height: calc(100vh - var(--controls-h) - 80px); /* 40px padding+20px extra bottom space */
         }
 
-
-
         /* let grid cells size to the grid row height (don't force aspect-ratio) */
         .service-output,
         .rask-model,
@@ -62,6 +58,10 @@
             overflow: auto;
             {#background-color: #eee;#}
             height: 100%;
+        }
+
+        .slo-f {
+            margin-top: 10px;
         }
 
         /* ensure images fill the grid cell */
@@ -99,16 +99,24 @@
             display: flex;
             align-items: center;
             margin-bottom: 2px;
-            margin-right: 10px;
+            margin-right: 15px;
+            margin-left: 15px;
         }
 
         .skill-label {
-            width: 100px;       /* fixed width for labels */
+            width: 120px;       /* fixed width for labels */
             text-align: left;
             margin-right: 10px;
+            {#font-weight: bold;#}
+        }
+
+        .bold {
             font-weight: bold;
         }
 
+         .cores-wrapper {
+             margin-top: 13px;
+         }
 
         .skill-container {
             flex-grow: 1;
@@ -150,19 +158,20 @@
 
     <div class="slo-f" id="qr-slo-f">
         <div class="skill-wrapper" id="qr-slo-f-abs">
-            <span class="skill-label">QR SLOs:</span>
+            <span class="skill-label bold">QR SLOs:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="qr-slo-f-quality">
-            <span class="skill-label label-right"> -- Quality</span>
+            <span class="skill-label">= 30%  quality</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="qr-slo-f-tp">
-            <span class="skill-label label-right"> -- RPS</span>
+            <span class="skill-label">+ 70%  rps</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
-        <div class="skill-wrapper" id="qr-slo-f-cores">
-            <span class="skill-label">Cores</span>
+        <br>
+        <div class="skill-wrapper cores-wrapper" id="qr-slo-f-cores">
+            <span class="skill-label">CPU Cores:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
     </div>
@@ -170,23 +179,23 @@
     <!-- replace old cv-slo-f block with this -->
     <div class="slo-f" id="cv-slo-f">
         <div class="skill-wrapper" id="cv-slo-f-abs">
-            <span class="skill-label">CV SLOs:</span>
+            <span class="skill-label bold">CV SLOs:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="cv-slo-f-quality">
-            <span class="skill-label">Quality</span>
-            <div class="skill-container"><div class="skill-bar"></div></div>
-        </div>
-        <div class="skill-wrapper" id="cv-slo-f-tp">
-            <span class="skill-label">RPS</span>
+            <span class="skill-label">= 15%  quality</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="cv-slo-f-model">
-            <span class="skill-label">Model</span>
+            <span class="skill-label">+ 15%  model</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
-        <div class="skill-wrapper" id="cv-slo-f-cores">
-            <span class="skill-label">Cores:</span>
+        <div class="skill-wrapper" id="cv-slo-f-tp">
+            <span class="skill-label">+ 70% rps</span>
+            <div class="skill-container"><div class="skill-bar"></div></div>
+        </div>
+        <div class="skill-wrapper cores-wrapper" id="cv-slo-f-cores">
+            <span class="skill-label">CPU Cores:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
     </div>
@@ -194,24 +203,23 @@
     <!-- replace old pc-slo-f block with this -->
     <div class="slo-f" id="pc-slo-f">
         <div class="skill-wrapper" id="pc-slo-f-abs">
-            <span class="skill-label">PC SLOs:</span>
+            <span class="skill-label bold">PC SLOs:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="pc-slo-f-quality">
-            <span class="skill-label">Quality</span>
+            <span class="skill-label">= 30%  quality</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
         <div class="skill-wrapper" id="pc-slo-f-tp">
-            <span class="skill-label">RPS</span>
+            <span class="skill-label">+ 70%  rps</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
-        <div class="skill-wrapper" id="pc-slo-f-cores">
-            <span class="skill-label">Cores</span>
+        <br>
+        <div class="skill-wrapper cores-wrapper" id="pc-slo-f-cores">
+            <span class="skill-label">CPU Cores:</span>
             <div class="skill-container"><div class="skill-bar"></div></div>
         </div>
     </div>
-
-
 
 
     <div class="rask-model" id="qr-rask"><img src="" alt=""></div>
@@ -271,6 +279,13 @@
 
 
     function loadUI(progress_time) {
+        const images = document.querySelectorAll('img');
+
+        images.forEach(img => {
+            img.onerror = () => {
+                img.src = 'error.jpg';
+            };
+        });
 
         const share = "../../share/service_output"
         service_outputs_qr.src = `${share}/elastic-workbench-qr-detector/${progress_time}.jpg`
@@ -287,19 +302,19 @@
 
         updateSkillBar("qr-slo-f-abs", csv_data[(agent_cycle * 3)]['slo_f'], 1, 1);
         updateSkillBar("qr-slo-f-quality", csv_data[(agent_cycle * 3)]['state']['data_quality'], 800, 800);
-        updateSkillBar("qr-slo-f-cores", csv_data[(agent_cycle * 3)]['state']['cores'], 8, 8);
         updateSkillBar("qr-slo-f-tp", csv_data[(agent_cycle * 3)]['state']['throughput'], 80, 80);
+        updateSkillBar("qr-slo-f-cores", csv_data[(agent_cycle * 3)]['state']['cores'], 8, 8, true);
 
         updateSkillBar("cv-slo-f-abs", csv_data[(agent_cycle * 3)+1]['slo_f'], 1, 1);
         updateSkillBar("cv-slo-f-quality", csv_data[(agent_cycle * 3)+1]['state']['data_quality'], 288, 288);
-        updateSkillBar("cv-slo-f-cores", csv_data[(agent_cycle * 3)+1]['state']['cores'], 8, 8);
         updateSkillBar("cv-slo-f-tp", csv_data[(agent_cycle * 3)+1]['state']['throughput'], 5, 5);
         updateSkillBar("cv-slo-f-model", csv_data[(agent_cycle * 3)+1]['state']['model_size'], 3, 3);
+        updateSkillBar("cv-slo-f-cores", csv_data[(agent_cycle * 3)+1]['state']['cores'], 8, 8, true);
 
         updateSkillBar("pc-slo-f-abs", csv_data[(agent_cycle * 3)+2]['slo_f'], 1, 1);
         updateSkillBar("pc-slo-f-quality", csv_data[(agent_cycle * 3)+2]['state']['data_quality'], 40, 40);
-        updateSkillBar("pc-slo-f-cores", csv_data[(agent_cycle * 3)+2]['state']['cores'], 8, 8);
         updateSkillBar("pc-slo-f-tp", csv_data[(agent_cycle * 3)+2]['state']['throughput'], 50, 50);
+        updateSkillBar("pc-slo-f-cores", csv_data[(agent_cycle * 3)+2]['state']['cores'], 8, 8, true);
 
 
         const path = "rask_plots/rask_plot_elastic-workbench-"
@@ -385,7 +400,7 @@
         }
     });
 
-    function updateSkillBar(id, value, threshold, max = 100) {
+    function updateSkillBar(id, value, threshold, max, grey = false) {
         const wrapper = document.getElementById(id);
         const bar = wrapper.querySelector('.skill-bar');
         if (threshold === 1) {
@@ -394,10 +409,14 @@
             bar.textContent = Math.round(percentage) + '%';
             bar.style.backgroundColor = (value >= threshold) ? 'green' : 'red';
         } else {
+            // TODO: Support fractional numbers for CPU cores
             const percentage = Math.min(Math.max(Math.round(value), 0), max) / max * 100;
             bar.style.width = percentage + '%';
             bar.textContent = `${Math.round(value)} / ${threshold}`;
             bar.style.backgroundColor = (Math.round(value) >= threshold) ? 'green' : 'red';
+        }
+        if (grey === true) {
+            bar.style.backgroundColor = 'grey'
         }
 
     }
