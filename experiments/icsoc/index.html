@@ -140,7 +140,6 @@
 </head>
 <body>
 
-<!-- TODO: Create a controls box on the left of the scene -->
 <div id="slider-container">
     <label for="time-slider"></label>
     <input type="range" id="time-slider" min="1" max="1" step="1" value="1" style="width:100%;">
@@ -292,10 +291,7 @@
         service_outputs_cv.src = `${share}/elastic-workbench-cv-analyzer/${progress_time}.jpg`
         service_outputs_pc.src = `${share}/elastic-workbench-pc-visualizer/${progress_time}.jpg`
 
-        // TODO: Current SLO-F in a non-changeable slider --> agent experience file
-        // Expected SLO-F in a non-changeable slider --x not directly supported
-        // TODO: All interventionable parameters + SLO range --> agent experience file + static threshold
-        // TODO: Actual throughput + SLO range --> agent experience file + static threshold
+        // TODO: Expected SLO-F in a non-changeable slider --x not directly supported
 
         const agent_cycle = 1 + Math.floor(progress_time / 10)
         console.log(agent_cycle, csv_data[(agent_cycle * 3)])
