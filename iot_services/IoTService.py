@@ -110,6 +110,7 @@ class IoTService(ABC):
             first_result = None
 
             try:
+                # logger.info(f"picking {utils.to_absolut_rps(self.client_arrivals)} frames...")
                 buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = self.global_cycle_counter)
                 future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
 
@@ -154,7 +155,7 @@ class IoTService(ABC):
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:
             self.client_arrivals[client_id] = 0  # Should be able to delete this??
-            if client_id != "buffer": # Minor hack to support the buffer processing of linked service
+            if client_id != "buffer":  # Minor hack to support the buffer processing of linked service
                 del self.client_arrivals[client_id]
                 logger.info(f"Removed client {client_id} from service {self.service_type}")
         else:

@@ -104,7 +104,7 @@ class ServiceWrapper:
         new_buffer = current_buffer + finished_frames
 
         self.service.change_request_arrival("buffer", new_buffer)
-        logger.info(f"Predecessing service provided {finished_frames} new frames")
+        logger.info(f"Predecessing service provided {finished_frames} new frames, new length is {self.service.client_arrivals['buffer']}")
         return ""
 
     ######################################
