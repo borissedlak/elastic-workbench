@@ -8,6 +8,7 @@ from pyzbar.pyzbar import decode
 
 import utils
 import video_utils
+from HttpClient import HttpClient
 from agent.components.es_registry import ServiceType
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
@@ -21,12 +22,27 @@ QR_PARALLELISM_DEFAULT = 1
 
 class LinkedService(IoTService):
 
-    def __init__(self, store_to_csv=True):
-        super().__init__(simulate_arrival_interval=False)
+    def __init__(self, store_to_csv=True, linked_service=None, is_source=False):
+        super().__init__()
         self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT, 'parallelism': QR_PARALLELISM_DEFAULT}
         self.store_to_csv = store_to_csv
         self.service_type = ServiceType.LS
         self.data_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
+
+        self.http_client = HttpClient()
+        self.subsequent_service = linked_service
+        self.is_source = is_source
+
+    def post_process(self, processed_items: int):
+
+        # Local postcondition
+        if not self.is_source:
+            self.client_arrivals['buffer'] -= processed_items
+        logger.info(f"Finished {processed_items} frames, current buffer load is {self.client_arrivals['buffer']}")
+
+        # Remote postcondition
+        if self.subsequent_service is not None:
+            self.http_client.append_finished_frames(self.subsequent_service, processed_items)
 
     def get_service_parallelism(self) -> int:
         return utils.cores_to_threads(self.cores_reserved)
@@ -61,10 +77,9 @@ class LinkedService(IoTService):
             pass
 
 
-
 if __name__ == '__main__':
     qd = LinkedService(store_to_csv=True)
-    qd.client_arrivals = {'C1': 40, 'C2': 30}
+    qd.client_arrivals = {'buffer': 30}
     qd.start_process()
 
     while True:

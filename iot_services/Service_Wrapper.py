@@ -5,7 +5,7 @@ from flask import Flask, request
 
 import utils
 from DockerClient import DockerClient
-from agent.components.es_registry import ESType
+from agent.components.es_registry import ESType, ServiceID, ServiceType
 from iot_services.IoTService import IoTService
 
 app = Flask(__name__)
@@ -20,6 +20,9 @@ DEFAULT_CLIENTS = utils.get_env_param("DEFAULT_CLIENTS", None)
 SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
 MAX_CORES = utils.get_env_param("MAX_CORES", None)
 
+SUBSEQUENT_SERVICE = utils.get_env_param("SUBSEQUENT_SERVICE", None)
+SOURCE = utils.get_env_param("SOURCE", None)
+
 
 def init_service(s_type):
     if s_type == "QR":
@@ -33,7 +36,12 @@ def init_service(s_type):
         return PcVisualizer()
     if s_type == "LS":
         from iot_services.LinkedService.LinkedService import LinkedService
-        return LinkedService()
+        if SUBSEQUENT_SERVICE is not None:
+            h, st, c, p = SUBSEQUENT_SERVICE.split(",")
+            subsequent_service = ServiceID(h, ServiceType(st), c, p) if SUBSEQUENT_SERVICE is not None else None
+        else:
+            subsequent_service = None
+        return LinkedService(linked_service=subsequent_service, is_source=SOURCE)
     else:
         raise RuntimeError("Must pass type!")
 
@@ -62,6 +70,7 @@ class ServiceWrapper:
         self.app.add_url_rule('/resource_scaling', 'resource_scaling', self.resource_scaling, methods=['PUT'])
         self.app.add_url_rule('/parallelism_scaling', 'parallelism_scaling', self.parallelism_scaling, methods=['PUT'])
         self.app.add_url_rule('/change_rps', 'change_rps', self.alter_client_connection, methods=['PUT'])
+        self.app.add_url_rule('/append_frames', 'append_frames', self.append_to_client_buffer, methods=['PUT'])
         self.app.add_url_rule('/reset_processing_count', 'reset_processing_count', self.reset_processing_count, methods=['PUT'])
         self.app.run(host='0.0.0.0', port=8080)
 
@@ -85,6 +94,17 @@ class ServiceWrapper:
         rps = int(request.args.get('rps'))
 
         self.service.change_request_arrival(client_id, rps)
+        return ""
+
+
+    def append_to_client_buffer(self):
+        finished_frames = int(request.args.get('finished_frames'))
+
+        current_buffer = self.service.client_arrivals['buffer']
+        new_buffer = current_buffer + finished_frames
+
+        self.service.change_request_arrival("buffer", new_buffer)
+        logger.info(f"Predecessing service provided {finished_frames} new frames")
         return ""
 
     ######################################

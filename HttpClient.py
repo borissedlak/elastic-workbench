@@ -32,3 +32,15 @@ class HttpClient:
     def update_service_rps(self, service: ServiceID, rps):
         thread = threading.Thread(target=self._update_service_rps, args=(service, rps))
         thread.start()
+
+    def _append_finished_frames(self, service: ServiceID, finished_frames):
+        try:
+            parameter_ass = {'finished_frames': finished_frames}
+            response = self.SESSION.put(f"http://{service.host}:{service.port}/append_frames", params=parameter_ass)
+            response.raise_for_status()  # Raise an exception for non-2xx status codes
+        except requests.RequestException as e:
+            print("Request failed:", e)
+
+    def append_finished_frames(self, service: ServiceID, finished_frames):
+        thread = threading.Thread(target=self._append_finished_frames, args=(service, finished_frames))
+        thread.start()

@@ -12,8 +12,10 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-linked-service-1
       - REDIS_INSTANCE=redis
-      - DEFAULT_CLIENTS=C_1:100
+      - DEFAULT_CLIENTS=buffer:500
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+      - SUBSEQUENT_SERVICE=linked-service-2,elastic-workbench-linked-service,elastic-workbench-linked-service-2,8080
+      - SOURCE=True
     volumes:
       - ./share:/src/share # Linux
       - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
@@ -21,6 +23,7 @@ services:
       - "8080:8080" # Only needed on Windows
     depends_on:
       - redis
+      - linked-service-2
 
 
 
@@ -36,7 +39,7 @@ services:
       - FLASK_ENV=development
       - CONTAINER_REF=elastic-workbench-linked-service-2
       - REDIS_INSTANCE=redis
-      - DEFAULT_CLIENTS=C_1:100
+      - DEFAULT_CLIENTS=buffer:0
       - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
     volumes:
       - ./share:/src/share # Linux
@@ -48,27 +51,27 @@ services:
 
 
 
-  linked-service-3:
-    container_name: elastic-workbench-linked-service-3
-    build:
-      context: .
-      dockerfile: iot_services/LinkedService/LinkedService.Dockerfile
-    image: elastic-workbench-linked-service:latest
-    networks:
-      - docker_network
-    environment:
-      - FLASK_ENV=development
-      - CONTAINER_REF=elastic-workbench-linked-service-3
-      - REDIS_INSTANCE=redis
-      - DEFAULT_CLIENTS=C_1:100
-      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
-    volumes:
-      - ./share:/src/share # Linux
-      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
-    ports:
-      - "8082:8080" # Only needed on Windows
-    depends_on:
-      - redis
+#  linked-service-3:
+#    container_name: elastic-workbench-linked-service-3
+#    build:
+#      context: .
+#      dockerfile: iot_services/LinkedService/LinkedService.Dockerfile
+#    image: elastic-workbench-linked-service:latest
+#    networks:
+#      - docker_network
+#    environment:
+#      - FLASK_ENV=development
+#      - CONTAINER_REF=elastic-workbench-linked-service-3
+#      - REDIS_INSTANCE=redis
+#      - DEFAULT_CLIENTS=buffer:0
+#      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+#    volumes:
+#      - ./share:/src/share # Linux
+#      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+#    ports:
+#      - "8082:8080" # Only needed on Windows
+#    depends_on:
+#      - redis
 
   prometheus:
     image: prom/prometheus

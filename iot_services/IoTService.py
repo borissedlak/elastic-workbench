@@ -10,6 +10,7 @@ import numpy as np
 from prometheus_client import start_http_server, Gauge
 
 import utils
+from HttpClient import HttpClient
 from RedisClient import RedisClient
 from agent.components.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 
@@ -21,7 +22,7 @@ REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
 class IoTService(ABC):
-    def __init__(self, store_to_csv=True, simulate_arrival_interval=True):
+    def __init__(self, store_to_csv=True):
         self.docker_container_ref = CONTAINER_REF
         self.service_type = ServiceType.UNKNOWN
         self._terminated = True
@@ -32,7 +33,7 @@ class IoTService(ABC):
         self.store_to_csv = store_to_csv
         self.data_stream = None
 
-        self.simulate_arrival_interval = simulate_arrival_interval
+        self.simulate_arrival_interval = True
         self.processing_timeframe = 1000  # ms
         self.client_arrivals: Dict[str, int] = {}
 
@@ -136,6 +137,8 @@ class IoTService(ABC):
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 
+                self.post_process(processed_item_counter)
+
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")
 
@@ -151,8 +154,9 @@ class IoTService(ABC):
     def change_request_arrival(self, client_id: str, client_rps: int):
         if client_rps <= 0:
             self.client_arrivals[client_id] = 0  # Should be able to delete this??
-            del self.client_arrivals[client_id]
-            logger.info(f"Removed client {client_id} from service {self.service_type}")
+            if client_id != "buffer": # Minor hack to support the buffer processing of linked service
+                del self.client_arrivals[client_id]
+                logger.info(f"Removed client {client_id} from service {self.service_type}")
         else:
             self.client_arrivals[client_id] = client_rps
             logger.info(f"Client {client_id} changed RPS to {client_rps}")
@@ -178,6 +182,10 @@ class IoTService(ABC):
 
     def write_result_to_sink(self, result, timestep):
         pass
+
+    def post_process(self, processed_items: int):
+        pass
+
 
 class DataReader(ABC):
     def __init__(self, buffer_size=200):
