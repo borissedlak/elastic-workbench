@@ -8,4 +8,5 @@ scrape_configs:
     static_configs:
       - targets: [ 'qr-detector-1:8000', 'cv-analyzer-1:8000', 'pc-visualizer-1:8000', 'cadvisor:8080',
                    'qr-detector-2:8000', 'cv-analyzer-2:8000', 'pc-visualizer-2:8000',
-                   'qr-detector-3:8000', 'cv-analyzer-3:8000', 'pc-visualizer-3:8000', ]
+                   'qr-detector-3:8000', 'cv-analyzer-3:8000', 'pc-visualizer-3:8000',
+                   'linked-service-1:8000', 'linked-service-2:8000', 'linked-service-3:8000', ]

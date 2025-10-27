@@ -10,7 +10,6 @@ import numpy as np
 from prometheus_client import start_http_server, Gauge
 
 import utils
-from HttpClient import HttpClient
 from RedisClient import RedisClient
 from agent.components.es_registry import ESType, ESRegistry, ServiceID, ServiceType
 
@@ -49,6 +48,7 @@ class IoTService(ABC):
                                   ['service_type', 'container_id', 'metric_id'])
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
+        self.buffer_size = Gauge('buffer_size', 'Current buffer size', ['service_type', 'container_id', 'metric_id'])
 
     def export_processing_metrics(self, processed_item_counter, processed_item_durations):
         # This is only executed once after the batch is processed
@@ -65,6 +65,10 @@ class IoTService(ABC):
         if self.service_type == ServiceType.CV or self.service_type == ServiceType.PC:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                         metric_id="model_size").set(self.service_conf['model_size'])
+
+        if self.service_type == ServiceType.LS:
+            self.buffer_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                    metric_id="data_quality").set(self.client_arrivals.get('buffer', 0))
 
         if self.store_to_csv:
             metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
