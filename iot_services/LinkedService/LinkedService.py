@@ -1,0 +1,71 @@
+import logging
+import os
+import time
+from typing import Any
+
+import cv2
+from pyzbar.pyzbar import decode
+
+import utils
+import video_utils
+from agent.components.es_registry import ServiceType
+from iot_services.IoTService import IoTService
+from iot_services.VideoReader import VideoReader
+
+logger = logging.getLogger("multiscale")
+
+ROOT = os.path.dirname(__file__)
+QR_DATA_QUALITY_DEFAULT = 552
+QR_PARALLELISM_DEFAULT = 1
+
+
+class LinkedService(IoTService):
+
+    def __init__(self, store_to_csv=True):
+        super().__init__(simulate_arrival_interval=False)
+        self.service_conf = {'data_quality': QR_DATA_QUALITY_DEFAULT, 'parallelism': QR_PARALLELISM_DEFAULT}
+        self.store_to_csv = store_to_csv
+        self.service_type = ServiceType.LS
+        self.data_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
+
+    def get_service_parallelism(self) -> int:
+        return utils.cores_to_threads(self.cores_reserved)
+
+    def process_one_iteration(self, frame) -> (Any, int):
+        start = time.perf_counter()
+
+        target_height = int(self.service_conf['data_quality'])
+        original_width, original_height = frame.shape[1], frame.shape[0]
+        ratio = original_height / target_height
+        frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        decoded_objects = decode(gray)
+
+        # Resulting image and total processing time --> unused
+        combined_img = video_utils.highlight_qr_codes(frame, decoded_objects)
+        duration = (time.perf_counter() - start) * 1000
+        return combined_img, duration
+
+    def write_result_to_sink(self, result, timestep):
+        directory = ROOT + f"/../../share/service_output/{self.service_type.value}"
+
+        # Ensure the directory exists
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if result is not None:
+            filename = f"{directory}/{timestep}.jpg"
+            # output_bgr = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+            cv2.imwrite(filename, result)
+            print(f"Write image {filename}")
+            pass
+
+
+
+if __name__ == '__main__':
+    qd = LinkedService(store_to_csv=True)
+    qd.client_arrivals = {'C1': 40, 'C2': 30}
+    qd.start_process()
+
+    while True:
+        time.sleep(1000)

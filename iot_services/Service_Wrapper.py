@@ -31,6 +31,9 @@ def init_service(s_type):
     if s_type == "PC":
         from iot_services.PcVisualizer.PcVisualizer import PcVisualizer
         return PcVisualizer()
+    if s_type == "LS":
+        from iot_services.LinkedService.LinkedService import LinkedService
+        return LinkedService()
     else:
         raise RuntimeError("Must pass type!")
 

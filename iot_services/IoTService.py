@@ -21,7 +21,7 @@ REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
 class IoTService(ABC):
-    def __init__(self, store_to_csv=True):
+    def __init__(self, store_to_csv=True, simulate_arrival_interval=True):
         self.docker_container_ref = CONTAINER_REF
         self.service_type = ServiceType.UNKNOWN
         self._terminated = True
@@ -32,7 +32,7 @@ class IoTService(ABC):
         self.store_to_csv = store_to_csv
         self.data_stream = None
 
-        self.simulate_arrival_interval = True
+        self.simulate_arrival_interval = simulate_arrival_interval
         self.processing_timeframe = 1000  # ms
         self.client_arrivals: Dict[str, int] = {}
 
@@ -131,8 +131,8 @@ class IoTService(ABC):
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
-                if self.global_cycle_counter <= 600:
-                    self.write_result_to_sink(first_result, self.global_cycle_counter)
+                # if self.global_cycle_counter <= 600:
+                #     self.write_result_to_sink(first_result, self.global_cycle_counter)
                 if self.simulate_arrival_interval:
                     self.simulate_interval(start_time)
 

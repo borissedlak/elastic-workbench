@@ -1,0 +1,128 @@
+services:
+
+  linked-service-1:
+    container_name: elastic-workbench-linked-service-1
+    build:
+      context: .
+      dockerfile: iot_services/LinkedService/LinkedService.Dockerfile
+    image: elastic-workbench-linked-service:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-linked-service-1
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+    volumes:
+      - ./share:/src/share # Linux
+      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+    ports:
+      - "8080:8080" # Only needed on Windows
+    depends_on:
+      - redis
+
+
+
+  linked-service-2:
+    container_name: elastic-workbench-linked-service-2
+    build:
+      context: .
+      dockerfile: iot_services/LinkedService/LinkedService.Dockerfile
+    image: elastic-workbench-linked-service:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-linked-service-2
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+    volumes:
+      - ./share:/src/share # Linux
+      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+    ports:
+      - "8081:8080" # Only needed on Windows
+    depends_on:
+      - redis
+
+
+
+  linked-service-3:
+    container_name: elastic-workbench-linked-service-3
+    build:
+      context: .
+      dockerfile: iot_services/LinkedService/LinkedService.Dockerfile
+    image: elastic-workbench-linked-service:latest
+    networks:
+      - docker_network
+    environment:
+      - FLASK_ENV=development
+      - CONTAINER_REF=elastic-workbench-linked-service-3
+      - REDIS_INSTANCE=redis
+      - DEFAULT_CLIENTS=C_1:100
+      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+    volumes:
+      - ./share:/src/share # Linux
+      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+    ports:
+      - "8082:8080" # Only needed on Windows
+    depends_on:
+      - redis
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    networks:
+      docker_network:
+    ports:
+      - "9090:9090" # Prometheus UI
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-admin-api
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    networks:
+      docker_network:
+    ports:
+      - "3000:3000" # Grafana UI
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=adminadmin
+    depends_on:
+      - prometheus
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      docker_network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    networks:
+      docker_network:
+    ports:
+      - "8090:8080" # Expose the cAdvisor UI and metrics endpoint
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+
+networks:
+  docker_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
