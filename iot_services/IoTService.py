@@ -68,7 +68,7 @@ class IoTService(ABC):
 
         if self.service_type == ServiceType.LS:
             self.buffer_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
-                                    metric_id="data_quality").set(self.client_arrivals.get('buffer', 0))
+                                    metric_id="buffer").set(self.client_arrivals.get('buffer', 0))
 
         if self.store_to_csv:
             metric_buffer = [(datetime.datetime.now(), self.service_type.value, CONTAINER_REF, avg_p_latency_v,
