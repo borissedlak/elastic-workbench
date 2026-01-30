@@ -1,4 +1,4 @@
-# ICSOC - Comparison of Agents
+# PERCOM - Visual Insights into Agentic Optimization of Pervasive Stream Processing Services
 
 This project demonstrated the capability of different agents to solve a complex scaling problem.  
 
