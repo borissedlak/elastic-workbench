@@ -7,7 +7,7 @@ import onnxruntime
 import video_utils
 
 
-class YOLOv8:
+class YOLOv10:
     def __init__(self, path: str, conf_threshold: float = 0.2):
         self.conf_threshold = conf_threshold
         self.session = onnxruntime.InferenceSession(path, providers=['CPUExecutionProvider'])
@@ -56,12 +56,12 @@ class YOLOv8:
 
 if __name__ == '__main__':
     model_path = "./models/yolov10n.onnx"
-    detector = YOLOv8(model_path)
+    detector = YOLOv10(model_path)
 
     img = cv2.imread("./data/CV_Image_2.png")
     # img = cv2.resize(img, (700, 701))  # match training shape
     class_ids, boxes, confidences = detector(img)
-    print(boxes)
+    # print(boxes)
 
     combined_img = video_utils.draw_detections(img, boxes, confidences, class_ids)
     # combined_img = video_utils.draw_detections_simple(img, boxes)

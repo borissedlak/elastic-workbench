@@ -6,7 +6,7 @@ from typing import Any
 import cv2
 
 from agent.components.es_registry import ServiceType
-from iot_services.CvAnalyzer_Yolo.YOLOv8_ONNX import YOLOv8
+from iot_services.CvAnalyzer_Yolo.YOLOv10_ONNX import YOLOv10
 from iot_services.IoTService import IoTService
 from iot_services.VideoReader import VideoReader
 from video_utils import yolo_model_sizes, draw_detections
@@ -26,7 +26,7 @@ class CvAnalyzer(IoTService):
         self.service_type = ServiceType.CV
         self.data_stream = VideoReader(ROOT + "/data/CV_Video.mp4")
 
-        self.detectors: dict[int, YOLOv8] = {}
+        self.detectors: dict[int, YOLOv10] = {}
         self.load_models()
         self.metric_buffer = []
 
@@ -34,8 +34,8 @@ class CvAnalyzer(IoTService):
     def load_models(self):
         for i in range(1, 6):
             # logger.info(f"Loading Detector with Yolov8{yolo_model_sizes[self.service_conf['model_size']]}")
-            model_path = ROOT + f"/models/yolov8{yolo_model_sizes[i]}.onnx"
-            detector = YOLOv8(model_path, conf_threshold=0.3)
+            model_path = ROOT + f"/models/yolov10{yolo_model_sizes[i]}.onnx"
+            detector = YOLOv10(model_path, conf_threshold=0.3)
             self.detectors[i] = detector
 
     def get_service_parallelism(self) -> int:
