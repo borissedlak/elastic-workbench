@@ -69,7 +69,9 @@ def resize_img_to_32_bins(image: np.ndarray) -> np.ndarray:
     resized = cv2.resize(image, (new_w, new_h))
     return resized
 
-
+# The rationale behind this function is the following:
+# I want to benefit from higher or lower image sizes when I input them into the model. That's why
+# we used the 'dynamic' flag at the model output. Still, the image shape must be multiples of 32
 def prepare_yolo_input(image: np.ndarray) -> np.ndarray:
     image = resize_img_to_32_bins(image)
 

@@ -3,8 +3,8 @@ import os
 from ultralytics import YOLO
 
 for size in ["n", "s", "m", "l", "x"]:
-    model_path = f"yolov8{size}.pt"
-    model_path_onnx = f"yolov8{size}.onnx"
+    model_path = f"yolov10{size}.pt"
+    model_path_onnx = f"yolov10{size}.onnx"
 
     if not os.path.exists(model_path_onnx):
         model = YOLO(model_path)  # load a pretrained model

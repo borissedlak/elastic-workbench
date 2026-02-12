@@ -18,3 +18,6 @@ ssh -L 8080:localhost:8080 -L 8081:localhost:8081 -L 8082:localhost:8082  -L 909
 ssh -L  3000:localhost:3000  root@128.131.172.182
 ssh root@128.131.172.182
 scp -r root@128.131.172.182:~/development/elastic-workbench/iot_services/PcVisualizer/data/2011_09_26/2011_09_26_drive_0001_sync "C:\Users\Boris\Downloads"
+
+# Delete GitHub tag remotely
+git push origin :refs/tags/<tag-name>
