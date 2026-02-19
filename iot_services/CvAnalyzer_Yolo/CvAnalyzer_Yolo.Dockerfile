@@ -9,7 +9,10 @@ COPY ./iot_services/CvAnalyzer_Yolo/requirements.txt /src/iot_services/CvAnalyze
 RUN pip install -r ./iot_services/CvAnalyzer_Yolo/requirements.txt
 
 COPY . /src/
-#RUN python -m iot_services.CvAnalyzer_Yolo.models.model_loader # The problem is that I did not want to include ultralytics
+
+# Uncomment this for directly loading the ultralytics package and the YOLOv10 models
+#RUN pip install ultralytics
+#RUN python ./iot_services/CvAnalyzer_Yolo/models/model_converter.py
 
 ENV SERVICE_TYPE CV
 

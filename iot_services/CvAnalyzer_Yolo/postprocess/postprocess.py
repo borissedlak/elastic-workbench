@@ -66,7 +66,7 @@ for timestep in range(0, 600):
 
     print(boxes)
 
-    if combined_img is not None and agent_experience['throughput'] > 1:
+    if combined_img is not None:
         filename = f"../../../../website-new/static/percom-demo-2026/service_output/elastic-workbench-cv-analyzer/{timestep}.jpg"
         cv2.imwrite(filename, combined_img)
         print(f"Write image {filename}")
