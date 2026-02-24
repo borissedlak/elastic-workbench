@@ -65,13 +65,19 @@ and /var/run/docker.sock for providing an interface to the Docker execution.
 
 ### Service Overview
 
+#### IoT Services
+
 | Service Name       | Container Name                      | Role                                              | Ports       |
 |:-------------------|:------------------------------------|:--------------------------------------------------|:------------|
-| **IoT Services**   |                                     |                                                   |             |
 | `qr-detector-1`    | `elastic-workbench-qr-detector-1`   | Stream processing service.                        | `8080:8080` |
 | `cv-analyzer-1`    | `elastic-workbench-cv-analyzer-1`   | Stream processing service.                        | `8081:8080` |
 | `pc-visualizer-1`  | `elastic-workbench-pc-visualizer-1` | Stream processing service.                        | `8082:8080` |
-| **Infrastructure** |                                     |                                                   |             |
+
+
+#### Infrastructure
+
+| Service Name       | Container Name                      | Role                                              | Ports       |
+|:-------------------|:------------------------------------|:--------------------------------------------------|:------------|
 | `prometheus`       | `prometheus`                        | Time-series DB for storing processing metrics.    | `9090:9090` |
 | `grafana`          | `grafana`                           | Dashboard for visualizing real-time metrics.      | `3000:3000` |
 | `cadvisor`         | `cadvisor`                          | Access detailed metics from service containers.   | `8090:8080` |
