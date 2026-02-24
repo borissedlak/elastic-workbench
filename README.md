@@ -17,7 +17,7 @@ evaluated:
 * Sedlak et al., **Multi-Dimensional Autoscaling of Stream Processing Services on Edge Devices** (2025)
   [[ref]](https://arxiv.org/abs/2510.06882)
 * Sedlak et al., **Visual Insights into Agentic Optimization of Pervasive Stream Processing Services** (2025)
-  [[missing!!]](https://arxiv.org/abs/2510.06882)
+  [[ref]](https://arxiv.org/abs/2602.17282)
 
 ## Installation
 
