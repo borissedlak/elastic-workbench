@@ -1,5 +1,24 @@
 services:
 
+  agent:
+    build:
+      context: .
+      dockerfile: agent/RASK.Dockerfile
+    image: elastic-workbench-agent:latest
+    networks:
+      - docker_network
+    environment:
+      - REDIS_INSTANCE=redis
+      - SERVICE_HOST=host.docker.internal
+    volumes:
+      - ./share:/src/share # Linux
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - qr-detector-1
+      - cv-analyzer-1
+      - pc-visualizer-1
+
   qr-detector-1:
     container_name: elastic-workbench-qr-detector-1
     build:
@@ -74,7 +93,7 @@ services:
     ports:
       - "9090:9090" # Prometheus UI
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Linux
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml # Linux
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-admin-api

@@ -1,7 +1,8 @@
-venv
-share/metrics
-agent/obsolete
+.idea
 experiments
+iwai
+share/metrics
+venv
 tests
 
 iot_services/CvAnalyzer

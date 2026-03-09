@@ -27,7 +27,7 @@ REMOTE_VM = utils.get_env_param('REMOTE_VM', "128.131.172.182")
 ROOT = os.path.dirname(__file__)
 
 
-class RASK_Global_Agent(ScalingAgent):
+class RASK_Agent(ScalingAgent):
 
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
@@ -138,9 +138,9 @@ if __name__ == '__main__':
     cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
     pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
-    agent = RASK_Global_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
-                              evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
-                              max_explore=5, gaussian_noise=0.05)
+    agent = RASK_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
+                       evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
+                       max_explore=5, gaussian_noise=0.05)
 
     # agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)

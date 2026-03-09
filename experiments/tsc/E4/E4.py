@@ -45,15 +45,15 @@ PROMETHEUS = f"http://{SERVICE_HOST}:9090"  # "128.131.172.182"
 qr_local_1 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
 qr_local_2 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-2", port="8083")
 qr_local_3 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-3", port="8086")
-qr_local_4 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-4", port="8089")
+# qr_local_4 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-4", port="8089")
 cv_local_1 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
 cv_local_2 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-2", port="8084")
 cv_local_3 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-3", port="8087")
-cv_local_4 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-4", port="8090")
+# cv_local_4 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-4", port="8090")
 pc_local_1 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 pc_local_2 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-2", port="8085")
 pc_local_3 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-3", port="8088")
-pc_local_4 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-4", port="8091")
+# pc_local_4 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-4", port="8091")
 
 MAX_RPS_QR = 100
 MAX_RPS_CV = 10
@@ -167,8 +167,7 @@ if __name__ == '__main__':
             evaluation_cycle=EVALUATION_FREQUENCY,
             log_experience=repetition,
             max_explore=MAX_EXPLORE,
-            gaussian_noise=GAUSSIAN_NOISE,
-            update_last_assignment=True
+            gaussian_noise=GAUSSIAN_NOISE
         )
 
         eval_scaling_agent(agent_fact_rask, f"RASK_{len(agent_list)}", REQUEST_PATTERN)

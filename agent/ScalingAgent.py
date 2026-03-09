@@ -24,7 +24,7 @@ logger = logging.getLogger("multiscale")
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 5))
 SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
-
+REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
 
 class ScalingAgent(Thread, ABC):
@@ -39,9 +39,8 @@ class ScalingAgent(Thread, ABC):
 
         self.services_monitored: list[ServiceID] = services_monitored
         self.prom_client = PrometheusClient(prom_server)
-        # self.docker_client = DockerClient()
         self.http_client = HttpClient()
-        self.reddis_client = RedisClient(SERVICE_HOST)
+        self.reddis_client = RedisClient(host=REDIS_INSTANCE)
         self.slo_registry = SLO_Registry(slo_registry_path)
         self.es_registry = ESRegistry(es_registry_path)
         self.experience_buffer = []
