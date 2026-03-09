@@ -10,6 +10,8 @@ services:
     environment:
       - REDIS_INSTANCE=redis
       - SERVICE_HOST=host.docker.internal
+      - MAX_CORES=8
+      - SERVICE_REPLICATION=1
     volumes:
       - ./share:/src/share # Linux
     extra_hosts:

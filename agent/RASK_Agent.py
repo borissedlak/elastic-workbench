@@ -19,12 +19,43 @@ from agent.components.es_registry import ServiceID, ServiceType, ESType
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("multiscale")
 
+ROOT = os.path.dirname(__file__)
+
+##### Scaling Agent Hyperparameters #######
+
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
+MAX_EXPLORE = int(utils.get_env_param('MAX_CORES', 0))
+GAUSSIAN_NOISE = float(utils.get_env_param('GAUSSIAN_NOISE', 0.0))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
+
+########## Service Definitions ############
+
 SERVICE_HOST = utils.get_env_param('SERVICE_HOST', "localhost")
 REMOTE_VM = utils.get_env_param('REMOTE_VM', "128.131.172.182")
+SERVICE_REPLICATION = int(utils.get_env_param('SERVICE_REPLICATION', 1))
+PROMETHEUS = f"http://{SERVICE_HOST}:9090"  # "128.131.172.182"
 
-ROOT = os.path.dirname(__file__)
+QR_RPS = 80
+CV_RPS = 5
+PC_RPS = 50
+
+qr_local_1 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
+qr_local_2 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-2", port="8083")
+qr_local_3 = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-3", port="8086")
+
+cv_local_1 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
+cv_local_2 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-2", port="8084")
+cv_local_3 = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-3", port="8087")
+
+pc_local_1 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
+pc_local_2 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-2", port="8085")
+pc_local_3 = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-3", port="8088")
+
+services_3 = [qr_local_1, cv_local_1, pc_local_1]
+services_6 = services_3 + [qr_local_2, cv_local_2, pc_local_2]
+services_9 = services_6 + [qr_local_3, cv_local_3, pc_local_3]
+
+services_convert = {1: services_3, 2: services_6, 3: services_9}
 
 
 class RASK_Agent(ScalingAgent):
@@ -133,26 +164,30 @@ def apply_gaussian_noise_to_asses(assignment, noise):
 
 
 if __name__ == '__main__':
-    ps = f"http://{SERVICE_HOST}:9090"  # "128.131.172.182"
-    qr_local = ServiceID(SERVICE_HOST, ServiceType.QR, "elastic-workbench-qr-detector-1", port="8080")
-    cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyzer-1", port="8081")
-    pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
-    agent = RASK_Agent(services_monitored=[cv_local, qr_local, pc_local], prom_server=ps,
+    agent = RASK_Agent(services_monitored=services_convert[SERVICE_REPLICATION], prom_server=PROMETHEUS,
                        evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
                        max_explore=5, gaussian_noise=0.05)
-
-    # agent_utils.delete_file_if_exists(ROOT + "/../share/metrics/metrics.csv")
-    # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_CYCLE_DELAY)
+    
 
     http_client = HttpClient()
-    http_client.update_service_rps(qr_local, 80)
-    http_client.update_service_rps(cv_local, 5)
-    http_client.update_service_rps(pc_local, 50)
+    http_client.update_service_rps(qr_local_1, QR_RPS)
+    http_client.update_service_rps(cv_local_1, CV_RPS)
+    http_client.update_service_rps(pc_local_1, PC_RPS)
+
+    if SERVICE_REPLICATION >= 2:
+        http_client.update_service_rps(qr_local_2, QR_RPS)
+        http_client.update_service_rps(cv_local_2, CV_RPS)
+        http_client.update_service_rps(pc_local_2, PC_RPS)
+    if SERVICE_REPLICATION >= 3:
+        http_client.update_service_rps(qr_local_3, QR_RPS)
+        http_client.update_service_rps(cv_local_3, CV_RPS)
+        http_client.update_service_rps(pc_local_3, PC_RPS)
 
     agent.reset_services_states()
+    time.sleep(EVALUATION_CYCLE_DELAY / 2) # Needs a couple of seconds after resetting services (i.e., calling ES)
     agent.start()
 
     while True:
-        time.sleep(5)
+        time.sleep(EVALUATION_CYCLE_DELAY)
         export_experience_buffer(agent.experience_buffer, ROOT + f"/agent_experience_RASK.csv")
