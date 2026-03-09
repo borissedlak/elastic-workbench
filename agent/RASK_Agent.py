@@ -24,7 +24,7 @@ ROOT = os.path.dirname(__file__)
 ##### Scaling Agent Hyperparameters #######
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
-MAX_EXPLORE = int(utils.get_env_param('MAX_CORES', 0))
+MAX_EXPLORE = int(utils.get_env_param('MAX_EXPLORE', 0))
 GAUSSIAN_NOISE = float(utils.get_env_param('GAUSSIAN_NOISE', 0.0))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
 
@@ -74,10 +74,11 @@ class RASK_Agent(ScalingAgent):
         self.gaussian_noise = gaussian_noise
         self.cache_last_assignment = cache_last_assignment
 
-        self.last_assignments = [{'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
-                                 {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT,
-                                  'cores': MAX_CORES / 3},
-                                 {'data_quality': PC_DISTANCE_DEFAULT, 'cores': MAX_CORES / 3}]
+        self.last_assignments = None
+        # self.last_assignments = [{'data_quality': QR_DATA_QUALITY_DEFAULT, 'cores': MAX_CORES / 3},
+        #                          {'model_size': CV_M_SIZE_DEFAULT, 'data_quality': CV_DATA_QUALITY_DEFAULT,
+        #                           'cores': MAX_CORES / 3},
+        #                          {'data_quality': PC_DISTANCE_DEFAULT, 'cores': MAX_CORES / 3}]
 
         self.rask = RASK(show_figures=False)
 
@@ -167,7 +168,7 @@ if __name__ == '__main__':
 
     agent = RASK_Agent(services_monitored=services_convert[SERVICE_REPLICATION], prom_server=PROMETHEUS,
                        evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
-                       max_explore=5, gaussian_noise=0.05)
+                       max_explore=MAX_EXPLORE, gaussian_noise=GAUSSIAN_NOISE,)
     
 
     http_client = HttpClient()
