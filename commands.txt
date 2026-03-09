@@ -6,7 +6,7 @@ docker inspect multiscaler-video-processing-1
 docker inspect multiscaler-video-processing-1 | grep CpuShares
 
 # Absolute amount of CPUs that the process gets assigned
-docker update --cpus 4.0 multiscaler-video-processing-1
+docker update --cpus 0.05 elastic-workbench-agent-1
 
 # Shares that it can use compared to other Docker containers
 docker update --cpu-shares 1024 multiscaler-video-processing-1
@@ -21,3 +21,8 @@ scp -r root@128.131.172.182:~/development/elastic-workbench/iot_services/PcVisua
 
 # Delete GitHub tag remotely
 git push origin :refs/tags/<tag-name>
+
+# Count FLOPS per container, give operations and timeframe in return
+perf stat -e fp_ret_sse_avx_ops.all \
+-p $(docker inspect --format '{{.State.Pid}}' elastic-workbench-agent-1) \
+sleep 60

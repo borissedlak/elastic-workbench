@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 
 import pandas as pd
@@ -12,8 +13,9 @@ MAX_CORES = 8
 class TestPolicySolver(TestCase):
 
     def setUp(self):
+        ROOT = os.path.dirname(__file__)
         self.rask = RASK()
-        df = pd.read_csv("static/metrics_20_0.csv")
+        df = pd.read_csv(ROOT + "/static/metrics_20_0.csv")
         self.rask.init_models(df)
 
 
@@ -24,6 +26,8 @@ class TestPolicySolver(TestCase):
         clients_slos_qr = [{'completion_rate': SLO(var='completion_rate', larger=True, target=1.0, weight=1.0),
                          'data_quality': SLO(var='data_quality', larger=True, target=900, weight=0.5)}]
 
-        service_context = [(ServiceType.QR, parameter_bounds_qr, clients_slos_qr, 100)]
+        service_context = [(ServiceType.QR, parameter_bounds_qr, clients_slos_qr, 100),
+                           (ServiceType.QR, parameter_bounds_qr, clients_slos_qr, 100),
+                           (ServiceType.QR, parameter_bounds_qr, clients_slos_qr, 100)]
 
         print(solve_global(service_context, MAX_CORES, self.rask, None))
