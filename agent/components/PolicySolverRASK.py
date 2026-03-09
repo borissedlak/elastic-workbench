@@ -71,6 +71,7 @@ def solve_global(service_contexts_m, max_cores, rask: RASK, last_assignments):
             else:
                 x0.append((ES_desc[ES_var]["min"] + ES_desc[ES_var]["max"]) / 2)
 
+    print(x0)
     if last_assignments:
         x0 = [v for d in last_assignments for v in d.values()] # Use last solution as starting point
 
