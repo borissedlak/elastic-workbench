@@ -27,12 +27,12 @@ class RASK:
         self.models: Dict[ServiceType, Dict] = None
 
     @utils.print_execution_time
-    def init_models(self, df_combined=None, img_suffix=None):
+    def init_models(self, df_combined=None, img_suffix=None, override_relation=False):
         if df_combined is None:
             df_combined = collect_all_metric_files()
         df_cleared = preprocess_data(df_combined)
 
-        self.models = train_rask_models(df_cleared, self.show_figures, img_suffix)
+        self.models = train_rask_models(df_cleared, self.show_figures, img_suffix, override_relation)
 
     def get_all_dependent_vars_ass(self, service_type: ServiceType, sample_state: Dict[str, Any]):
         dependent_variables = list(get_dependent_variable_mapping(service_type).keys())
@@ -100,7 +100,7 @@ def get_local_metric_file(path=ROOT + "/../../share/metrics/metrics.csv"):
 
 
 # @print_execution_time  # Roughly 10ms
-def train_rask_models(df, show_result=False, img_suffix=None):
+def train_rask_models(df, show_result=False, img_suffix=None, override_relation= False):
     service_models = {}
 
     for degree in [2]:  # range(1,10):
@@ -108,7 +108,7 @@ def train_rask_models(df, show_result=False, img_suffix=None):
             df_service = df[df['service_type'] == service_type_s]
             service_models[ServiceType(service_type_s)] = {}
 
-            dependent_variables = get_dependent_variable_mapping(ServiceType(service_type_s))
+            dependent_variables = get_dependent_variable_mapping(ServiceType(service_type_s), override_relation)
             for var, deps in dependent_variables.items():
                 Y = df_service[var]  # dependent variable
                 X = df_service[deps]  # independent variables
@@ -133,13 +133,17 @@ def train_rask_models(df, show_result=False, img_suffix=None):
 
                 service_models[ServiceType(service_type_s)] |= {var: (poly, model)}
                 if show_result:
-                    # draw_3d_plot(df_service, var, deps, poly, model, service_type_s)
-                    draw_3d_plot_fast(df_service, var, deps, poly, model, service_type_s, img_suffix= f"_{img_suffix}")
+                    # draw_3d_plot_interactive(df_service, var, deps, poly, model, service_type_s)
+                    # draw_3d_plot_fast(df_service, var, deps, poly, model, service_type_s, img_suffix= f"_{img_suffix}")
+                    draw_heatmap_fast(df_service, var, deps, poly, model, service_type_s)
 
     return service_models
 
 
-def get_dependent_variable_mapping(service_type: ServiceType):
+def get_dependent_variable_mapping(service_type: ServiceType, override= False):
+    if override:
+        return {'cores': sorted(['max_tp', 'data_quality'])}
+
     if service_type == ServiceType.QR:
         return {'max_tp': sorted(['cores', 'data_quality'])}
     elif service_type == ServiceType.CV:
@@ -165,7 +169,7 @@ def calculate_missing_vars(partial_state, total_rps: int):
 
 
 # @utils.print_execution_time
-def draw_3d_plot(df, var, deps, poly, model, service_type_s: ServiceType):
+def draw_3d_plot_interactive(df, var, deps, poly, model, service_type_s: ServiceType):
     if len(deps) > 3:
         logger.info(f"3D plot not supported for more than 3 dimensions!")
         return
@@ -243,13 +247,12 @@ def draw_3d_plot(df, var, deps, poly, model, service_type_s: ServiceType):
         height=700
     )
 
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or platform.system() == "Linux":
         fig.write_html(f"rask_plot_{service_type_s}.html", auto_open=True)
     else:
         fig.show()
 
 # @utils.print_execution_time # Fast option takes ~400ms, while other take 2.5s
-# TODO: Merge two functions into one
 def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, grid_size: int = 30, out_dir: str = "./rask_plots", img_suffix=""):
     # put these *before* any matplotlib use
     import matplotlib
@@ -366,6 +369,113 @@ def draw_3d_plot_fast(df, var, deps, poly, model, service_type_s: ServiceType, g
     logger.info(f"Saved fast 3D plot to {out_path}")
 
 
+def draw_heatmap_fast(df, var, deps, poly, model, service_type_s, grid_size=8, out_dir="./rask_plots", img_suffix=""):
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from sklearn.decomposition import PCA
+
+    os.makedirs(out_dir, exist_ok=True)
+
+    if len(deps) > 3:
+        print(f"Heatmap not supported for more than 3 dimensions!")
+        return
+
+    df_local = df.copy()
+
+    # --- Handling 2D or 3D (PCA) logic ---
+    if len(deps) == 3:
+        data = df_local[deps].values
+        pca = PCA(n_components=2)
+        pca_coords = pca.fit_transform(data)
+
+        df_local['PC1'] = pca_coords[:, 0]
+        df_local['PC2'] = pca_coords[:, 1]
+
+        # --- FLIPPED AXES ---
+        # Swap the assignment: PC2 becomes x, PC1 becomes y
+        x_axis, y_axis = 'PC2', 'PC1'
+
+        # Generate ranges based on the new axis assignment
+        x1_range = np.linspace(df_local[x_axis].min(), df_local[x_axis].max(), grid_size)
+        x2_range = np.linspace(df_local[y_axis].min(), df_local[y_axis].max(), grid_size)
+
+        # Meshgrid: x1 (PC2) horizontal, x2 (PC1) vertical
+        x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+
+        # When stacking for inverse_transform, ensure we match PCA's expected order (PC1, PC2)
+        # Since x1 is PC2 and x2 is PC1, we stack as (x2, x1)
+        grid_points = np.column_stack((x2_grid.ravel(), x1_grid.ravel()))
+
+        orig_features = pca.inverse_transform(grid_points)
+        X_grid_df = pd.DataFrame(orig_features, columns=deps)
+    else:
+        x_axis, y_axis = deps[0], deps[1]
+
+        def safe_range(col):
+            mn, mx = float(df_local[col].min()), float(df_local[col].max())
+            if np.isclose(mn, mx):
+                eps = max(1.0, abs(mn) * 0.01)
+                return np.linspace(mn - eps, mx + eps, grid_size)
+            return np.linspace(mn, mx, grid_size)
+
+        x1_range = safe_range(x_axis)
+        x2_range = safe_range(y_axis)
+        x1_grid, x2_grid = np.meshgrid(x1_range, x2_range)
+        X_grid_df = pd.DataFrame(np.column_stack((x1_grid.ravel(), x2_grid.ravel())), columns=[x_axis, y_axis])
+
+    # --- Predict using the regression model ---
+    if poly is not None:
+        X_transformed = poly.transform(X_grid_df)
+    else:
+        X_transformed = X_grid_df.values
+
+    y_pred_grid = model.predict(X_transformed)
+
+    # --- Prepare Pivot Table (No Capping) ---
+    plot_df = pd.DataFrame({
+        x_axis: np.round(x1_grid.ravel(), 2),
+        y_axis: np.round(x2_grid.ravel(), 2),
+        var: y_pred_grid
+    })
+
+    heatmap_data = plot_df.pivot(index=y_axis, columns=x_axis, values=var)
+
+    # --- Plotting ---
+    plt.figure(figsize=(5, 3))
+
+    # Removed vmin/vmax to allow auto-scaling based on raw predictions
+    ax = sns.heatmap(
+        heatmap_data,
+        cmap="viridis",
+        annot=True,
+        fmt=".0f",
+        cbar_kws={'label': var},
+        xticklabels=max(1, grid_size // 5),
+        yticklabels=max(1, grid_size // 5)
+    )
+
+    ax.invert_yaxis()  # Keep origin at bottom-left
+    # plt.title(f"Regression Heatmap: {service_type_s}")
+    plt.xlabel(x_axis)
+    plt.ylabel(y_axis)
+
+    # --- Save ---
+    out_path = os.path.join(out_dir, f"heatmap_{service_type_s}{img_suffix}.pdf")
+    try:
+        plt.tight_layout()
+        plt.savefig(out_path, format="pdf", dpi=600)
+    except Exception as e:
+        print(f"Failed to save: {e}")
+    finally:
+        plt.close()
+
+    return out_path
+
 if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
 
@@ -378,6 +488,8 @@ if __name__ == "__main__":
         logger.addHandler(ch)
 
     rask = RASK(show_figures=True) # If you set the 'show_figures' parameter once, its exported every cycle
-    df = pd.read_csv("../../experiments/tsc/E1/run_3/metrics_20_0.csv")
-    # rask.init_models(df)
-    rask.init_models()
+    df_1 = pd.read_csv("../../experiments/tsc/E1/run_6/metrics_20_0.csv")
+    df_2 = pd.read_csv("../../experiments/tsc/E2/run_3/metrics_RASK_0_bursty.csv")
+    df_3 = pd.read_csv("../../experiments/tsc/E2/run_3/metrics_RASK_0_diurnal.csv")
+    rask.init_models(pd.concat([df_1, df_2, df_3], ignore_index=True), override_relation=False)
+    # rask.init_models()
