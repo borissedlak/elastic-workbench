@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 import utils
 from HttpClient import HttpClient
 from agent import agent_utils
-from agent.RASKGlobalAgent import RASK_Global_Agent
+from agent.RASK_Agent import RASK_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
     for es_file_ext, update_last_ass in itertools.product(['_lim_1', '_lim_2', ''], [True, False]):
-        agent_fact_rask = lambda repetition: RASK_Global_Agent(
+        agent_fact_rask = lambda repetition: RASK_Agent(
             prom_server=PROMETHEUS,
             services_monitored=[qr_local, cv_local, pc_local],
             evaluation_cycle=EVALUATION_FREQUENCY,
@@ -140,7 +140,7 @@ if __name__ == '__main__':
             max_explore=MAX_EXPLORE,
             gaussian_noise=GAUSSIAN_NOISE,
             es_registry_path=ROOT + f"/../../../config/es_registry{es_file_ext}.json",
-            update_last_assignment=update_last_ass
+            cache_last_assignment=update_last_ass
         )
 
         eval_scaling_agent(agent_fact_rask, f"RASK{es_file_ext}_{update_last_ass}", REQUEST_PATTERN)

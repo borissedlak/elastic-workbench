@@ -60,7 +60,7 @@ def main():
     ax1.plot(odd_x, odd_medians, linestyle='--', color='blue', label='Without caching last actions')
     even_x = [x_positions[i] for i in [0, 2, 4]]
     even_medians = [medians[i] for i in [0, 2, 4]]
-    ax1.plot(even_x, even_medians, linestyle='--', color='green', label='Caching last scaling action')
+    ax1.plot(even_x, even_medians, linestyle='-.', color='green', label='Caching last scaling action')
     ax1.legend(loc='upper left')
 
     ax1.set_ylabel("Iteration Time per Cycle (ms)")
@@ -82,7 +82,7 @@ def main():
     even_x2 = [x_positions2[i] for i in [0, 2, 4]]
     even_medians2 = [medians2[i] for i in [0, 2, 4]]
     ax2.plot(odd_x2, odd_medians2, linestyle='--', color='blue', label='Without caching last actions')
-    ax2.plot(even_x2, even_medians2, linestyle='--', color='green', label='Caching last scaling action')
+    ax2.plot(even_x2, even_medians2, linestyle='-.', color='green', label='Caching last scaling action')
 
     ax2.set_ylabel("Global SLO Fulfillment")
     ax2.set_ylim(0.58, 1.025)
