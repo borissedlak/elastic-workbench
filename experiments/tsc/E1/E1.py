@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import time
@@ -8,6 +9,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
+from agent.RASK_Agent import RASK_Agent
 import utils
 from HttpClient import HttpClient
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
@@ -169,30 +171,31 @@ def calculate_mean_and_std(df: DataFrame, experiment_repetitions: int):
 
 
 if __name__ == '__main__':
-    files = [
-        ('agent_experience_RASK_0_0.csv', 'RASK, no exploration, no noise'),
-        ('agent_experience_RASK_0_0.1.csv', 'RASK, no exploration, 10% noise'),
-        # ('agent_experience_RASK_0_0.05.csv', 'RASK, no exploration, 5% noise'),
-        ('agent_experience_RASK_10_0.csv', 'RASK, explore 10 iterations, no noise'),
-        ('agent_experience_RASK_10_0.1.csv', 'RASK, explore 10 iterations, 10% noise'),
-        # ('agent_experience_RASK_10_0.05.csv', 'RASK, 10 exploration steps, 5% noise'),
-        ('agent_experience_RASK_20_0.csv', 'RASK, explore 20 iterations, no noise'),
-        ('agent_experience_RASK_20_0.1.csv', 'RASK, explore 20 iterations, 10% noise'),
-        # ('agent_experience_RASK_20_0.05.csv', 'RASK, 20 exploration steps, 5% noise'),
-    ]
+    # files = [
+    #     ('agent_experience_RASK_0_0.csv', 'RASK, no exploration, no noise'),
+    #     ('agent_experience_RASK_0_0.1.csv', 'RASK, no exploration, 10% noise'),
+    #     # ('agent_experience_RASK_0_0.05.csv', 'RASK, no exploration, 5% noise'),
+    #     ('agent_experience_RASK_10_0.csv', 'RASK, explore 10 iterations, no noise'),
+    #     ('agent_experience_RASK_10_0.1.csv', 'RASK, explore 10 iterations, 10% noise'),
+    #     # ('agent_experience_RASK_10_0.05.csv', 'RASK, 10 exploration steps, 5% noise'),
+    #     ('agent_experience_RASK_20_0.csv', 'RASK, explore 20 iterations, no noise'),
+    #     ('agent_experience_RASK_20_0.1.csv', 'RASK, explore 20 iterations, 10% noise'),
+    #     # ('agent_experience_RASK_20_0.05.csv', 'RASK, 20 exploration steps, 5% noise'),
+    # ]
 
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
+    # os.environ["MAX_CORES"] = 24
 
-    # for max_exploration, noise in itertools.product(MAX_EXPLORE, GAUSSIAN_NOISE):
-    #     agent_fact_rask = lambda repetition: RASK_Global_Agent(
-    #         prom_server=PROMETHEUS,
-    #         services_monitored=[qr_local, cv_local, pc_local],
-    #         evaluation_cycle=EVALUATION_FREQUENCY,
-    #         log_experience=repetition,
-    #         max_explore=max_exploration,
-    #         gaussian_noise=noise
-    #     )
-    #
-    # eval_scaling_agent(agent_fact_rask, f"RASK_{max_exploration}_{noise}")
+    for exploration_rounds, noise in itertools.product(EXPLORE_ROUNDS, GAUSSIAN_NOISE):
+        agent_fact_rask = lambda repetition: RASK_Agent(
+            prom_server=PROMETHEUS,
+            services_monitored=[qr_local, cv_local, pc_local],
+            evaluation_cycle=EVALUATION_FREQUENCY,
+            log_experience=repetition,
+            explore_rounds=exploration_rounds,
+            gaussian_noise=noise
+        )
+    
+    eval_scaling_agent(agent_fact_rask, f"RASK_{exploration_rounds}_{noise}")
 
-    visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")
+    # visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")
