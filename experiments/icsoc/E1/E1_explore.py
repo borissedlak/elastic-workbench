@@ -36,7 +36,7 @@ EVALUATION_FREQUENCY = 10
 #### Special Configs ######################
 
 EXPERIMENT_REPETITIONS = 10
-EXPERIMENT_DURATION = 3600  # seconds, so it's 1h
+EXPERIMENT_DURATION = 1800  # seconds, so it's 30min
 GAUSSIAN_NOISE = [0]
 EXPLORE_ROUNDS = [180]
 
@@ -203,6 +203,6 @@ if __name__ == '__main__':
             gaussian_noise=noise
         )
 
-    eval_scaling_agent(agent_fact_rask, f"RASK_{exploration_rounds}_{noise}")
+        eval_scaling_agent(agent_fact_rask, f"RASK_{exploration_rounds}_{noise}")
 
     # visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")

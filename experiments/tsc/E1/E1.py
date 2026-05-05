@@ -196,6 +196,6 @@ if __name__ == '__main__':
             gaussian_noise=noise
         )
     
-    eval_scaling_agent(agent_fact_rask, f"RASK_{exploration_rounds}_{noise}")
+        eval_scaling_agent(agent_fact_rask, f"RASK_{exploration_rounds}_{noise}")
 
     # visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")
