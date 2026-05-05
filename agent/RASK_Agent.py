@@ -24,7 +24,7 @@ ROOT = os.path.dirname(__file__)
 ##### Scaling Agent Hyperparameters #######
 
 MAX_CORES = int(utils.get_env_param('MAX_CORES', 8))
-MAX_EXPLORE = int(utils.get_env_param('MAX_EXPLORE', 0))
+EXPLORE_ROUNDS = int(utils.get_env_param('EXPLORE_ROUNDS', 0))
 GAUSSIAN_NOISE = float(utils.get_env_param('GAUSSIAN_NOISE', 0.0))
 EVALUATION_CYCLE_DELAY = int(utils.get_env_param('EVALUATION_CYCLE_DELAY', 10))
 
@@ -63,14 +63,14 @@ class RASK_Agent(ScalingAgent):
     def __init__(self, prom_server, services_monitored: list[ServiceID], evaluation_cycle,
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
-                 log_experience=None, max_explore=25, gaussian_noise=0.05,
+                 log_experience=None, explore_rounds=25, gaussian_noise=0.05,
                  cache_last_assignment=True):
 
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path,
                          es_registry_path, log_experience)
 
         self.explore_count = 0
-        self.max_explore = max_explore
+        self.explore_rounds = explore_rounds
         self.gaussian_noise = gaussian_noise
         self.cache_last_assignment = cache_last_assignment
 
@@ -90,7 +90,7 @@ class RASK_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-        if self.explore_count < self.max_explore:
+        if self.explore_count < self.explore_rounds:
             logger.info("Agent is exploring.....")
             self.explore_count += 1
             self.call_all_ES_randomly(services_m)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     agent = RASK_Agent(services_monitored=services_convert[SERVICE_REPLICATION], prom_server=PROMETHEUS,
                        evaluation_cycle=EVALUATION_CYCLE_DELAY, log_experience="#",
-                       max_explore=MAX_EXPLORE, gaussian_noise=GAUSSIAN_NOISE,)
+                       explore_rounds=EXPLORE_ROUNDS, gaussian_noise=GAUSSIAN_NOISE,)
     
 
     http_client = HttpClient()

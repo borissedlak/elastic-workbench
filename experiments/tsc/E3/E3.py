@@ -137,7 +137,7 @@ if __name__ == '__main__':
             services_monitored=[qr_local, cv_local, pc_local],
             evaluation_cycle=EVALUATION_FREQUENCY,
             log_experience=repetition,
-            max_explore=MAX_EXPLORE,
+            explore_rounds=MAX_EXPLORE,
             gaussian_noise=GAUSSIAN_NOISE,
             es_registry_path=ROOT + f"/../../../config/es_registry{es_file_ext}.json",
             cache_last_assignment=update_last_ass
