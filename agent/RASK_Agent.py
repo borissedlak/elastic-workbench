@@ -5,6 +5,7 @@ import time
 from typing import Dict, Tuple, Any
 
 import numpy as np
+import pandas as pd
 
 import utils
 from HttpClient import HttpClient
@@ -64,7 +65,7 @@ class RASK_Agent(ScalingAgent):
                  slo_registry_path=ROOT + "/../config/slo_config.json",
                  es_registry_path=ROOT + "/../config/es_registry.json",
                  log_experience=None, explore_rounds=25, gaussian_noise=0.05,
-                 cache_last_assignment=True):
+                 cache_last_assignment=True, replay_path=None):
 
         super().__init__(prom_server, services_monitored, evaluation_cycle, slo_registry_path,
                          es_registry_path, log_experience)
@@ -82,6 +83,15 @@ class RASK_Agent(ScalingAgent):
 
         self.rask = RASK(show_figures=False)
 
+        # Replay Logic initialization
+        self.replay_path = replay_path
+        if self.replay_path:
+            logger.info(f"Agent initialized in REPLAY mode using: {replay_path}")
+            df_replay = pd.read_csv(replay_path)
+            # Group by Generation so we can pop one generation at a time
+            self.replay_steps = df_replay.to_dict('records')
+            self.current_step = 0
+
     @utils.print_execution_time
     def orchestrate_services_optimally(self, services_m: list[ServiceID]):
 
@@ -90,7 +100,11 @@ class RASK_Agent(ScalingAgent):
         for service_m in services_m:  # For all monitored services
             service_contexts.append(self.prepare_service_context(service_m))
 
-        if self.explore_count < self.explore_rounds:
+        # 2. Decision Logic: Replay vs Explore vs Optimize
+        if self.replay_path:
+            self.execute_replay_step(services_m)
+
+        elif self.explore_count < self.explore_rounds:
             logger.info("Agent is exploring.....")
             self.explore_count += 1
             self.call_all_ES_randomly(services_m)
@@ -102,6 +116,36 @@ class RASK_Agent(ScalingAgent):
 
             if self.cache_last_assignment:
                 self.last_assignments = assignments
+
+
+    def execute_replay_step(self, services_m: list[ServiceID]):
+        """Helper to extract params from CSV and apply them"""
+        if self.current_step >= len(self.replay_steps):
+            logger.warning("Replay data exhausted. Terminating.")
+            self.terminate_gracefully()
+            return
+        
+        row = self.replay_steps[self.current_step]
+        
+        # We need to format the CSV row back into the 'assignments' list format
+        # expected by our existing call_all_ES_deterministic method
+        csv_assignments = []
+        
+        for service_m in services_m:
+            
+            # Map CSV columns back to parameter keys
+            # Adjust these keys if your CSV column names are different!
+            params = {
+                'cores': row.get('cores'),
+                'data_quality': row.get('data_quality')
+            }
+            if service_m.service_type == ServiceType.CV:
+                params['model_size'] = row.get('model_size')
+                
+            csv_assignments.append(params)
+
+        self.call_all_ES_deterministic(services_m, csv_assignments)
+        self.current_step += 1
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
