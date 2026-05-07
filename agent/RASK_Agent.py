@@ -120,18 +120,21 @@ class RASK_Agent(ScalingAgent):
 
     def execute_replay_step(self, services_m: list[ServiceID]):
         """Helper to extract params from CSV and apply them"""
+
         if self.current_step >= len(self.replay_steps):
             logger.warning("Replay data exhausted. Terminating.")
             self.terminate_gracefully()
             return
         
-        row = self.replay_steps[self.current_step]
+        row_qr = self.replay_steps[self.current_step]
+        row_cv = self.replay_steps[self.current_step + 1]
+        row_pc = self.replay_steps[self.current_step + 2]
         
         # We need to format the CSV row back into the 'assignments' list format
         # expected by our existing call_all_ES_deterministic method
-        csv_assignments = []
+        all_assignments = []
         
-        for service_m in services_m:
+        for service_m, row in zip(services_m, [row_qr, row_cv, row_pc]):
             
             # Map CSV columns back to parameter keys
             # Adjust these keys if your CSV column names are different!
@@ -142,15 +145,14 @@ class RASK_Agent(ScalingAgent):
             if service_m.service_type == ServiceType.CV:
                 params['model_size'] = row.get('model_size')
                 
-            csv_assignments.append(params)
+            all_assignments.append(params)
 
-        self.call_all_ES_deterministic(services_m, csv_assignments)
-        self.current_step += 1
+        self.call_all_ES_deterministic(services_m, all_assignments)
+        self.current_step += 3
 
     def prepare_service_context(self, service_m: ServiceID) -> Tuple[ServiceType, Dict[ESType, Dict], Any, int]:
         assigned_clients = self.reddis_client.get_assignments_for_service(service_m)
 
-        # TODO: Fix this ....
         if assigned_clients == {}:
             logging.warning("No clients found, but why?")
             time.sleep(0.01)

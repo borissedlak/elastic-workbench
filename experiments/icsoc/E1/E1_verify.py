@@ -24,7 +24,8 @@ nn_folder = "./networks"
 
 import pandas as pd
 
-candidate_path = ROOT + "/run_1/candidate_solutions.csv"
+file_name = "candidate_solutions_20_100_50"
+candidate_path = ROOT + f"/run_1/{file_name}.csv"
 evaluation_script = pd.read_csv(candidate_path)
 
 ##### Scaling Agent Hyperparameters #######
@@ -34,7 +35,7 @@ EVALUATION_FREQUENCY = 10
 #### Special Configs ######################
 
 EXPERIMENT_REPETITIONS = 1 # might also be more!
-EXPERIMENT_DURATION = len(evaluation_script) * EVALUATION_FREQUENCY
+EXPERIMENT_DURATION = (len(evaluation_script) * EVALUATION_FREQUENCY) / 3 # because we have 3 services!
 
 ########## Service Definitions ############
 
@@ -88,18 +89,14 @@ def calculate_mean_and_std(df: DataFrame, experiment_repetitions: int):
 
     return mean_over_time, std_over_time
 
-# TODO: (1) Currently, only one service is adjusted; this is ok, but ideally we should parallelize this.
-
 if __name__ == '__main__':
 
     agent_fact_rask = lambda repetition: RASK_Agent(
         prom_server=PROMETHEUS,
         evaluation_cycle=EVALUATION_FREQUENCY,
-        services_monitored=[qr_local],
+        services_monitored=[qr_local, cv_local, pc_local],
         log_experience=repetition,
         replay_path=candidate_path
     )
 
-    eval_scaling_agent(agent_fact_rask, f"RASK_verify")
-
-    # visualize_data(files, ROOT + "/plots/E1_SLO_F.pdf")
+    eval_scaling_agent(agent_fact_rask, f"{file_name}")
