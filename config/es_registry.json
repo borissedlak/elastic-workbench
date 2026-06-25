@@ -29,7 +29,7 @@
       "parameters": {
         "cores": {
           "min": 1,
-          "max": 24
+          "max": 8
         }
       }
     }
