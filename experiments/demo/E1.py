@@ -8,6 +8,8 @@ import utils
 from HttpClient import HttpClient
 from agent import agent_utils
 from agent.RASKGlobalAgent import RASK_Global_Agent
+
+from agent.RASK_Agent import RASK_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists, delete_folder_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.run_6.extract_metrics import extract_metrics
@@ -24,11 +26,11 @@ nn_folder = "./networks"
 ######## Experimental Parameters ##########
 
 DURATION_EXPLORE = 5 * 60  # = 5min
-DURATION_OPERATE = 5 * 60  # = 9min
+DURATION_OPERATE = 5 * 60  # = 5min
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = 28 # 4min
+MAX_EXPLORE = 30 # 4min
 GAUSSIAN_NOISE = 0.05
 EVALUATION_FREQUENCY = 10
 
@@ -73,7 +75,7 @@ def train_scaling_agent(rask_agent, agent_suffix):
     print(f"{agent_suffix} agent finished evaluation after {DURATION_EXPLORE} seconds")
 
 
-def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPattern):
+def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPattern | None = None):
     print(f"Agent starting actual operation")
 
     # reset_services_default_rps()
@@ -92,8 +94,9 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
     pattern_rps = PatternRPS()
 
     while runtime_sec < DURATION_OPERATE:
-        # pattern_rps.reconfigure_rps(request_pattern, qr_local, MAX_RPS_QR, runtime_sec)
-        # pattern_rps.reconfigure_rps(request_pattern, cv_local, MAX_RPS_CV, runtime_sec)
+        if request_pattern:
+            pattern_rps.reconfigure_rps(request_pattern, qr_local, MAX_RPS_QR, runtime_sec)
+            pattern_rps.reconfigure_rps(request_pattern, cv_local, MAX_RPS_CV, runtime_sec)
         time.sleep(EVALUATION_FREQUENCY)
 
         runtime_sec += EVALUATION_FREQUENCY
@@ -109,26 +112,25 @@ def operate_scaling_agent(rask_agent, agent_suffix, request_pattern: RequestPatt
 if __name__ == '__main__':
     # agent_utils.stream_remote_metrics_file(REMOTE_VM, EVALUATION_FREQUENCY)
 
-    exploring_agent = RASK_Global_Agent(
+    exploring_agent = RASK_Agent(
         prom_server=PROMETHEUS,
         services_monitored=[qr_local, cv_local, pc_local],
         evaluation_cycle=EVALUATION_FREQUENCY,
         log_experience=1,
-        max_explore=MAX_EXPLORE,
+        explore_rounds=MAX_EXPLORE,
         gaussian_noise=GAUSSIAN_NOISE
     )
-    
 
     train_scaling_agent(exploring_agent, f"EXPLORE")
 
-    operating_agent = RASK_Global_Agent(
+    operating_agent = RASK_Agent(
         prom_server=PROMETHEUS,
         services_monitored=[qr_local, cv_local, pc_local],
         evaluation_cycle=EVALUATION_FREQUENCY,
         log_experience=1,
-        max_explore=0,
+        explore_rounds=0,
         gaussian_noise=0.01
     )
 
-    operate_scaling_agent(operating_agent, "OPERATE", RequestPattern.DIURNAL)
+    operate_scaling_agent(operating_agent, "OPERATE")
 
