@@ -1,25 +1,25 @@
 services:
 
-  agent:
-    build:
-      context: .
-      dockerfile: agent/RASK.Dockerfile
-    image: elastic-workbench-agent:latest
-    networks:
-      - docker_network
-    environment:
-      - REDIS_INSTANCE=redis
-      - SERVICE_HOST=host.docker.internal
-      - MAX_CORES=8
-      - SERVICE_REPLICATION=1
-    volumes:
-      - ./share:/src/share # Linux
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - qr-detector-1
-      - cv-analyzer-1
-      - pc-visualizer-1
+  # agent:
+  #   build:
+  #     context: .
+  #     dockerfile: agent/RASK.Dockerfile
+  #   image: elastic-workbench-agent:latest
+  #   networks:
+  #     - docker_network
+  #   environment:
+  #     - REDIS_INSTANCE=redis
+  #     - SERVICE_HOST=host.docker.internal
+  #     - MAX_CORES=8
+  #     - SERVICE_REPLICATION=1
+  #   volumes:
+  #     - ./share:/src/share # Linux
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   depends_on:
+  #     - qr-detector-1
+  #     - cv-analyzer-1
+  #     - pc-visualizer-1
 
   qr-detector-1:
     container_name: elastic-workbench-qr-detector-1
