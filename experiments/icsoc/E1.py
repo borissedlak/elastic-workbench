@@ -24,14 +24,15 @@ nn_folder = "./networks"
 
 ######## Experimental Parameters ##########
 
-DURATION_EXPLORE = 5 * 60  # = 5min
-DURATION_OPERATE = 5 * 60  # = 5min
+SECONDS_PER_MINUTE = 60
+DURATION_EXPLORE = 10 * SECONDS_PER_MINUTE
+DURATION_OPERATE = 5 * SECONDS_PER_MINUTE
 
 ##### Scaling Agent Hyperparameters #######
 
 MAX_EXPLORE = 30 # 5min
 GAUSSIAN_NOISE = 0.05
-EVALUATION_FREQUENCY = 10
+EVALUATION_FREQUENCY = 20
 
 ########## Service Definitions ############
 
