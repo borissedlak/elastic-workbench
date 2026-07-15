@@ -184,7 +184,7 @@ class RASK_Agent(ScalingAgent):
 
         for index, service_m in enumerate(shuffled_services):
             all_ES_active = self.es_registry.get_active_ES_for_service(service_m.service_type)
-            max_available_cores = MAX_CORES - assigned_cores + (index - 2)  # 6 Cores for first service
+            max_available_cores = MAX_CORES - assigned_cores  # 6 Cores for first service
 
             for es in all_ES_active:
                 param_bounds = self.es_registry.get_parameter_bounds_for_active_ES(service_m.service_type,

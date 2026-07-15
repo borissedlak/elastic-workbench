@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Any
+from typing import Any, Tuple
 
 import cv2
 from pyzbar.pyzbar import decode
@@ -29,16 +29,19 @@ class QrDetector(IoTService):
         self.data_stream = VideoReader(ROOT + "/data/QR_Video.mp4")
 
     def get_service_parallelism(self) -> int:
-        # return self.service_conf['parallelism']
-        return utils.cores_to_threads(self.cores_reserved)
+        return self.service_conf['parallelism']
+        # return utils.cores_to_threads(self.cores_reserved)
 
-    def process_one_iteration(self, frame) -> (Any, int):
-        start = time.perf_counter()
-
-        target_height = int(self.service_conf['data_quality'])
+    def rescale_data(self, frame, data_quality):
+        target_height = int(data_quality)
         original_width, original_height = frame.shape[1], frame.shape[0]
         ratio = original_height / target_height
-        frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
+        output_frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
+        return output_frame
+
+    @staticmethod
+    def process_one_iteration(frame, data_quality) -> Tuple[Any, int]:
+        start = time.perf_counter()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         decoded_objects = decode(gray)
 

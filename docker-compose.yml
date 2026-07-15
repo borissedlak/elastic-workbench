@@ -43,49 +43,49 @@ services:
     depends_on:
       - redis
 
-  cv-analyzer-1:
-    container_name: elastic-workbench-cv-analyzer-1
-    build:
-      context: .
-      dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
-    image: elastic-workbench-cv-analyzer:latest
-    networks:
-      - docker_network
-    environment:
-      - FLASK_ENV=development
-      - CONTAINER_REF=elastic-workbench-cv-analyzer-1
-      - REDIS_INSTANCE=redis
-      - DEFAULT_CLIENTS=C_1:30
-      - TZ=Europe/Vienna
-    volumes:
-      - ./share:/src/share # Linux
-      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
-    ports:
-      - "8081:8080" # Only needed on Windows
-    depends_on:
-      - redis
-
-  pc-visualizer-1:
-    container_name: elastic-workbench-pc-visualizer-1
-    build:
-      context: .
-      dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
-    image: elastic-workbench-pc-visualizer:latest
-    networks:
-      - docker_network
-    environment:
-      - FLASK_ENV=development
-      - CONTAINER_REF=elastic-workbench-pc-visualizer-1
-      - REDIS_INSTANCE=redis
-      - DEFAULT_CLIENTS=C_1:100
-      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
-    volumes:
-      - ./share:/src/share # Linux
-      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
-    ports:
-      - "8082:8080" # Only needed on Windows
-    depends_on:
-      - redis
+#  cv-analyzer-1:
+#    container_name: elastic-workbench-cv-analyzer-1
+#    build:
+#      context: .
+#      dockerfile: iot_services/CvAnalyzer_Yolo/CvAnalyzer_Yolo.Dockerfile
+#    image: elastic-workbench-cv-analyzer:latest
+#    networks:
+#      - docker_network
+#    environment:
+#      - FLASK_ENV=development
+#      - CONTAINER_REF=elastic-workbench-cv-analyzer-1
+#      - REDIS_INSTANCE=redis
+#      - DEFAULT_CLIENTS=C_1:30
+#      - TZ=Europe/Vienna
+#    volumes:
+#      - ./share:/src/share # Linux
+#      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+#    ports:
+#      - "8081:8080" # Only needed on Windows
+#    depends_on:
+#      - redis
+#
+#  pc-visualizer-1:
+#    container_name: elastic-workbench-pc-visualizer-1
+#    build:
+#      context: .
+#      dockerfile: iot_services/PcVisualizer/PcVisualizer.Dockerfile
+#    image: elastic-workbench-pc-visualizer:latest
+#    networks:
+#      - docker_network
+#    environment:
+#      - FLASK_ENV=development
+#      - CONTAINER_REF=elastic-workbench-pc-visualizer-1
+#      - REDIS_INSTANCE=redis
+#      - DEFAULT_CLIENTS=C_1:100
+#      - TZ=Europe/Vienna # TODO: If I dont work ok Windows anymore, mount timezone volume
+#    volumes:
+#      - ./share:/src/share # Linux
+#      - /var/run/docker.sock:/var/run/docker.sock # Needed on Windows
+#    ports:
+#      - "8082:8080" # Only needed on Windows
+#    depends_on:
+#      - redis
 
   prometheus:
     image: prom/prometheus

@@ -24,7 +24,7 @@ SUBSEQUENT_SERVICE = utils.get_env_param("SUBSEQUENT_SERVICE", None)
 SOURCE = utils.get_env_param("SOURCE", None)
 
 
-def init_service(s_type):
+def init_service(s_type: str):
     if s_type == "QR":
         from iot_services.QrDetector.QrDetector import QrDetector
         return QrDetector()

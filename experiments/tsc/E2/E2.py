@@ -9,7 +9,6 @@ from matplotlib import pyplot as plt
 import utils
 from HttpClient import HttpClient
 from agent import agent_utils
-from agent.RASKGlobalAgent import RASK_Global_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists
 from agent.components.es_registry import ServiceID, ServiceType
 from experiments.tsc.E1.E1 import PC_RPS, QR_RPS, CV_RPS, calculate_mean_and_std

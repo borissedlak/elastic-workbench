@@ -49,6 +49,8 @@ class IoTService(ABC):
         self.prom_cores = Gauge('cores', 'Current configured cores', ['service_type', 'container_id', 'metric_id'])
         self.prom_model_size = Gauge('model_size', 'Current model size', ['service_type', 'container_id', 'metric_id'])
         self.buffer_size = Gauge('buffer_size', 'Current buffer size', ['service_type', 'container_id', 'metric_id'])
+        self.prom_parallelism = Gauge('parallelism', 'Current configured parallelism',
+                                      ['service_type', 'container_id', 'metric_id'])
 
     def export_processing_metrics(self, processed_item_counter, processed_item_durations):
         # This is only executed once after the batch is processed
@@ -61,6 +63,8 @@ class IoTService(ABC):
                                metric_id="cores").set(self.cores_reserved)
         self.prom_quality.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
                                  metric_id="data_quality").set(self.service_conf['data_quality'])
+        self.prom_parallelism.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
+                                     metric_id="parallelism").set(self.service_conf['parallelism'])
 
         if self.service_type == ServiceType.CV or self.service_type == ServiceType.PC:
             self.prom_model_size.labels(container_id=self.docker_container_ref, service_type=self.service_type.value,
@@ -78,8 +82,13 @@ class IoTService(ABC):
             utils.write_metrics_to_csv(metric_buffer)
             metric_buffer.clear()
 
+    @staticmethod
     @abstractmethod
-    def process_one_iteration(self, frame) -> None:
+    def process_one_iteration(frame, data_quality) -> None:
+        pass
+
+    @abstractmethod
+    def rescale_data(self, frame, data_quality) -> None:
         pass
 
     @abstractmethod
@@ -104,19 +113,38 @@ class IoTService(ABC):
         return self._running
 
     def process_loop(self):
-        while self._running:
 
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.get_service_parallelism())
+        current_parallelism = self.get_service_parallelism()
+        executor = concurrent.futures.ProcessPoolExecutor(max_workers=current_parallelism)
+        logger.info(f"Initialized ProcessPoolExecutor with {current_parallelism} workers.")
+
+        while self._running:
+            # Check if config has changed at the start of the cycle
+            new_parallelism = self.get_service_parallelism()
+            if new_parallelism != current_parallelism:
+                logger.info(f"Parallelism from {current_parallelism} to {new_parallelism}. Recreating executor...")
+
+                # Shutdown the old executor gracefully in the background
+                executor.shutdown(wait=False, cancel_futures=True)
+
+                # Update tracker and create the new executor
+                current_parallelism = new_parallelism
+                executor = concurrent.futures.ProcessPoolExecutor(max_workers=current_parallelism)
+
             start_time = time.perf_counter()
             processed_item_counter = 0
-            self.global_cycle_counter += 1
+            # self.global_cycle_counter += 1 # Not needed currently
             processed_item_durations = []
             first_result = None
 
             try:
                 # logger.info(f"picking {utils.to_absolut_rps(self.client_arrivals)} frames...")
-                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift = self.global_cycle_counter)
-                future_dict = {executor.submit(self.process_one_iteration, frame): frame for frame in buffer}
+                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift=0)
+                data_quality = self.service_conf['data_quality']
+
+                rescaled_buffer = [self.rescale_data(frame, data_quality) for frame in buffer]
+                future_dict = {executor.submit(self.process_one_iteration, frame, data_quality): frame
+                               for frame in rescaled_buffer}
 
                 while future_dict:
                     done, _ = concurrent.futures.wait(
@@ -133,7 +161,10 @@ class IoTService(ABC):
                         first_result = result[0] if first_result is None else first_result
 
                     if self.has_processing_timeout(start_time):
-                        executor.shutdown(wait=False, cancel_futures=True)
+                        print(len(future_dict))
+                        # executor.shutdown(wait=False, cancel_futures=True)
+                        for fut in future_dict:
+                            fut.cancel()
                         break
             finally:
                 self.export_processing_metrics(processed_item_counter, processed_item_durations)
