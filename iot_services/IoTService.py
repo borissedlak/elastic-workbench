@@ -117,6 +117,7 @@ class IoTService(ABC):
         current_parallelism = self.get_service_parallelism()
         executor = concurrent.futures.ProcessPoolExecutor(max_workers=current_parallelism)
         logger.info(f"Initialized ProcessPoolExecutor with {current_parallelism} workers.")
+        prepare_x_frames = utils.to_absolut_rps(self.client_arrivals)
 
         while self._running:
             # Check if config has changed at the start of the cycle
@@ -139,7 +140,7 @@ class IoTService(ABC):
 
             try:
                 # logger.info(f"picking {utils.to_absolut_rps(self.client_arrivals)} frames...")
-                buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift=0)
+                buffer = self.data_stream.get_batch(prepare_x_frames, shift=0)
                 data_quality = self.service_conf['data_quality']
 
                 rescaled_buffer = [self.rescale_data(frame, data_quality) for frame in buffer]
@@ -174,6 +175,7 @@ class IoTService(ABC):
                     self.simulate_interval(start_time)
 
                 self.post_process(processed_item_counter)
+                prepare_x_frames = int((processed_item_counter * 1.25) + 1)
 
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")
