@@ -5,7 +5,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Tuple, Any
 
 import numpy as np
 from prometheus_client import start_http_server, Gauge
@@ -20,7 +20,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 # HOST_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
-DIR_CONFIG = Path('./config') # needs to be ./ because in Docker it's all in one directory
+DIR_CONFIG = Path('../../config') # needs to be ./ because in Docker it's all in one directory
 PATH_ES_CONFIG = DIR_CONFIG / 'es_registry.json'
 
 class IoTService(ABC):
@@ -85,17 +85,28 @@ class IoTService(ABC):
             utils.write_metrics_to_csv(metric_buffer)
             metric_buffer.clear()
 
+    def get_executor_initializer(self) -> tuple:
+        """Subclasses override this to provide a custom process initializer."""
+        return None, ()
+
     @staticmethod
     @abstractmethod
-    def process_one_iteration(frame, data_quality) -> None:
+    def process_one_iteration(frame, data_quality) -> Tuple[Any, float]:
         pass
 
-    @abstractmethod
-    def rescale_data(self, frame, data_quality) -> None:
-        pass
+    def preprocess_batch(self, buffer, data_quality):
+        """Default is a no-op (returns buffer as-is). Subclasses override this to resize/crop."""
+        return buffer
+
+    def get_task_args(self) -> tuple:
+        return ()  # Returns an empty tuple by default
 
     @abstractmethod
     def get_service_parallelism(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_model_size(self) -> int:
         pass
 
     def reset_processing_count(self):
@@ -116,67 +127,89 @@ class IoTService(ABC):
         return self._running
 
     def process_loop(self):
-
         current_parallelism = self.get_service_parallelism()
-        executor = concurrent.futures.ProcessPoolExecutor(max_workers=current_parallelism)
-        logger.info(f"Initialized ProcessPoolExecutor with {current_parallelism} workers.")
-        prepare_x_frames = utils.to_absolut_rps(self.client_arrivals)
 
-        while self._running:
-            # Check if config has changed at the start of the cycle
-            new_parallelism = self.get_service_parallelism()
-            if new_parallelism != current_parallelism:
-                logger.info(f"Parallelism from {current_parallelism} to {new_parallelism}. Recreating executor...")
+        # Pull the initializer hooks from the active subclass
+        init_func, init_args = self.get_executor_initializer()
 
-                # Shutdown the old executor gracefully in the background
-                executor.shutdown(wait=False, cancel_futures=True)
+        executor = concurrent.futures.ProcessPoolExecutor(
+            max_workers=current_parallelism,
+            initializer=init_func,
+            initargs=init_args
+        )
 
-                # Update tracker and create the new executor
-                current_parallelism = new_parallelism
-                executor = concurrent.futures.ProcessPoolExecutor(max_workers=current_parallelism)
+        # logger.info(
+        #     f"Initialized ProcessPoolExecutor with {current_parallelism} workers loading model size {current_model_size}")
 
-            start_time = time.perf_counter()
-            processed_item_counter = 0
-            # self.global_cycle_counter += 1 # Not needed currently
-            processed_item_durations = []
-            first_result = None
+        try:
+            while self._running:
+                # Check for dynamic configuration updates
+                new_parallelism = self.get_service_parallelism()
 
-            try:
-                # logger.info(f"picking {utils.to_absolut_rps(self.client_arrivals)} frames...")
-                buffer = self.data_stream.get_batch(prepare_x_frames, shift=0)
-                data_quality = self.service_conf['data_quality']
+                # Check if the subclass initializer args have changed (e.g., model_size changed)
+                _, new_init_args = self.get_executor_initializer()
 
-                rescaled_buffer = [self.rescale_data(frame, data_quality) for frame in buffer]
-                future_dict = {executor.submit(self.process_one_iteration, frame, data_quality): frame
-                               for frame in rescaled_buffer}
+                if new_parallelism != current_parallelism or new_init_args != init_args:
+                    logger.info("Configuration change detected! Rebuilding process pool...")
+                    executor.shutdown(wait=False, cancel_futures=True)
 
-                while future_dict:
-                    done, _ = concurrent.futures.wait(
-                        future_dict,
-                        timeout=0.015,
-                        return_when=concurrent.futures.FIRST_COMPLETED
+                    current_parallelism = new_parallelism
+                    init_args = new_init_args
+
+                    executor = concurrent.futures.ProcessPoolExecutor(
+                        max_workers=current_parallelism,
+                        initializer=init_func,
+                        initargs=init_args
                     )
 
-                    for future in done:
-                        result = future.result()
-                        processed_item_durations.append(np.abs(result[1]))
-                        processed_item_counter += 1
-                        del future_dict[future]
-                        first_result = result[0] if first_result is None else first_result
+                start_time = time.perf_counter()
+                processed_item_counter = 0
+                processed_item_durations = []
+                first_result = None
 
-                    if self.has_processing_timeout(start_time):
-                        for fut in future_dict:
-                            fut.cancel()
-                        break
-            finally:
-                self.export_processing_metrics(processed_item_counter, processed_item_durations)
-                # if self.global_cycle_counter <= 600:
-                #     self.write_result_to_sink(first_result, self.global_cycle_counter)
-                if self.simulate_arrival_interval:
-                    self.simulate_interval(start_time)
+                try:
+                    buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift=0)
+                    data_quality = self.service_conf['data_quality']
 
-                self.post_process(processed_item_counter)
-                prepare_x_frames = max(int((processed_item_counter * 1.25)), 30)
+                    # 1. Downscale on main thread before sending across processes
+                    preprocessed_buffer = self.preprocess_batch(buffer, data_quality)
+
+                    # Hook: Grab any extra arguments the task function needs (like target quality)
+                    task_extra_args = self.get_task_args()
+
+                    future_dict = {
+                        executor.submit(self.process_one_iteration, item, *task_extra_args): item
+                        for item in preprocessed_buffer
+                    }
+
+                    while future_dict:
+                        done, _ = concurrent.futures.wait(
+                            future_dict,
+                            timeout=0.015,
+                            return_when=concurrent.futures.FIRST_COMPLETED
+                        )
+
+                        for future in done:
+                            result = future.result()
+                            processed_item_durations.append(np.abs(result[1]))
+                            processed_item_counter += 1
+                            del future_dict[future]
+                            first_result = result[0] if first_result is None else first_result
+
+                        if self.has_processing_timeout(start_time):
+                            for fut in future_dict:
+                                fut.cancel()
+                            break
+                finally:
+                    print(processed_item_counter)
+                    self.export_processing_metrics(processed_item_counter, processed_item_durations)
+                    if self.simulate_arrival_interval:
+                        self.simulate_interval(start_time)
+                    self.post_process(processed_item_counter)
+
+        finally:
+            logger.info("Stopping process loop, shutting down executor...")
+            executor.shutdown(wait=True)
 
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")

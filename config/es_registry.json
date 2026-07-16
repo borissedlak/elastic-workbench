@@ -94,12 +94,12 @@
     },
     "parallelism_scaling": {
       "cooldown": 2000,
-      "active": false,
+      "active": true,
       "endpoint": "/parallelism_scaling",
       "parameters": {
         "parallelism": {
           "min": 1,
-          "max": 8
+          "max": 5
         }
       }
     },
@@ -110,7 +110,7 @@
       "parameters": {
         "cores": {
           "min": 1,
-          "max": 8
+          "max": 10
         }
       }
     }
