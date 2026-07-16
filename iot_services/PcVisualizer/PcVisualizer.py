@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import cv2
-from typing import Any
+from typing import Any, Tuple
 
 from agent.components.es_registry import ServiceType
 from iot_services.IoTService import IoTService
@@ -32,24 +32,28 @@ class PcVisualizer(IoTService):
     def get_service_parallelism(self) -> int:
         return self.service_conf['parallelism']
 
-    def process_one_iteration(self, frame) -> (Any, int):
+    def rescale_data(self, frame, data_quality):
+        return frame
+
+    @staticmethod
+    def process_one_iteration(frame, data_quality) -> Tuple[Any, int]:
         start = time.perf_counter()
 
-        self.fusion_buffer.append(frame)
-        if len(self.fusion_buffer) > self.service_conf['model_size']:
-            self.fusion_buffer.pop(0)
-
-        fused_points = fuse_pointclouds(self.fusion_buffer)
-        bev = point_cloud_to_bev(fused_points, self.service_conf['data_quality'])
+        # self.fusion_buffer.append(frame)
+        # if len(self.fusion_buffer) > self.service_conf['model_size']:
+        #     self.fusion_buffer.pop(0)
+        #
+        fused_points = fuse_pointclouds([frame])
+        bev = point_cloud_to_bev(fused_points, data_quality)
 
         # Overlay 3D boxes
-        i = self.data_stream.get_current_index()
-        for obj in self.tracklets:
-            if i < obj["first_frame"] or i - obj["first_frame"] >= len(obj["poses"]):
-                continue
-            pose = obj["poses"][i - obj["first_frame"]]
-            # TODO: There is some problem with the object highlighting. Disable for now
-            # draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
+        # i = self.data_stream.get_current_index()
+        # for obj in self.tracklets:
+        #     if i < obj["first_frame"] or i - obj["first_frame"] >= len(obj["poses"]):
+        #         continue
+        #     pose = obj["poses"][i - obj["first_frame"]]
+        #     # TODO: There is some problem with the object highlighting. Disable for now
+        #     # draw_bev_box(bev, pose, obj["size"], color=(0, 0, 255), max_dist=self.service_conf['data_quality'])
 
         # cv2.imshow("LIDAR BEV with Fused Frames", bev)
         # if cv2.waitKey(10) == 27:
