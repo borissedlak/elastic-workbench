@@ -126,6 +126,7 @@ class IoTService(ABC):
 
     def process_loop(self):
         current_parallelism = self.get_service_parallelism()
+        prepare_x_frames = utils.to_absolut_rps(self.client_arrivals)
 
         # Pull the initializer hooks from the active subclass
         init_func, init_args = self.get_executor_initializer()
@@ -135,9 +136,6 @@ class IoTService(ABC):
             initializer=init_func,
             initargs=init_args
         )
-
-        # logger.info(
-        #     f"Initialized ProcessPoolExecutor with {current_parallelism} workers loading model size {current_model_size}")
 
         try:
             while self._running:
@@ -166,7 +164,7 @@ class IoTService(ABC):
                 first_result = None
 
                 try:
-                    buffer = self.data_stream.get_batch(utils.to_absolut_rps(self.client_arrivals), shift=0)
+                    buffer = self.data_stream.get_batch(prepare_x_frames, shift=0)
                     data_quality = self.service_conf['data_quality']
 
                     # 1. Downscale on main thread before sending across processes
@@ -204,6 +202,7 @@ class IoTService(ABC):
                     if self.simulate_arrival_interval:
                         self.simulate_interval(start_time)
                     self.post_process(processed_item_counter)
+                    prepare_x_frames = max(int((processed_item_counter * 1.25)), 30)
 
         finally:
             logger.info("Stopping process loop, shutting down executor...")
