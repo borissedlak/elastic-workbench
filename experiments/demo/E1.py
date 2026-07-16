@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 import utils
 from HttpClient import HttpClient
 from agent import agent_utils
-from agent.RASKGlobalAgent import RASK_Global_Agent
 
 from agent.RASK_Agent import RASK_Agent
 from agent.agent_utils import export_experience_buffer, delete_file_if_exists, delete_folder_if_exists
