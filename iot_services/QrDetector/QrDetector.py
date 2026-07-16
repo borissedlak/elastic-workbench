@@ -4,6 +4,7 @@ import time
 from typing import Any, Tuple
 
 import cv2
+import numpy as np
 from pyzbar.pyzbar import decode
 
 import utils
@@ -32,15 +33,19 @@ class QrDetector(IoTService):
         return self.service_conf['parallelism']
         # return utils.cores_to_threads(self.cores_reserved)
 
-    def rescale_data(self, frame, data_quality):
+    def preprocess_buffer_items(self, buffer, data_quality):
+        # Scale frames on the parent process before writing them to OS Pipes
         target_height = int(data_quality)
-        original_width, original_height = frame.shape[1], frame.shape[0]
-        ratio = original_height / target_height
-        output_frame = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
-        return output_frame
+        preprocessed = []
+        for frame in buffer:
+            original_width, original_height = frame.shape[1], frame.shape[0]
+            ratio = original_height / target_height
+            resized = cv2.resize(frame, (int(original_width / ratio), int(original_height / ratio)))
+            preprocessed.append(resized)
+        return preprocessed
 
     @staticmethod
-    def process_one_iteration(frame, data_quality) -> Tuple[Any, int]:
+    def process_one_iteration(frame) -> Tuple[Any, float]:
         start = time.perf_counter()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         decoded_objects = decode(gray)

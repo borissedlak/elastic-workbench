@@ -56,7 +56,7 @@ class CvAnalyzer(IoTService):
         # Pass the global setup function and its dynamic args to the base loop
         return init_single_model, (ROOT, self.get_model_size())
 
-    def preprocess_batch(self, buffer, data_quality):
+    def preprocess_buffer_items(self, buffer, data_quality):
         # Scale frames on the parent process before writing them to OS Pipes
         target_height = int(data_quality)
         preprocessed = []

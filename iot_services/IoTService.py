@@ -94,7 +94,7 @@ class IoTService(ABC):
     def process_one_iteration(frame, data_quality) -> Tuple[Any, float]:
         pass
 
-    def preprocess_batch(self, buffer, data_quality):
+    def preprocess_buffer_items(self, buffer, data_quality):
         """Default is a no-op (returns buffer as-is). Subclasses override this to resize/crop."""
         return buffer
 
@@ -170,7 +170,7 @@ class IoTService(ABC):
                     data_quality = self.service_conf['data_quality']
 
                     # 1. Downscale on main thread before sending across processes
-                    preprocessed_buffer = self.preprocess_batch(buffer, data_quality)
+                    preprocessed_buffer = self.preprocess_buffer_items(buffer, data_quality)
 
                     # Hook: Grab any extra arguments the task function needs (like target quality)
                     task_extra_args = self.get_task_args()
