@@ -32,8 +32,8 @@ class PcVisualizer(IoTService):
     def get_service_parallelism(self) -> int:
         return self.service_conf['parallelism']
 
-    def rescale_data(self, frame, data_quality):
-        return frame
+    def get_task_args(self) -> tuple:
+        return (self.service_conf['data_quality'],)  # Returns an empty tuple by default
 
     @staticmethod
     def process_one_iteration(frame, data_quality) -> Tuple[Any, int]:

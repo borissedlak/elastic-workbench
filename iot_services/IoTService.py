@@ -20,7 +20,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 # HOST_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
-DIR_CONFIG = Path('../../config') # needs to be ./ because in Docker it's all in one directory
+DIR_CONFIG = Path('./config') # needs to be ./ because in Docker it's all in one directory
 PATH_ES_CONFIG = DIR_CONFIG / 'es_registry.json'
 
 class IoTService(ABC):
@@ -101,13 +101,11 @@ class IoTService(ABC):
     def get_task_args(self) -> tuple:
         return ()  # Returns an empty tuple by default
 
-    @abstractmethod
     def get_service_parallelism(self) -> int:
-        pass
+        return 1
 
-    @abstractmethod
     def get_model_size(self) -> int:
-        pass
+        return 1
 
     def reset_processing_count(self):
         self.global_cycle_counter = 0
