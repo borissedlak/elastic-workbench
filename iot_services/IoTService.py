@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict
 
 import numpy as np
@@ -19,6 +20,8 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 # HOST_IP = utils.get_env_param("CONTAINER_IP", "Unknown")
 REDIS_INSTANCE = utils.get_env_param("REDIS_INSTANCE", "localhost")
 
+DIR_CONFIG = Path('./config') # needs to be ./ because in Docker it's all in one directory
+PATH_ES_CONFIG = DIR_CONFIG / 'es_registry.json'
 
 class IoTService(ABC):
     def __init__(self, store_to_csv=True):
@@ -28,7 +31,7 @@ class IoTService(ABC):
         self._running = False
         self.service_conf = {}
         self.cores_reserved: float = 2.0
-        self.es_registry = ESRegistry("./config/es_registry.json")
+        self.es_registry = ESRegistry(PATH_ES_CONFIG)
         self.store_to_csv = store_to_csv
         self.data_stream = None
 
@@ -162,8 +165,6 @@ class IoTService(ABC):
                         first_result = result[0] if first_result is None else first_result
 
                     if self.has_processing_timeout(start_time):
-                        print(len(future_dict))
-                        # executor.shutdown(wait=False, cancel_futures=True)
                         for fut in future_dict:
                             fut.cancel()
                         break

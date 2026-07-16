@@ -18,7 +18,7 @@ CONTAINER_REF = utils.get_env_param("CONTAINER_REF", "Unknown")
 DEFAULT_CORES = float(utils.get_env_param("DEFAULT_CORES", 2.0))
 DEFAULT_CLIENTS = utils.get_env_param("DEFAULT_CLIENTS", None)
 SERVICE_TYPE = utils.get_env_param("SERVICE_TYPE", None)
-MAX_CORES = utils.get_env_param("MAX_CORES", None)
+MAX_CORES = int(utils.get_env_param("MAX_CORES", 8))
 
 SUBSEQUENT_SERVICE = utils.get_env_param("SUBSEQUENT_SERVICE", None)
 SOURCE = utils.get_env_param("SOURCE", None)
