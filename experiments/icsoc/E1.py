@@ -45,14 +45,14 @@ cv_local = ServiceID(SERVICE_HOST, ServiceType.CV, "elastic-workbench-cv-analyze
 pc_local = ServiceID(SERVICE_HOST, ServiceType.PC, "elastic-workbench-pc-visualizer-1", port="8082")
 
 QR_RPS_DEFAULT = 2000
-# CV_RPS_DEFAULT = 5
-# PC_RPS_DEFAULT = 50
+CV_RPS_DEFAULT = 5
+PC_RPS_DEFAULT = 50
 
 
 def reset_services_default_rps():
     http_client.update_service_rps(qr_local, QR_RPS_DEFAULT)
-    # http_client.update_service_rps(cv_local, CV_RPS_DEFAULT)
-    # http_client.update_service_rps(pc_local, PC_RPS_DEFAULT)
+    http_client.update_service_rps(cv_local, CV_RPS_DEFAULT)
+    http_client.update_service_rps(pc_local, PC_RPS_DEFAULT)
 
 
 def train_scaling_agent(rask_agent, agent_suffix):
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     exploring_agent = RASK_Agent(
         prom_server=PROMETHEUS,
-        services_monitored=[qr_local],
+        services_monitored=[pc_local],
         evaluation_cycle=EVALUATION_FREQUENCY,
         log_experience=1,
         explore_rounds=MAX_EXPLORE,
