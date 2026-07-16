@@ -25,14 +25,14 @@ nn_folder = "./networks"
 ######## Experimental Parameters ##########
 
 SECONDS_PER_MINUTE = 60
-DURATION_EXPLORE = 10 * SECONDS_PER_MINUTE
+DURATION_EXPLORE = 60 * SECONDS_PER_MINUTE
 DURATION_OPERATE = 5 * SECONDS_PER_MINUTE
 
 ##### Scaling Agent Hyperparameters #######
 
-MAX_EXPLORE = 30 # 5min
+EVALUATION_FREQUENCY = 30
+MAX_EXPLORE = DURATION_EXPLORE / EVALUATION_FREQUENCY
 GAUSSIAN_NOISE = 0.05
-EVALUATION_FREQUENCY = 20
 
 ########## Service Definitions ############
 
@@ -64,7 +64,7 @@ def train_scaling_agent(rask_agent, agent_suffix):
     delete_file_if_exists(ROOT + "/../../share/metrics/metrics.csv")
     delete_file_if_exists(ROOT + f"/agent_experience_{agent_suffix}.csv")
     delete_file_if_exists(ROOT + f"/metrics_{agent_suffix}.csv")
-    time.sleep(EVALUATION_FREQUENCY)  # Needs a couple of seconds after resetting services
+    time.sleep(EVALUATION_FREQUENCY / 2)  # Needs a couple of seconds after resetting services
     rask_agent.reset_services_counters()
 
     rask_agent.start()

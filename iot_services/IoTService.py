@@ -175,7 +175,7 @@ class IoTService(ABC):
                     self.simulate_interval(start_time)
 
                 self.post_process(processed_item_counter)
-                prepare_x_frames = int((processed_item_counter * 1.25) + 1)
+                prepare_x_frames = max(int((processed_item_counter * 1.25)), 30)
 
         self._terminated = True
         logger.info(f"{self.service_type.value} stopped")
